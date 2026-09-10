@@ -1,0 +1,1056 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>DocBuddy Premium</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet" />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='upgrade.css') }}" />
+
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("docuforge-theme") === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+
+  <body>
+    <div class="page">
+      <!-- TOP BAR -->
+      <header class="topbar">
+        <a href="{{ url_for('dashboard') }}" class="back-button">
+          <span>←</span>
+          <span>Dashboard</span>
+        </a>
+
+        <div class="secure-badge">
+          <span class="secure-dot"></span>
+          Secure checkout
+        </div>
+      </header>
+
+      <!-- HERO -->
+      <section class="hero">
+        <div class="hero-content">
+          <div class="premium-tag">
+            <span>✦</span>
+            DocBuddy Premium
+          </div>
+
+          <h1>
+            Stop fighting your documents.
+            <span>Let them just work.</span>
+          </h1>
+
+          <p>
+            Convert, compress, crop and OCR anything you throw at it — without
+            the daily limits, the wait, or the ads.
+          </p>
+
+          <div class="hero-features">
+            <div>
+              <span>✓</span>
+              Faster processing
+            </div>
+
+            <div>
+              <span>✓</span>
+              Higher limits
+            </div>
+
+            <div>
+              <span>✓</span>
+              No ads
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="floating-card floating-one">
+            <strong>PDF</strong>
+            <small>Convert</small>
+          </div>
+
+          <div class="floating-card floating-two">
+            <strong>JPG</strong>
+            <small>Compress</small>
+          </div>
+
+          <div class="document-card">
+            <div class="document-header">
+              <div class="document-logo">D</div>
+
+              <div>
+                <strong>DocBuddy</strong>
+                <small>Premium Workspace</small>
+              </div>
+            </div>
+
+            <div class="document-lines">
+              <i></i>
+              <i></i>
+              <i></i>
+              <i class="short"></i>
+            </div>
+
+            <div class="document-tools">
+              <span>PDF</span>
+              <span>JPG</span>
+              <span>OCR</span>
+              <span>DOCX</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATS -->
+      {% if stats %}
+      <section class="stats-strip">
+        <div class="stat">
+          <strong>{{ stats.docs_processed }}</strong>
+          <small>{{ stats.docs_processed_label }}</small>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <strong>{{ stats.avg_rating }}</strong>
+          <small>{{ stats.avg_rating_label }}</small>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <strong>{{ stats.avg_time_saved }}</strong>
+          <small>{{ stats.avg_time_saved_label }}</small>
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- BILLING -->
+      <section class="billing-section">
+        <div>
+          <strong>Choose your billing cycle</strong>
+          <small>Change or cancel anytime — no lock-in</small>
+        </div>
+
+        <div class="billing-switch">
+          <button
+            type="button"
+            class="billing-button active"
+            data-cycle="monthly">
+            Monthly
+          </button>
+
+          <button type="button" class="billing-button" data-cycle="yearly">
+            Yearly
+            <span>Save 17%</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- PLANS -->
+      <section class="plans-section">
+        <div class="section-heading">
+          <div>
+            <h2>Pick the plan that fits your workload</h2>
+          </div>
+
+          <p>Every plan can be upgraded, downgraded, or cancelled anytime.</p>
+        </div>
+
+        <div class="plans-grid">
+          {% for plan_id, plan in plans.items() %}
+
+          <article
+            class="plan-card {% if plan_id == current_plan %}current{% endif %} {% if plan_id == 'pro' %}popular{% endif %}">
+            {% if plan_id == 'pro' %}
+            <div class="popular-label">★ Most popular</div>
+            {% endif %}
+
+            <div class="plan-header">
+              <div
+                class="plan-icon {% if plan_id == 'pro' %}pro{% elif plan_id == 'business' %}business{% else %}free{% endif %}">
+                {% if plan_id == 'free' %} F {% elif plan_id == 'pro' %} P {%
+                else %} B {% endif %}
+              </div>
+
+              <div>
+                <h3>{{ plan.name }}</h3>
+
+                {% if plan_id == 'pro' %}
+                <small>Best value for individuals</small>
+                {% elif plan_id == 'business' %}
+                <small>Built for teams</small>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="plan-price">
+              <strong
+                class="price"
+                data-monthly="{{ plan.monthly_price }}"
+                data-yearly="{{ (plan.yearly_price / 12) | round(2) }}">
+                ₹{{ plan.monthly_price }}
+              </strong>
+
+              <span>/month</span>
+            </div>
+
+            {% if plan.yearly_price > 0 %}
+            <div class="yearly-note" hidden>
+              Billed ₹{{ plan.yearly_price }} yearly
+            </div>
+            {% endif %}
+
+            <div class="plan-divider"></div>
+
+            <ul class="feature-list">
+              {% for feature in plan.features %}
+
+              <li>
+                <span>✓</span>
+                {{ feature }}
+              </li>
+
+              {% endfor %}
+            </ul>
+
+            {% if plan_id == current_plan %}
+
+            <button class="plan-action disabled" disabled>Current plan</button>
+
+            {% elif plan_id == 'free' %}
+
+            <a href="{{ url_for('dashboard') }}" class="plan-action secondary">
+              Continue free
+            </a>
+
+            {% else %}
+
+            <button
+              type="button"
+              class="plan-action primary plan-select"
+              data-plan="{{ plan_id }}"
+              data-plan-name="{{ plan.name }}"
+              data-monthly-price="{{ plan.monthly_price }}"
+              data-yearly-price="{{ plan.yearly_price }}">
+              Upgrade to {{ plan.name }}
+
+              <span>→</span>
+            </button>
+
+            {% endif %}
+          </article>
+
+          {% endfor %}
+        </div>
+
+        {% if comparison_rows %}
+        <!-- COMPARISON TABLE -->
+        <div class="compare-wrap">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th class="compare-row-label">Compare in detail</th>
+                <th>Free</th>
+                <th class="compare-pro">Pro</th>
+                <th>Business</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in comparison_rows %}
+              <tr>
+                <td class="compare-row-label">{{ row[0] }}</td>
+                <td>{{ row[1] }}</td>
+                <td class="compare-pro">{{ row[2] }}</td>
+                <td>{{ row[3] }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </section>
+
+      {% if testimonials %}
+      <!-- TESTIMONIALS -->
+      <section class="testimonials-section">
+        <div class="section-heading">
+          <div>
+            <h2>What Premium users say</h2>
+          </div>
+        </div>
+
+        <div class="testimonials-grid">
+          {% for t in testimonials %}
+          <figure class="testimonial-card">
+            <blockquote>“{{ t.quote }}”</blockquote>
+            <figcaption>
+              <span class="avatar">{{ t.name[0] }}</span>
+              <div>
+                <strong>{{ t.name }}</strong>
+                <small>{{ t.role }}</small>
+              </div>
+            </figcaption>
+          </figure>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- CHECKOUT -->
+      <section class="checkout" id="paymentSection" hidden>
+        <div class="checkout-header">
+          <div>
+            <h2>Complete your upgrade</h2>
+            <p>Select your preferred payment method.</p>
+          </div>
+
+          <div class="checkout-secure">
+            <span>🔒</span>
+            <div>
+              <strong>Secure payment</strong>
+              <small>Protected checkout</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="checkout-grid">
+          <!-- LEFT -->
+          <div class="checkout-main">
+            <!-- ORDER -->
+            <div class="order-card">
+              <div class="order-heading">
+                <span>Your order</span>
+                <b>PREMIUM</b>
+              </div>
+
+              <div id="orderSummary"></div>
+            </div>
+
+            <!-- PAYMENT METHOD -->
+            <div class="payment-heading">Choose payment method</div>
+
+            <div class="payment-methods">
+              <label class="payment-method">
+                <input
+                  type="radio"
+                  name="payment_selector"
+                  value="upi"
+                  checked />
+
+                <div class="payment-method-content">
+                  <div class="payment-method-icon upi">UPI</div>
+
+                  <div>
+                    <strong>UPI</strong>
+                    <small>Instant payment</small>
+                  </div>
+
+                  <span class="radio-check">✓</span>
+                </div>
+              </label>
+
+              <label class="payment-method">
+                <input type="radio" name="payment_selector" value="card" />
+
+                <div class="payment-method-content">
+                  <div class="payment-method-icon cards">▰</div>
+
+                  <div>
+                    <strong>Cards</strong>
+                    <small>Credit / Debit</small>
+                  </div>
+
+                  <span class="radio-check">✓</span>
+                </div>
+              </label>
+
+              <label class="payment-method">
+                <input
+                  type="radio"
+                  name="payment_selector"
+                  value="netbanking" />
+
+                <div class="payment-method-content">
+                  <div class="payment-method-icon banking">▦</div>
+
+                  <div>
+                    <strong>Net Banking</strong>
+                    <small>All major banks</small>
+                  </div>
+
+                  <span class="radio-check">✓</span>
+                </div>
+              </label>
+
+              <label class="payment-method">
+                <input type="radio" name="payment_selector" value="wallet" />
+
+                <div class="payment-method-content">
+                  <div class="payment-method-icon wallet">◈</div>
+
+                  <div>
+                    <strong>Wallets</strong>
+                    <small>Popular wallets</small>
+                  </div>
+
+                  <span class="radio-check">✓</span>
+                </div>
+              </label>
+            </div>
+
+            <!-- PAYMENT FORM -->
+            <form
+              action="{{ url_for('upgrade_checkout') }}"
+              method="POST"
+              id="paymentForm">
+              <input type="hidden" name="plan" id="selectedPlan" />
+
+              <input
+                type="hidden"
+                name="billing_cycle"
+                id="selectedCycle"
+                value="monthly" />
+
+              <input
+                type="hidden"
+                name="payment_method"
+                id="paymentMethod"
+                value="upi" />
+
+              <!-- UPI -->
+              <div class="payment-panel" id="upiPanel">
+                <div class="panel-title">
+                  <div>
+                    <strong>Pay using UPI</strong>
+                    <small>Choose your preferred UPI app</small>
+                  </div>
+
+                  <span class="upi-label">UPI</span>
+                </div>
+
+                <div class="upi-apps">
+                  <button
+                    type="button"
+                    class="upi-app phonepe"
+                    data-app="PhonePe">
+                    <span class="brand-mark phonepe-mark">
+                      <span>पे</span>
+                    </span>
+
+                    <strong>PhonePe</strong>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="upi-app gpay"
+                    data-app="Google Pay">
+                    <span class="brand-mark gpay-mark"> G </span>
+
+                    <strong>Google Pay</strong>
+                  </button>
+
+                  <button type="button" class="upi-app paytm" data-app="Paytm">
+                    <span class="brand-mark paytm-mark"> paytm </span>
+
+                    <strong>Paytm</strong>
+                  </button>
+
+                  <button type="button" class="upi-app bhim" data-app="BHIM">
+                    <span class="brand-mark bhim-mark"> BHIM </span>
+
+                    <strong>BHIM</strong>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="upi-app amazon"
+                    data-app="Amazon Pay">
+                    <span class="brand-mark amazon-mark"> a </span>
+
+                    <strong>Amazon Pay</strong>
+                  </button>
+
+                  <button
+                    type="button"
+                    class="upi-app other"
+                    data-app="Other UPI">
+                    <span class="brand-mark other-mark"> U </span>
+
+                    <strong>Other UPI</strong>
+                  </button>
+                </div>
+
+                <div class="divider">
+                  <span>Or enter UPI ID</span>
+                </div>
+
+                <label class="field">
+                  <span>UPI ID</span>
+
+                  <input
+                    type="text"
+                    name="upi_id"
+                    id="upiId"
+                    placeholder="yourname@upi"
+                    autocomplete="off" />
+                </label>
+
+                <small class="field-help">
+                  Example: name@oksbi or name@ybl
+                </small>
+              </div>
+
+              <!-- CARD -->
+              <div class="payment-panel" id="cardPanel" hidden>
+                <div class="panel-title">
+                  <div>
+                    <strong>Card payment</strong>
+                    <small>Credit or debit card</small>
+                  </div>
+
+                  <div class="card-brands">
+                    <span>VISA</span>
+                    <span>MC</span>
+                    <span>RuPay</span>
+                  </div>
+                </div>
+
+                <label class="field">
+                  <span>Cardholder name</span>
+
+                  <input
+                    type="text"
+                    name="card_name"
+                    placeholder="Name as shown on card"
+                    autocomplete="cc-name" />
+                </label>
+
+                <label class="field">
+                  <span>Card number</span>
+
+                  <input
+                    type="text"
+                    name="card_number"
+                    id="cardNumber"
+                    placeholder="1234 5678 9012 3456"
+                    maxlength="19"
+                    inputmode="numeric"
+                    autocomplete="cc-number" />
+                </label>
+
+                <div class="two-fields">
+                  <label class="field">
+                    <span>Expiry</span>
+
+                    <input
+                      type="text"
+                      name="card_expiry"
+                      id="cardExpiry"
+                      placeholder="MM/YY"
+                      maxlength="5"
+                      inputmode="numeric"
+                      autocomplete="cc-exp" />
+                  </label>
+
+                  <label class="field">
+                    <span>CVV</span>
+
+                    <input
+                      type="password"
+                      name="card_cvv"
+                      placeholder="•••"
+                      maxlength="4"
+                      inputmode="numeric"
+                      autocomplete="cc-csc" />
+                  </label>
+                </div>
+              </div>
+
+              <!-- NET BANKING -->
+              <div class="payment-panel" id="netbankingPanel" hidden>
+                <div class="panel-title">
+                  <div>
+                    <strong>Net Banking</strong>
+                    <small>Select your bank</small>
+                  </div>
+
+                  <span class="panel-symbol">▦</span>
+                </div>
+
+                <label class="field">
+                  <span>Select bank</span>
+
+                  <select name="bank">
+                    <option value="">Choose your bank</option>
+
+                    <option value="sbi">State Bank of India</option>
+
+                    <option value="hdfc">HDFC Bank</option>
+
+                    <option value="icici">ICICI Bank</option>
+
+                    <option value="axis">Axis Bank</option>
+
+                    <option value="kotak">Kotak Mahindra Bank</option>
+
+                    <option value="other">Other Bank</option>
+                  </select>
+                </label>
+              </div>
+
+              <!-- WALLET -->
+              <div class="payment-panel" id="walletPanel" hidden>
+                <div class="panel-title">
+                  <div>
+                    <strong>Wallets</strong>
+                    <small>Select your wallet</small>
+                  </div>
+
+                  <span class="panel-symbol">◈</span>
+                </div>
+
+                <div class="wallet-grid">
+                  <button
+                    type="button"
+                    class="wallet-button"
+                    data-wallet="Paytm">
+                    Paytm
+                  </button>
+
+                  <button
+                    type="button"
+                    class="wallet-button"
+                    data-wallet="Amazon Pay">
+                    Amazon Pay
+                  </button>
+
+                  <button
+                    type="button"
+                    class="wallet-button"
+                    data-wallet="MobiKwik">
+                    MobiKwik
+                  </button>
+
+                  <button
+                    type="button"
+                    class="wallet-button"
+                    data-wallet="Freecharge">
+                    Freecharge
+                  </button>
+                </div>
+              </div>
+
+              <!-- GUARANTEE -->
+              <div class="guarantee-strip">
+                <div class="guarantee-icon">↺</div>
+                <div>
+                  <strong>7-day money-back guarantee</strong>
+                  <small
+                    >Not a fit? Get a full refund, no questions asked.</small
+                  >
+                </div>
+              </div>
+
+              <!-- SECURITY -->
+              <div class="payment-security">
+                <div class="security-icon">🔒</div>
+
+                <div>
+                  <strong>Your payment is protected</strong>
+
+                  <small>
+                    Payment information is processed securely. Never share your
+                    CVV or PIN.
+                  </small>
+                </div>
+              </div>
+
+              <!-- PAY -->
+              <button type="submit" class="pay-button">
+                <span>Pay securely</span>
+
+                <strong id="payAmount"> ₹0 </strong>
+
+                <span>→</span>
+              </button>
+
+              <p class="terms">
+                By continuing, you agree to DocBuddy's Terms of Service and
+                Privacy Policy.
+              </p>
+            </form>
+          </div>
+
+          <!-- RIGHT -->
+          <aside class="checkout-sidebar">
+            <div class="premium-card">
+              <div class="premium-card-top">
+                DocBuddy Premium
+                <span>★</span>
+              </div>
+
+              <h3>Everything you need for your documents.</h3>
+
+              <div class="benefit">
+                <span>⚡</span>
+
+                <div>
+                  <strong>Faster processing</strong>
+                  <small>Get files processed quickly</small>
+                </div>
+              </div>
+
+              <div class="benefit">
+                <span>∞</span>
+
+                <div>
+                  <strong>Higher limits</strong>
+                  <small>Work with more files</small>
+                </div>
+              </div>
+
+              <div class="benefit">
+                <span>✂</span>
+
+                <div>
+                  <strong>Advanced tools</strong>
+                  <small>Crop, compress and convert</small>
+                </div>
+              </div>
+
+              <div class="benefit">
+                <span>✦</span>
+
+                <div>
+                  <strong>Premium workspace</strong>
+                  <small>A cleaner experience</small>
+                </div>
+              </div>
+
+              <div class="confidence">
+                <span>✓</span>
+
+                <div>
+                  <strong>Upgrade with confidence</strong>
+                  <small>Your plan can be changed later.</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- ACCEPTED -->
+            <div class="accepted-payment">
+              <small>Supported payment methods</small>
+
+              <div class="accepted-row">
+                <span class="accepted upi-logo"> UPI </span>
+
+                <span class="accepted visa-logo"> VISA </span>
+
+                <span class="accepted mc-logo"> MC </span>
+
+                <span class="accepted rupay-logo"> RuPay </span>
+              </div>
+
+              <p>Multiple payment options available</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- TRUST -->
+      <section class="trust-section">
+        <div>
+          <span>🔒</span>
+          <strong>Secure checkout</strong>
+          <small>Protected payment processing</small>
+        </div>
+
+        <div>
+          <span>⚡</span>
+          <strong>Instant activation</strong>
+          <small>Premium access after payment</small>
+        </div>
+
+        <div>
+          <span>✓</span>
+          <strong>Transparent pricing</strong>
+          <small>No hidden charges</small>
+        </div>
+      </section>
+
+      {% if faqs %}
+      <!-- FAQ -->
+      <section class="faq-section">
+        <div class="section-heading">
+          <div>
+            <h2>Questions, answered</h2>
+          </div>
+        </div>
+
+        <div class="faq-list">
+          {% for question, answer in faqs %}
+          <details class="faq-item">
+            <summary>
+              {{ question }}
+              <span class="faq-chevron">⌄</span>
+            </summary>
+            <p>{{ answer }}</p>
+          </details>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const billingButtons = document.querySelectorAll(".billing-button");
+
+        const priceElements = document.querySelectorAll(".price");
+
+        const yearlyNotes = document.querySelectorAll(".yearly-note");
+
+        const cycleInput = document.getElementById("selectedCycle");
+
+        const paymentSection = document.getElementById("paymentSection");
+
+        const selectedPlan = document.getElementById("selectedPlan");
+
+        const orderSummary = document.getElementById("orderSummary");
+
+        const payAmount = document.getElementById("payAmount");
+
+        const paymentMethod = document.getElementById("paymentMethod");
+
+        let currentCycle = "monthly";
+        let selectedPlanButton = null;
+
+        /* BILLING */
+
+        function updateBilling(cycle) {
+          currentCycle = cycle;
+
+          cycleInput.value = cycle;
+
+          billingButtons.forEach(function (button) {
+            button.classList.toggle("active", button.dataset.cycle === cycle);
+          });
+
+          priceElements.forEach(function (price) {
+            const monthly = price.dataset.monthly;
+
+            const yearly = price.dataset.yearly;
+
+            price.textContent = "₹" + (cycle === "yearly" ? yearly : monthly);
+          });
+
+          yearlyNotes.forEach(function (note) {
+            note.hidden = cycle !== "yearly";
+          });
+
+          updateSummary();
+        }
+
+        billingButtons.forEach(function (button) {
+          button.addEventListener("click", function () {
+            updateBilling(button.dataset.cycle);
+          });
+        });
+
+        /* PLAN */
+
+        document.querySelectorAll(".plan-select").forEach(function (button) {
+          button.addEventListener("click", function () {
+            selectedPlanButton = button;
+
+            selectedPlan.value = button.dataset.plan;
+
+            document.querySelectorAll(".plan-select").forEach(function (item) {
+              item.classList.remove("selected");
+            });
+
+            button.classList.add("selected");
+
+            updateSummary();
+
+            paymentSection.hidden = false;
+
+            paymentSection.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          });
+        });
+
+        /* SUMMARY */
+
+        function updateSummary() {
+          if (!selectedPlanButton) {
+            return;
+          }
+
+          const name = selectedPlanButton.dataset.planName;
+
+          const price =
+            currentCycle === "yearly"
+              ? selectedPlanButton.dataset.yearlyPrice
+              : selectedPlanButton.dataset.monthlyPrice;
+
+          const cycle = currentCycle === "yearly" ? "year" : "month";
+
+          orderSummary.innerHTML = `
+
+            <div class="summary">
+
+                <div class="summary-icon">
+                    ✦
+                </div>
+
+                <div class="summary-name">
+
+                    <strong>
+                        ${name} Plan
+                    </strong>
+
+                    <small>
+                        ${
+                          currentCycle === "yearly"
+                            ? "Annual billing"
+                            : "Monthly billing"
+                        }
+                    </small>
+
+                </div>
+
+                <div class="summary-price">
+
+                    <strong>
+                        ₹${price}
+                    </strong>
+
+                    <small>
+                        /${cycle}
+                    </small>
+
+                </div>
+
+            </div>
+        `;
+
+          payAmount.textContent = "₹" + price;
+        }
+
+        /* PAYMENT METHODS */
+
+        const panels = {
+          upi: document.getElementById("upiPanel"),
+
+          card: document.getElementById("cardPanel"),
+
+          netbanking: document.getElementById("netbankingPanel"),
+
+          wallet: document.getElementById("walletPanel"),
+        };
+
+        document
+          .querySelectorAll('input[name="payment_selector"]')
+          .forEach(function (radio) {
+            radio.addEventListener("change", function () {
+              const method = radio.value;
+
+              Object.keys(panels).forEach(function (key) {
+                panels[key].hidden = key !== method;
+              });
+
+              paymentMethod.value = method;
+            });
+          });
+
+        /* UPI APPS */
+
+        document.querySelectorAll(".upi-app").forEach(function (button) {
+          button.addEventListener("click", function () {
+            document.querySelectorAll(".upi-app").forEach(function (item) {
+              item.classList.remove("active");
+            });
+
+            button.classList.add("active");
+
+            const upiId = document.getElementById("upiId");
+
+            if (upiId) {
+              upiId.focus();
+            }
+          });
+        });
+
+        /* WALLETS */
+
+        document.querySelectorAll(".wallet-button").forEach(function (button) {
+          button.addEventListener("click", function () {
+            document
+              .querySelectorAll(".wallet-button")
+              .forEach(function (item) {
+                item.classList.remove("active");
+              });
+
+            button.classList.add("active");
+          });
+        });
+
+        /* CARD NUMBER */
+
+        const cardNumber = document.getElementById("cardNumber");
+
+        if (cardNumber) {
+          cardNumber.addEventListener("input", function () {
+            let value = cardNumber.value.replace(/\D/g, "").slice(0, 16);
+
+            cardNumber.value = value.replace(/(.{4})/g, "$1 ").trim();
+          });
+        }
+
+        /* EXPIRY */
+
+        const expiry = document.getElementById("cardExpiry");
+
+        if (expiry) {
+          expiry.addEventListener("input", function () {
+            let value = expiry.value.replace(/\D/g, "").slice(0, 4);
+
+            if (value.length > 2) {
+              value = value.slice(0, 2) + "/" + value.slice(2);
+            }
+
+            expiry.value = value;
+          });
+        }
+
+        /* THEME */
+
+        window.addEventListener("storage", function (event) {
+          if (event.key === "docuforge-theme") {
+            if (event.newValue === "dark") {
+              document.documentElement.setAttribute("data-theme", "dark");
+            } else {
+              document.documentElement.removeAttribute("data-theme");
+            }
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>OCR &amp; Text | DocBuddy</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('ocr_text.static', filename='ocr_text.css') }}" />
+  </head>
+  <body>
+    <div class="grain"></div>
+    <div class="ot-app">
+      <header class="ot-topbar">
+        <div class="brand">
+          <a class="back-link" href="/dashboard" title="Back to dashboard"
+            >← Dashboard</a
+          >
+          <div class="brand-icon">◉</div>
+          <div>
+            <strong>OCR &amp; Text</strong
+            ><small>Pull text out of scans, images &amp; handwriting</small>
+          </div>
+        </div>
+        <div class="top-actions">
+          <span class="safelight-badge" id="capBadgeBasic"
+            >checking basic engine…</span
+          >
+          <span class="safelight-badge" id="capBadgeEnhanced"
+            >checking enhanced engine…</span
+          >
+          <span class="safelight-badge" id="capBadgeTrocr"
+            >checking handwriting engine…</span
+          >
+          <a class="btn outline hidden" id="zipAllBtn">⬇ Download all (.zip)</a>
+          <button class="btn primary" id="runBtn">▷ Extract Text</button>
+        </div>
+      </header>
+
+      <div class="ot-layout">
+        <aside class="settings-panel">
+          <div class="panel-title">
+            <span>SOURCE</span>
+            <h1>Load Material</h1>
+          </div>
+
+          <section class="setting-section">
+            <label class="label">FILES</label>
+            <div class="dropzone" id="dropzone">
+              <input
+                id="fileInput"
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.bmp,.webp"
+                multiple
+                hidden />
+              <div class="upload-icon">◇</div>
+              <strong>Drop PDFs or images</strong
+              ><small
+                >Up to 10 files, PDF/PNG/JPG/TIFF/BMP/WEBP, 100 MB each</small
+              >
+              <button type="button" class="btn outline" id="browseBtn">
+                Choose files
+              </button>
+            </div>
+            <div class="file-list" id="fileList"></div>
+            <p class="field-error hidden" id="fileError"></p>
+          </section>
+
+          <section class="setting-section">
+            <label class="label">EXTRACTION MODE</label>
+            <div class="choice-list">
+              <label
+                ><input type="radio" name="mode" value="auto" checked /><span
+                  ><b>Auto</b
+                  ><small
+                    >Use existing text where present, OCR the rest.</small
+                  ></span
+                ></label
+              >
+              <label
+                ><input type="radio" name="mode" value="native" /><span
+                  ><b>Native text only</b
+                  ><small
+                    >Fast. Only works on PDFs with a real text layer.</small
+                  ></span
+                ></label
+              >
+              <label
+                ><input
+                  type="radio"
+                  name="mode"
+                  value="ocr"
+                  id="modeOcrOption" /><span
+                  ><b>Force OCR</b
+                  ><small>Re-read every selected page as an image.</small></span
+                ></label
+              >
+            </div>
+            <p class="field-error hidden" id="ocrUnavailableNote"></p>
+          </section>
+
+          <section class="setting-section">
+            <label class="label">OCR ENGINE</label>
+            <select id="engine">
+              <option value="auto" selected>Auto (best available)</option>
+              <option value="basic">Basic (PyMuPDF + Tesseract)</option>
+              <option value="enhanced">
+                Enhanced (confidence scores, auto-rotate, handwriting detection)
+              </option>
+              <option value="trocr">
+                Handwriting specialist (TrOCR) — slow, best for
+                cursive/handwriting
+              </option>
+            </select>
+            <p class="micro">
+              Enhanced mode needs <code>pytesseract</code> +
+              <code>Pillow</code>. TrOCR needs <code>torch</code> +
+              <code>transformers</code> + <code>numpy</code>, and downloads its
+              model (a few hundred MB) from Hugging Face the first time it's
+              used.
+            </p>
+
+            <div id="trocrOptions" class="hidden">
+              <label>Handwriting model</label>
+              <select id="trocrModel">
+                <option value="base" selected>
+                  Base — faster, smaller download
+                </option>
+                <option value="large">
+                  Large — slower, usually more accurate
+                </option>
+              </select>
+            </div>
+
+            <div id="qualityOptions" class="hidden">
+              <label>Quality mode</label>
+              <select id="qualityMode">
+                <option value="fast" selected>
+                  Fast — one OCR pass per page
+                </option>
+                <option value="thorough">
+                  Thorough — tries contrast/sharpen/threshold variants per page,
+                  keeps the best-confidence result
+                </option>
+              </select>
+              <p class="micro">
+                Thorough mode is slower per page but recovers text on rough
+                scans that a single pass misses.
+              </p>
+            </div>
+          </section>
+
+          <section class="setting-section">
+            <label class="label">LANGUAGE</label>
+            <select id="language">
+              <option value="eng">English</option>
+              <option value="fra">French</option>
+              <option value="deu">German</option>
+              <option value="spa">Spanish</option>
+              <option value="ita">Italian</option>
+              <option value="por">Portuguese</option>
+              <option value="nld">Dutch</option>
+              <option value="rus">Russian</option>
+              <option value="chi_sim">Chinese (Simplified)</option>
+              <option value="chi_tra">Chinese (Traditional)</option>
+              <option value="jpn">Japanese</option>
+              <option value="kor">Korean</option>
+              <option value="ara">Arabic</option>
+              <option value="hin">Hindi</option>
+            </select>
+            <label class="toggle-row"
+              ><input id="multiLang" type="checkbox" /><span
+                >Add a second language</span
+              ></label
+            >
+            <select id="language2" class="hidden">
+              <option value="">— none —</option>
+              <option value="eng">English</option>
+              <option value="fra">French</option>
+              <option value="deu">German</option>
+              <option value="spa">Spanish</option>
+              <option value="ita">Italian</option>
+              <option value="por">Portuguese</option>
+            </select>
+            <p class="micro">
+              Only languages whose tessdata is installed on the server will
+              work.
+            </p>
+          </section>
+
+          <section class="setting-section">
+            <label class="label">SCAN QUALITY</label>
+            <label>OCR resolution (DPI)</label>
+            <input
+              id="dpi"
+              type="range"
+              min="100"
+              max="400"
+              step="10"
+              value="200" />
+            <div class="range-value"><span id="dpiValue">200</span> dpi</div>
+
+            <label>Page segmentation</label>
+            <select id="psm">
+              <option value="3" selected>Automatic (default)</option>
+              <option value="4">Single column of text</option>
+              <option value="6">Single uniform block</option>
+              <option value="7">Single text line</option>
+              <option value="11">Sparse text</option>
+            </select>
+
+            <label class="toggle-row"
+              ><input id="enhanceImage" type="checkbox" /><span
+                >Enhance scan (grayscale + autocontrast)</span
+              ></label
+            >
+            <label class="toggle-row"
+              ><input id="autoOrient" type="checkbox" /><span
+                >Auto-detect &amp; fix page rotation</span
+              ></label
+            >
+            <p class="micro" id="enhancedOnlyNote">
+              The last three options need the enhanced engine.
+            </p>
+
+            <label>Manual rotation (applied to every page first)</label>
+            <select id="rotation">
+              <option value="0">No rotation</option>
+              <option value="90">90° clockwise</option>
+              <option value="180">180°</option>
+              <option value="270">270° clockwise</option>
+            </select>
+          </section>
+
+          <section class="setting-section">
+            <label class="label">PAGE RANGE</label>
+            <div class="field-grid">
+              <div>
+                <label>From</label
+                ><input id="pageStart" type="number" min="1" value="1" />
+              </div>
+              <div>
+                <label>To</label
+                ><input id="pageEnd" type="number" min="1" placeholder="All" />
+              </div>
+            </div>
+            <label>Apply to</label>
+            <select id="pageFilter">
+              <option value="all">All pages in range</option>
+              <option value="odd">Odd pages only</option>
+              <option value="even">Even pages only</option>
+            </select>
+            <p class="micro">
+              Same settings apply to every file when processing more than one at
+              once.
+            </p>
+          </section>
+
+          <section class="setting-section">
+            <label class="toggle-row"
+              ><input id="wantPdf" type="checkbox" checked /><span
+                >Also build a searchable PDF</span
+              ></label
+            >
+            <label class="toggle-row"
+              ><input id="extractImages" type="checkbox" /><span
+                >Extract embedded images (into the ZIP)</span
+              ></label
+            >
+          </section>
+        </aside>
+
+        <main class="preview-panel">
+          <div class="file-tabs" id="fileTabs"></div>
+
+          <div class="meta-bar hidden" id="metaBar">
+            <span id="metaTitle"></span>
+            <span class="hw-badge" id="hwBadge"></span>
+            <span id="metaEngine"></span>
+          </div>
+
+          <div class="preview-toolbar">
+            <div class="tabs" id="pageTabs">
+              <span class="tab-empty">No pages processed yet</span>
+            </div>
+            <div class="search-box">
+              <input id="findInput" type="text" placeholder="Find in text…" />
+              <span id="findCount"></span>
+            </div>
+          </div>
+
+          <div class="tray" id="tray">
+            <div class="tray-glow"></div>
+            <pre
+              class="text-sheet"
+              id="textSheet">Load one or more files and hit <b>Extract Text</b> to develop the page.</pre>
+          </div>
+
+          <footer class="preview-footer">
+            <div class="stat"><b id="statPages">0</b><span>pages</span></div>
+            <div class="stat"><b id="statOcr">0</b><span>OCR'd</span></div>
+            <div class="stat"><b id="statNative">0</b><span>native</span></div>
+            <div class="stat"><b id="statWords">0</b><span>words</span></div>
+            <div class="stat"><b id="statImages">0</b><span>images</span></div>
+            <div class="downloads" id="downloads">
+              <button class="btn outline" id="copyBtn" type="button">
+                ⧉ Copy text
+              </button>
+              <a class="btn outline hidden" id="dlTxt">.txt</a>
+              <a class="btn outline hidden" id="dlMd">.md</a>
+              <a class="btn outline hidden" id="dlJson">.json</a>
+              <a class="btn outline hidden" id="dlDocx">.docx</a>
+              <a class="btn primary hidden" id="dlPdf">Searchable PDF</a>
+            </div>
+          </footer>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        let files = [],
+          caps = null,
+          lastResults = null,
+          activeFile = 0,
+          activePage = 0;
+
+        function showError(id, msg) {
+          const el = $(id);
+          if (!el) return;
+          if (msg) {
+            el.textContent = msg;
+            el.classList.remove("hidden");
+          } else el.classList.add("hidden");
+        }
+        function escapeHtml(s) {
+          return s.replace(
+            /[&<>]/g,
+            (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c],
+          );
+        }
+        function escapeRegExp(s) {
+          return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        // ---- capabilities -------------------------------------------------
+        async function loadCapabilities() {
+          try {
+            const r = await fetch("/api/ocr-text/capabilities");
+            const d = await r.json();
+            if (!d.success) throw new Error();
+            caps = d;
+
+            const basic = $("capBadgeBasic");
+            if (d.ocr_available) {
+              basic.textContent = "● Basic OCR ready";
+              basic.classList.add("ok");
+            } else {
+              basic.textContent = "● Basic OCR unavailable";
+              basic.title = d.ocr_detail || "";
+              basic.classList.add("warn");
+              $("modeOcrOption").disabled = true;
+              document.querySelector("input[name=mode][value=auto]").checked =
+                true;
+              showError(
+                "ocrUnavailableNote",
+                `Tesseract OCR isn\u2019t working on this server, so scanned pages can\u2019t be read.${d.ocr_detail ? " (" + d.ocr_detail + ")" : ""}`,
+              );
+            }
+
+            const enh = $("capBadgeEnhanced");
+            const engineSelect = $("engine");
+            if (d.enhanced_available) {
+              enh.textContent = "● Enhanced engine ready";
+              enh.classList.add("ok");
+              $("enhancedOnlyNote").classList.add("hidden");
+            } else {
+              enh.textContent = "● Enhanced engine unavailable";
+              enh.title = d.enhanced_detail || "";
+              enh.classList.add("warn");
+              engineSelect.querySelector('option[value="enhanced"]').disabled =
+                true;
+              $("enhancedOnlyNote").textContent =
+                `Enhanced engine unavailable: ${d.enhanced_detail || "missing dependency"}. Confidence scores, auto-rotation and reliable handwriting detection need it.`;
+            }
+
+            const troc = $("capBadgeTrocr");
+            if (d.trocr_available) {
+              troc.textContent = "● Handwriting engine ready";
+              troc.title = d.trocr_detail || "";
+              troc.classList.add("ok");
+            } else {
+              troc.textContent = "● Handwriting engine unavailable";
+              troc.title = d.trocr_detail || "";
+              troc.classList.add("warn");
+              engineSelect.querySelector('option[value="trocr"]').disabled =
+                true;
+            }
+            updateEngineOptionVisibility();
+          } catch {
+            $("capBadgeBasic").textContent = "● Could not check engine status";
+            $("capBadgeBasic").classList.add("warn");
+            $("capBadgeEnhanced").classList.add("hidden");
+            $("capBadgeTrocr").classList.add("hidden");
+          }
+        }
+
+        function updateEngineOptionVisibility() {
+          const engine = $("engine").value;
+          $("trocrOptions").classList.toggle("hidden", engine !== "trocr");
+          $("qualityOptions").classList.toggle(
+            "hidden",
+            engine !== "enhanced" && engine !== "auto",
+          );
+        }
+
+        // ---- file list --------------------------------------------------
+        function renderFileList() {
+          const wrap = $("fileList");
+          wrap.innerHTML = "";
+          files.forEach((f, i) => {
+            const row = document.createElement("div");
+            row.className = "file-card";
+            row.innerHTML = `<div class="pdf-badge">${f.name.split(".").pop().toUpperCase()}</div>
+      <div class="file-info"><strong>${escapeHtml(f.name)}</strong><small>${(f.size / 1048576).toFixed(2)} MB</small></div>
+      <button class="xbtn" type="button">×</button>`;
+            row.querySelector(".xbtn").onclick = () => {
+              files.splice(i, 1);
+              renderFileList();
+            };
+            wrap.appendChild(row);
+          });
+        }
+
+        function addFiles(list) {
+          showError("fileError", "");
+          const incoming = Array.from(list || []);
+          for (const f of incoming) {
+            if (!/\.(pdf|png|jpe?g|tiff?|bmp|webp)$/i.test(f.name)) {
+              showError("fileError", `'${f.name}': unsupported type.`);
+              continue;
+            }
+            if (f.size > 100 * 1024 * 1024) {
+              showError("fileError", `'${f.name}' exceeds 100 MB.`);
+              continue;
+            }
+            if (files.length >= 10) {
+              showError("fileError", "Maximum 10 files at once.");
+              break;
+            }
+            files.push(f);
+          }
+          renderFileList();
+        }
+
+        function settings() {
+          let lang = $("language").value;
+          if ($("multiLang").checked && $("language2").value)
+            lang += "+" + $("language2").value;
+          return {
+            mode: document.querySelector("input[name=mode]:checked").value,
+            engine: $("engine").value,
+            language: lang,
+            dpi: Number($("dpi").value) || 200,
+            psm: Number($("psm").value) || 3,
+            quality_mode: $("qualityMode").value,
+            trocr_model: $("trocrModel").value,
+            enhance_image: $("enhanceImage").checked,
+            auto_orient: $("autoOrient").checked,
+            rotation: Number($("rotation").value) || 0,
+            page_start: Math.max(1, Number($("pageStart").value) || 1),
+            page_end: $("pageEnd").value ? Number($("pageEnd").value) : null,
+            page_filter: $("pageFilter").value,
+            want_searchable_pdf: $("wantPdf").checked,
+            extract_images: $("extractImages").checked,
+          };
+        }
+
+        // ---- rendering results ------------------------------------------------
+        function hwClass(label) {
+          if (!label) return "";
+          if (label.startsWith("likely handwritten")) return "hw-high";
+          if (label.startsWith("possibly")) return "hw-mid";
+          if (label.startsWith("likely printed")) return "hw-low";
+          return "hw-neutral";
+        }
+
+        function renderFileTabs() {
+          const wrap = $("fileTabs");
+          wrap.innerHTML = "";
+          lastResults.forEach((r, i) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className =
+              "file-tab" +
+              (i === activeFile ? " active" : "") +
+              (r.error ? " file-tab-error" : "");
+            b.innerHTML = `${escapeHtml(r.filename)}${r.error ? " ⚠" : ""}`;
+            b.onclick = () => {
+              activeFile = i;
+              activePage = 0;
+              renderFileTabs();
+              renderActiveFile();
+            };
+            wrap.appendChild(b);
+          });
+        }
+
+        function renderActiveFile() {
+          const r = lastResults[activeFile];
+          if (r.error) {
+            $("metaBar").classList.add("hidden");
+            $("pageTabs").innerHTML =
+              '<span class="tab-empty">This file failed to process</span>';
+            $("textSheet").textContent = r.error;
+            [
+              "statPages",
+              "statOcr",
+              "statNative",
+              "statWords",
+              "statImages",
+            ].forEach((id) => ($(id).textContent = "0"));
+            ["dlTxt", "dlMd", "dlJson", "dlDocx", "dlPdf"].forEach((id) =>
+              $(id).classList.add("hidden"),
+            );
+            return;
+          }
+
+          const meta = r.metadata || {};
+          $("metaBar").classList.remove("hidden");
+          $("metaTitle").textContent = meta.title ? meta.title : r.filename;
+          $("metaEngine").textContent = meta.engine_used
+            ? `engine: ${meta.engine_used}`
+            : "";
+          const hw = r.handwriting_summary || {};
+          const badge = $("hwBadge");
+          badge.textContent = hw.label
+            ? `${hw.label}${hw.score ? " (" + hw.score + "/100)" : ""}`
+            : "";
+          badge.className = "hw-badge " + hwClass(hw.label || "");
+
+          renderPageTabs(r.pages);
+          showPage(r.pages[0]);
+
+          $("statPages").textContent = r.stats.pages_processed ?? 0;
+          $("statOcr").textContent = r.stats.pages_ocrd ?? 0;
+          $("statNative").textContent = r.stats.pages_native ?? 0;
+          $("statWords").textContent = r.stats.total_words ?? 0;
+          $("statImages").textContent = r.stats.images_extracted ?? 0;
+
+          wireDownload("dlTxt", r.downloads.txt);
+          wireDownload("dlMd", r.downloads.md);
+          wireDownload("dlJson", r.downloads.json);
+          wireDownload("dlDocx", r.downloads.docx);
+          wireDownload("dlPdf", r.downloads.pdf);
+        }
+
+        function renderPageTabs(pages) {
+          const wrap = $("pageTabs");
+          wrap.innerHTML = "";
+          if (!pages.length) {
+            wrap.innerHTML =
+              '<span class="tab-empty">No pages processed</span>';
+            return;
+          }
+          pages.forEach((p, i) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className =
+              "tab" +
+              (p.mode === "ocr" ? " tab-ocr" : "") +
+              (i === activePage ? " active" : "");
+            b.textContent = `Pg ${p.page}`;
+            if (p.confidence != null) b.title = `Confidence: ${p.confidence}%`;
+            b.onclick = () => {
+              activePage = i;
+              renderPageTabs(pages);
+              showPage(pages[i]);
+            };
+            wrap.appendChild(b);
+          });
+        }
+
+        function showPage(p) {
+          $("textSheet").textContent = p.text || "(no text found on this page)";
+          applyFind();
+        }
+
+        function applyFind() {
+          const q = $("findInput").value.trim();
+          const sheet = $("textSheet");
+          const raw = sheet.textContent;
+          if (!q) {
+            sheet.innerHTML = escapeHtml(raw);
+            $("findCount").textContent = "";
+            return;
+          }
+          const re = new RegExp(escapeRegExp(q), "gi");
+          const matches = raw.match(re);
+          $("findCount").textContent = matches
+            ? `${matches.length} match${matches.length === 1 ? "" : "es"}`
+            : "no matches";
+          sheet.innerHTML = escapeHtml(raw).replace(
+            new RegExp(escapeRegExp(escapeHtml(q)), "gi"),
+            (m) => `<mark>${m}</mark>`,
+          );
+        }
+
+        function wireDownload(id, url) {
+          const el = $(id);
+          if (!url) {
+            el.classList.add("hidden");
+            el.removeAttribute("href");
+            return;
+          }
+          el.href = url;
+          el.classList.remove("hidden");
+        }
+
+        // ---- run --------------------------------------------------------------
+        async function run() {
+          showError("fileError", "");
+          if (!files.length) {
+            showError("fileError", "Please add at least one file first.");
+            return;
+          }
+          $("runBtn").disabled = true;
+          $("runBtn").textContent = "◐ Developing…";
+          $("textSheet").textContent = "Extracting text…";
+          $("zipAllBtn").classList.add("hidden");
+
+          const fd = new FormData();
+          files.forEach((f) => fd.append("file", f));
+          fd.append("settings", JSON.stringify(settings()));
+          try {
+            const r = await fetch("/api/ocr-text/process", {
+              method: "POST",
+              body: fd,
+            });
+            const d = await r.json();
+            if (!r.ok || !d.success)
+              throw new Error(d.error || "Unable to process the file(s).");
+            lastResults = d.results;
+            activeFile = 0;
+            activePage = 0;
+            renderFileTabs();
+            renderActiveFile();
+            $("zipAllBtn").href = d.zip_url;
+            $("zipAllBtn").classList.remove("hidden");
+          } catch (e) {
+            showError("fileError", e.message);
+            $("textSheet").textContent =
+              "Nothing developed — see the error above.";
+          } finally {
+            $("runBtn").disabled = false;
+            $("runBtn").textContent = "▷ Extract Text";
+          }
+        }
+
+        // ---- wiring -------------------------------------------------------
+        $("browseBtn").onclick = () => $("fileInput").click();
+        $("dropzone").onclick = (e) => {
+          if (!e.target.closest("button")) $("fileInput").click();
+        };
+        $("fileInput").onchange = (e) => {
+          addFiles(e.target.files);
+          $("fileInput").value = "";
+        };
+        $("dropzone").ondragover = (e) => {
+          e.preventDefault();
+          $("dropzone").classList.add("drag");
+        };
+        $("dropzone").ondragleave = () =>
+          $("dropzone").classList.remove("drag");
+        $("dropzone").ondrop = (e) => {
+          e.preventDefault();
+          $("dropzone").classList.remove("drag");
+          addFiles(e.dataTransfer.files);
+        };
+
+        $("dpi").oninput = () => ($("dpiValue").textContent = $("dpi").value);
+        $("engine").onchange = updateEngineOptionVisibility;
+        $("multiLang").onchange = () =>
+          $("language2").classList.toggle("hidden", !$("multiLang").checked);
+        $("runBtn").onclick = run;
+        $("findInput").oninput = applyFind;
+
+        $("copyBtn").onclick = async () => {
+          try {
+            await navigator.clipboard.writeText($("textSheet").textContent);
+            $("copyBtn").textContent = "✓ Copied";
+            setTimeout(() => ($("copyBtn").textContent = "⧉ Copy text"), 1400);
+          } catch {
+            showError(
+              "fileError",
+              "Could not copy automatically — select the text and copy manually.",
+            );
+          }
+        };
+
+        updateEngineOptionVisibility();
+        loadCapabilities();
+      })();
+    </script>
+  </body>
+</html>

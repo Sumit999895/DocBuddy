@@ -1,0 +1,2049 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Create Document | DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='create.css') }}" />
+  </head>
+
+  <body>
+    <div class="create-app">
+      <!-- =====================================================
+         TOP BAR
+    ====================================================== -->
+
+      <header class="topbar">
+        <div class="brand-area">
+          <a
+            href="{{ url_for('dashboard') }}"
+            class="back-btn"
+            title="Back to Dashboard">
+            ←
+          </a>
+
+          <div class="brand-block">
+            <div class="brand-name">DocBuddy</div>
+
+            <div class="brand-subtitle">Create Document</div>
+          </div>
+        </div>
+
+        <div class="top-center">
+          <div class="document-name-wrap">
+            <span class="document-name-label"> DOCUMENT </span>
+
+            <input
+              type="text"
+              id="topDocumentName"
+              value="My Document"
+              class="document-name-input" />
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <button type="button" class="top-btn" id="undoTopBtn" title="Undo">
+            ↶
+          </button>
+
+          <button type="button" class="top-btn" id="redoTopBtn" title="Redo">
+            ↷
+          </button>
+
+          <button type="button" class="top-btn" id="previewBtn">Preview</button>
+
+          <button type="button" class="top-btn primary" id="createBtnTop">
+            Create DOCX
+          </button>
+        </div>
+      </header>
+
+      <!-- =====================================================
+         MAIN WORKSPACE
+    ====================================================== -->
+
+      <main class="workspace">
+        <!-- =================================================
+             LEFT SIDEBAR
+        ================================================== -->
+
+        <aside class="left-sidebar">
+          <div class="sidebar-heading">
+            <span class="eyebrow"> DOCUMENT </span>
+
+            <h2>Settings</h2>
+          </div>
+
+          <!-- DOCUMENT SETTINGS -->
+
+          <div class="settings-section">
+            <div class="section-label">Document</div>
+
+            <div class="form-group">
+              <label> Document Type </label>
+
+              <select id="documentType">
+                <option>General Document</option>
+
+                <option>Formal Letter</option>
+
+                <option>Report</option>
+
+                <option>Resume / CV</option>
+
+                <option>Business Proposal</option>
+
+                <option>Invoice</option>
+
+                <option>Meeting Notes</option>
+
+                <option>Assignment</option>
+
+                <option>Official Notice</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label> Title </label>
+
+              <input type="text" id="documentTitle" value="My Document" />
+            </div>
+
+            <div class="form-group">
+              <label> Author </label>
+
+              <input type="text" id="documentAuthor" placeholder="Your name" />
+            </div>
+
+            <div class="form-group">
+              <label> Subject </label>
+
+              <input
+                type="text"
+                id="documentSubject"
+                placeholder="Document subject" />
+            </div>
+          </div>
+
+          <!-- PAGE SETTINGS -->
+
+          <div class="settings-section">
+            <div class="section-label">Page Setup</div>
+
+            <div class="form-group">
+              <label> Page Size </label>
+
+              <select id="pageSize">
+                <option value="A4">A4</option>
+
+                <option value="Letter">Letter</option>
+
+                <option value="Legal">Legal</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label> Orientation </label>
+
+              <select id="orientation">
+                <option value="portrait">Portrait</option>
+
+                <option value="landscape">Landscape</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label> Margins </label>
+
+              <select id="margins">
+                <option value="normal">Normal</option>
+
+                <option value="narrow">Narrow</option>
+
+                <option value="wide">Wide</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- HEADER FOOTER -->
+
+          <div class="settings-section">
+            <div class="section-label">Header & Footer</div>
+
+            <div class="toggle-row">
+              <div>
+                <strong> Header </strong>
+
+                <small> Add header to document </small>
+              </div>
+
+              <label class="switch">
+                <input type="checkbox" id="headerEnabled" />
+
+                <span></span>
+              </label>
+            </div>
+
+            <input
+              type="text"
+              id="headerText"
+              class="optional-field"
+              placeholder="Header text"
+              disabled />
+
+            <div class="toggle-row">
+              <div>
+                <strong> Footer </strong>
+
+                <small> Add footer to document </small>
+              </div>
+
+              <label class="switch">
+                <input type="checkbox" id="footerEnabled" />
+
+                <span></span>
+              </label>
+            </div>
+
+            <input
+              type="text"
+              id="footerText"
+              class="optional-field"
+              placeholder="Footer text"
+              disabled />
+
+            <div class="toggle-row">
+              <div>
+                <strong> Page Numbers </strong>
+
+                <small> Number document pages </small>
+              </div>
+
+              <label class="switch">
+                <input type="checkbox" id="pageNumbers" checked />
+
+                <span></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- PAGE COUNT -->
+
+          <div class="page-info-card">
+            <div class="page-info-icon">▤</div>
+
+            <div>
+              <strong id="pageCountText"> 1 page </strong>
+
+              <span> Document workspace </span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- =================================================
+             CENTER EDITOR
+        ================================================== -->
+
+        <section class="editor-area">
+          <!-- TOOLBAR -->
+
+          <div class="toolbar-wrapper">
+            <div class="toolbar-row">
+              <!-- Undo / Redo -->
+
+              <div class="tool-group">
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="undoBtn"
+                  title="Undo">
+                  ↶
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="redoBtn"
+                  title="Redo">
+                  ↷
+                </button>
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <!-- Style -->
+
+              <div class="tool-group">
+                <select
+                  id="formatBlock"
+                  class="toolbar-select style-select"
+                  title="Text style">
+                  <option value="p">Normal</option>
+
+                  <option value="h1">Heading 1</option>
+
+                  <option value="h2">Heading 2</option>
+
+                  <option value="h3">Heading 3</option>
+
+                  <option value="blockquote">Quote</option>
+                </select>
+
+                <select
+                  id="fontFamily"
+                  class="toolbar-select font-select"
+                  title="Font">
+                  <option value="Arial">Arial</option>
+
+                  <option value="Calibri">Calibri</option>
+
+                  <option value="Georgia">Georgia</option>
+
+                  <option value="Times New Roman">Times New Roman</option>
+
+                  <option value="Verdana">Verdana</option>
+
+                  <option value="Courier New">Courier New</option>
+
+                  <option value="Trebuchet MS">Trebuchet MS</option>
+                </select>
+
+                <select
+                  id="fontSize"
+                  class="toolbar-select size-select"
+                  title="Font size">
+                  <option value="8">8</option>
+
+                  <option value="9">9</option>
+
+                  <option value="10">10</option>
+
+                  <option value="11" selected>11</option>
+
+                  <option value="12">12</option>
+
+                  <option value="14">14</option>
+
+                  <option value="16">16</option>
+
+                  <option value="18">18</option>
+
+                  <option value="20">20</option>
+
+                  <option value="24">24</option>
+
+                  <option value="28">28</option>
+
+                  <option value="32">32</option>
+
+                  <option value="36">36</option>
+
+                  <option value="48">48</option>
+
+                  <option value="60">60</option>
+
+                  <option value="72">72</option>
+                </select>
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <!-- Text formatting -->
+
+              <div class="tool-group">
+                <button
+                  type="button"
+                  class="tool-btn bold-btn"
+                  data-command="bold"
+                  title="Bold">
+                  B
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn italic-btn"
+                  data-command="italic"
+                  title="Italic">
+                  I
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn underline-btn"
+                  data-command="underline"
+                  title="Underline">
+                  U
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn strike-btn"
+                  data-command="strikeThrough"
+                  title="Strikethrough">
+                  S
+                </button>
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <!-- Font size controls -->
+
+              <div class="tool-group">
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="decreaseFont"
+                  title="Decrease font size">
+                  A−
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="increaseFont"
+                  title="Increase font size">
+                  A+
+                </button>
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <!-- Colors -->
+
+              <div class="color-control">
+                <span> A </span>
+
+                <input
+                  type="color"
+                  id="textColor"
+                  value="#222222"
+                  title="Text color" />
+              </div>
+
+              <div class="color-control">
+                <span class="highlight-symbol"> ▰ </span>
+
+                <input
+                  type="color"
+                  id="highlightColor"
+                  value="#fff176"
+                  title="Highlight" />
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <!-- Alignment -->
+
+              <div class="tool-group">
+                <button
+                  type="button"
+                  class="tool-btn"
+                  data-command="justifyLeft"
+                  title="Align left">
+                  ≡
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  data-command="justifyCenter"
+                  title="Center">
+                  ≡
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  data-command="justifyRight"
+                  title="Align right">
+                  ≡
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  data-command="justifyFull"
+                  title="Justify">
+                  ☰
+                </button>
+              </div>
+            </div>
+
+            <div class="toolbar-row secondary-toolbar">
+              <!-- Lists -->
+
+              <div class="tool-group">
+                <button
+                  type="button"
+                  class="tool-btn"
+                  data-command="insertUnorderedList"
+                  title="Bullet list">
+                  •☰
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  data-command="insertOrderedList"
+                  title="Numbered list">
+                  1☰
+                </button>
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <!-- Indent -->
+
+              <div class="tool-group">
+                <button
+                  type="button"
+                  class="tool-btn"
+                  data-command="outdent"
+                  title="Decrease indent">
+                  ⇤
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  data-command="indent"
+                  title="Increase indent">
+                  ⇥
+                </button>
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <!-- Insert -->
+
+              <div class="tool-group">
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="insertLinkBtn"
+                  title="Insert link">
+                  🔗
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="insertImageBtn"
+                  title="Insert image">
+                  🖼
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="insertTableBtn"
+                  title="Insert table">
+                  ▦
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="insertHrBtn"
+                  title="Horizontal line">
+                  ―
+                </button>
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <!-- Paragraph -->
+
+              <div class="tool-group">
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="lineSpacingBtn"
+                  title="Line spacing">
+                  ↕
+                </button>
+
+                <button
+                  type="button"
+                  class="tool-btn"
+                  id="clearFormattingBtn"
+                  title="Clear formatting">
+                  Tx
+                </button>
+              </div>
+
+              <div class="toolbar-divider"></div>
+
+              <div class="toolbar-status">
+                <span id="editorStatus"> Ready </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- HIDDEN IMAGE INPUT -->
+
+          <input
+            type="file"
+            id="imageInput"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            hidden />
+
+          <!-- EDITOR SCROLL -->
+
+          <div class="editor-scroll">
+            <div id="documentPaper" class="document-paper portrait">
+              <!-- HEADER -->
+
+              <div id="documentHeader" class="document-header">
+                <span> Header </span>
+              </div>
+
+              <!-- EDITABLE DOCUMENT -->
+
+              <div
+                id="editor"
+                class="editor"
+                contenteditable="true"
+                spellcheck="true">
+                <h1>My Document</h1>
+
+                <p>Start writing your document here...</p>
+              </div>
+
+              <!-- FOOTER -->
+
+              <div id="documentFooter" class="document-footer">
+                <span> Footer </span>
+
+                <span id="pageNumberDisplay"> Page 1 </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTTOM BAR -->
+
+          <div class="editor-bottom">
+            <span>
+              <strong id="wordCount"> 4 </strong>
+              words
+            </span>
+
+            <span>
+              <strong id="characterCount"> 32 </strong>
+              characters
+            </span>
+
+            <span>
+              <strong id="paragraphCount"> 2 </strong>
+              paragraphs
+            </span>
+
+            <span class="autosave"> ● Changes are saved locally </span>
+          </div>
+        </section>
+
+        <!-- =================================================
+             RIGHT SIDEBAR
+        ================================================== -->
+
+        <aside class="right-sidebar">
+          <!-- QUICK INSERT -->
+
+          <div class="right-card">
+            <div class="card-heading">
+              <span class="eyebrow"> INSERT </span>
+
+              <h3>Quick tools</h3>
+            </div>
+
+            <button type="button" class="quick-tool" id="quickHeadingBtn">
+              <span> H </span>
+
+              <div>
+                <strong> Heading </strong>
+
+                <small> Add a section heading </small>
+              </div>
+            </button>
+
+            <button type="button" class="quick-tool" id="quickBulletBtn">
+              <span> • </span>
+
+              <div>
+                <strong> Bullet List </strong>
+
+                <small> Create bullet points </small>
+              </div>
+            </button>
+
+            <button type="button" class="quick-tool" id="quickNumberBtn">
+              <span> 1. </span>
+
+              <div>
+                <strong> Numbered List </strong>
+
+                <small> Create numbered items </small>
+              </div>
+            </button>
+
+            <button type="button" class="quick-tool" id="quickImageBtn">
+              <span> ▧ </span>
+
+              <div>
+                <strong> Image </strong>
+
+                <small> Add an image </small>
+              </div>
+            </button>
+
+            <button type="button" class="quick-tool" id="quickTableBtn">
+              <span> ▦ </span>
+
+              <div>
+                <strong> Table </strong>
+
+                <small> Insert a table </small>
+              </div>
+            </button>
+          </div>
+
+          <!-- DOCUMENT INFO -->
+
+          <div class="right-card">
+            <div class="card-heading">
+              <span class="eyebrow"> INFORMATION </span>
+
+              <h3>Document stats</h3>
+            </div>
+
+            <div class="stat-row">
+              <span> Words </span>
+
+              <strong id="sideWords"> 4 </strong>
+            </div>
+
+            <div class="stat-row">
+              <span> Characters </span>
+
+              <strong id="sideCharacters"> 32 </strong>
+            </div>
+
+            <div class="stat-row">
+              <span> Paragraphs </span>
+
+              <strong id="sideParagraphs"> 2 </strong>
+            </div>
+
+            <div class="stat-row">
+              <span> Images </span>
+
+              <strong id="sideImages"> 0 </strong>
+            </div>
+          </div>
+
+          <!-- HELP -->
+
+          <div class="help-card">
+            <div class="help-icon">?</div>
+
+            <strong> Editing tip </strong>
+
+            <p>
+              Select any text and use the toolbar above to format it just like a
+              word processor.
+            </p>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <!-- =====================================================
+     IMAGE MODAL
+====================================================== -->
+
+    <div id="imageModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+
+      <div class="small-modal">
+        <div class="modal-title">Insert Image</div>
+
+        <p>Choose an image from your computer.</p>
+
+        <button type="button" class="modal-primary" id="chooseImageBtn">
+          Choose Image
+        </button>
+
+        <button type="button" class="modal-secondary" id="closeImageModal">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- =====================================================
+     TABLE MODAL
+====================================================== -->
+
+    <div id="tableModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+
+      <div class="small-modal">
+        <div class="modal-title">Insert Table</div>
+
+        <p>Choose the number of rows and columns.</p>
+
+        <div class="table-inputs">
+          <div>
+            <label> Rows </label>
+
+            <input type="number" id="tableRows" min="1" max="20" value="3" />
+          </div>
+
+          <div>
+            <label> Columns </label>
+
+            <input type="number" id="tableColumns" min="1" max="12" value="3" />
+          </div>
+        </div>
+
+        <button type="button" class="modal-primary" id="createTableBtn">
+          Insert Table
+        </button>
+
+        <button type="button" class="modal-secondary" id="closeTableModal">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- =====================================================
+     LINK MODAL
+====================================================== -->
+
+    <div id="linkModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+
+      <div class="small-modal">
+        <div class="modal-title">Insert Link</div>
+
+        <p>Enter the URL for the selected text.</p>
+
+        <input type="url" id="linkUrl" placeholder="https://example.com" />
+
+        <button type="button" class="modal-primary" id="insertLinkConfirm">
+          Insert Link
+        </button>
+
+        <button type="button" class="modal-secondary" id="closeLinkModal">
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- =====================================================
+     LINE SPACING MENU
+====================================================== -->
+
+    <div id="spacingMenu" class="spacing-menu hidden">
+      <button data-spacing="1">Single</button>
+
+      <button data-spacing="1.15">1.15</button>
+
+      <button data-spacing="1.5">1.5</button>
+
+      <button data-spacing="2">Double</button>
+    </div>
+
+    <!-- =====================================================
+     RESULT MODAL
+====================================================== -->
+
+    <div id="resultModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+
+      <div class="result-modal">
+        <div class="success-circle">✓</div>
+
+        <h2>Document Created</h2>
+
+        <p>Your Word document has been generated successfully.</p>
+
+        <div class="result-file">
+          <div class="docx-icon">DOCX</div>
+
+          <div>
+            <strong id="resultFilename"> DocBuddy_Document.docx </strong>
+
+            <small> Microsoft Word document </small>
+          </div>
+        </div>
+
+        <div class="result-buttons">
+          <a href="#" id="downloadBtn" class="modal-primary"> Download DOCX </a>
+
+          <button type="button" id="closeResultBtn" class="modal-secondary">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+
+      /* =========================================================
+   ELEMENTS
+========================================================= */
+
+      const editor = document.getElementById("editor");
+
+      const documentPaper = document.getElementById("documentPaper");
+
+      const documentTitle = document.getElementById("documentTitle");
+
+      const topDocumentName = document.getElementById("topDocumentName");
+
+      const documentAuthor = document.getElementById("documentAuthor");
+
+      const documentSubject = document.getElementById("documentSubject");
+
+      const documentType = document.getElementById("documentType");
+
+      const pageSize = document.getElementById("pageSize");
+
+      const orientation = document.getElementById("orientation");
+
+      const margins = document.getElementById("margins");
+
+      const headerEnabled = document.getElementById("headerEnabled");
+
+      const footerEnabled = document.getElementById("footerEnabled");
+
+      const headerText = document.getElementById("headerText");
+
+      const footerText = document.getElementById("footerText");
+
+      const pageNumbers = document.getElementById("pageNumbers");
+
+      const documentHeader = document.getElementById("documentHeader");
+
+      const documentFooter = document.getElementById("documentFooter");
+
+      const pageNumberDisplay = document.getElementById("pageNumberDisplay");
+
+      const imageInput = document.getElementById("imageInput");
+
+      const imageModal = document.getElementById("imageModal");
+
+      const tableModal = document.getElementById("tableModal");
+
+      const linkModal = document.getElementById("linkModal");
+
+      const spacingMenu = document.getElementById("spacingMenu");
+
+      const resultModal = document.getElementById("resultModal");
+
+      /* =========================================================
+   EDITOR FOCUS
+========================================================= */
+
+      function focusEditor() {
+        editor.focus();
+      }
+
+      /* =========================================================
+   EXECUTE COMMAND
+========================================================= */
+
+      function executeCommand(command, value = null) {
+        focusEditor();
+
+        document.execCommand(command, false, value);
+
+        updateStats();
+        updateStatus("Formatting applied");
+      }
+
+      /* =========================================================
+   TOOLBAR COMMANDS
+========================================================= */
+
+      document.querySelectorAll("[data-command]").forEach((button) => {
+        button.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+
+          executeCommand(button.dataset.command);
+        });
+      });
+
+      /* =========================================================
+   FONT FAMILY
+========================================================= */
+
+      document
+        .getElementById("fontFamily")
+        .addEventListener("change", function () {
+          executeCommand("fontName", this.value);
+        });
+
+      /* =========================================================
+   FONT SIZE
+========================================================= */
+
+      document
+        .getElementById("fontSize")
+        .addEventListener("change", function () {
+          setFontSize(parseInt(this.value, 10));
+        });
+
+      function setFontSize(size) {
+        focusEditor();
+
+        document.execCommand("fontSize", false, "7");
+
+        const fonts = editor.querySelectorAll('font[size="7"]');
+
+        fonts.forEach((font) => {
+          font.removeAttribute("size");
+
+          font.style.fontSize = `${size}px`;
+        });
+
+        updateStats();
+      }
+
+      /* =========================================================
+   INCREASE / DECREASE FONT
+========================================================= */
+
+      function changeFontSize(direction) {
+        focusEditor();
+
+        const selection = window.getSelection();
+
+        if (!selection || selection.rangeCount === 0) {
+          return;
+        }
+
+        const range = selection.getRangeAt(0);
+
+        let element = range.commonAncestorContainer;
+
+        if (element.nodeType === 3) {
+          element = element.parentElement;
+        }
+
+        const computed = window.getComputedStyle(element);
+
+        let size = parseFloat(computed.fontSize);
+
+        if (!Number.isFinite(size)) {
+          size = 11;
+        }
+
+        if (direction > 0) {
+          size += 2;
+        } else {
+          size -= 2;
+        }
+
+        size = Math.max(6, Math.min(96, size));
+
+        setFontSize(size);
+
+        const select = document.getElementById("fontSize");
+
+        const closest = Array.from(select.options).reduce(
+          (previous, option) => {
+            return Math.abs(Number(option.value) - size) <
+              Math.abs(Number(previous.value) - size)
+              ? option
+              : previous;
+          },
+        );
+
+        select.value = closest.value;
+      }
+
+      document
+        .getElementById("increaseFont")
+        .addEventListener("mousedown", (event) => {
+          event.preventDefault();
+
+          changeFontSize(1);
+        });
+
+      document
+        .getElementById("decreaseFont")
+        .addEventListener("mousedown", (event) => {
+          event.preventDefault();
+
+          changeFontSize(-1);
+        });
+
+      /* =========================================================
+   FORMAT BLOCK
+========================================================= */
+
+      document
+        .getElementById("formatBlock")
+        .addEventListener("change", function () {
+          executeCommand("formatBlock", this.value);
+        });
+
+      /* =========================================================
+   TEXT COLOR
+========================================================= */
+
+      document
+        .getElementById("textColor")
+        .addEventListener("input", function () {
+          executeCommand("foreColor", this.value);
+        });
+
+      /* =========================================================
+   HIGHLIGHT
+========================================================= */
+
+      document
+        .getElementById("highlightColor")
+        .addEventListener("input", function () {
+          focusEditor();
+
+          let success = document.execCommand("hiliteColor", false, this.value);
+
+          if (!success) {
+            document.execCommand("backColor", false, this.value);
+          }
+
+          updateStats();
+        });
+
+      /* =========================================================
+   UNDO REDO
+========================================================= */
+
+      function undo() {
+        executeCommand("undo");
+      }
+
+      function redo() {
+        executeCommand("redo");
+      }
+
+      document
+        .getElementById("undoBtn")
+        .addEventListener("mousedown", (event) => {
+          event.preventDefault();
+
+          undo();
+        });
+
+      document
+        .getElementById("redoBtn")
+        .addEventListener("mousedown", (event) => {
+          event.preventDefault();
+
+          redo();
+        });
+
+      document
+        .getElementById("undoTopBtn")
+        .addEventListener("mousedown", (event) => {
+          event.preventDefault();
+
+          undo();
+        });
+
+      document
+        .getElementById("redoTopBtn")
+        .addEventListener("mousedown", (event) => {
+          event.preventDefault();
+
+          redo();
+        });
+
+      /* =========================================================
+   CLEAR FORMATTING
+========================================================= */
+
+      document
+        .getElementById("clearFormattingBtn")
+        .addEventListener("mousedown", function (event) {
+          event.preventDefault();
+
+          focusEditor();
+
+          document.execCommand("removeFormat", false, null);
+
+          document.execCommand("formatBlock", false, "p");
+
+          updateStats();
+
+          updateStatus("Formatting cleared");
+        });
+
+      /* =========================================================
+   HORIZONTAL LINE
+========================================================= */
+
+      document
+        .getElementById("insertHrBtn")
+        .addEventListener("mousedown", function (event) {
+          event.preventDefault();
+
+          focusEditor();
+
+          document.execCommand("insertHorizontalRule", false, null);
+
+          updateStats();
+        });
+
+      /* =========================================================
+   LINK
+========================================================= */
+
+      let savedRange = null;
+
+      document
+        .getElementById("insertLinkBtn")
+        .addEventListener("mousedown", function (event) {
+          event.preventDefault();
+
+          focusEditor();
+
+          const selection = window.getSelection();
+
+          if (selection && selection.rangeCount) {
+            savedRange = selection.getRangeAt(0).cloneRange();
+          }
+
+          linkModal.classList.remove("hidden");
+
+          document.getElementById("linkUrl").focus();
+        });
+
+      document
+        .getElementById("insertLinkConfirm")
+        .addEventListener("click", function () {
+          const url = document.getElementById("linkUrl").value.trim();
+
+          if (!url) {
+            return;
+          }
+
+          if (savedRange) {
+            const selection = window.getSelection();
+
+            selection.removeAllRanges();
+
+            selection.addRange(savedRange);
+          }
+
+          focusEditor();
+
+          document.execCommand("createLink", false, url);
+
+          document.getElementById("linkUrl").value = "";
+
+          linkModal.classList.add("hidden");
+
+          updateStats();
+        });
+
+      document
+        .getElementById("closeLinkModal")
+        .addEventListener("click", () => {
+          linkModal.classList.add("hidden");
+        });
+
+      /* =========================================================
+   IMAGE
+========================================================= */
+
+      document
+        .getElementById("insertImageBtn")
+        .addEventListener("mousedown", function (event) {
+          event.preventDefault();
+
+          openImagePicker();
+        });
+
+      document
+        .getElementById("quickImageBtn")
+        .addEventListener("click", openImagePicker);
+
+      document
+        .getElementById("chooseImageBtn")
+        .addEventListener("click", function () {
+          imageModal.classList.add("hidden");
+
+          imageInput.click();
+        });
+
+      function openImagePicker() {
+        imageModal.classList.remove("hidden");
+      }
+
+      document
+        .getElementById("closeImageModal")
+        .addEventListener("click", function () {
+          imageModal.classList.add("hidden");
+        });
+
+      imageInput.addEventListener("change", function () {
+        const file = this.files[0];
+
+        if (!file) {
+          return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+          alert("Please select an image file.");
+
+          return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+          focusEditor();
+
+          const image = document.createElement("img");
+
+          image.src = event.target.result;
+
+          image.alt = file.name;
+
+          image.className = "document-image";
+
+          image.style.maxWidth = "100%";
+
+          image.style.width = "400px";
+
+          image.style.height = "auto";
+
+          image.style.display = "block";
+
+          image.style.margin = "12px auto";
+
+          image.draggable = false;
+
+          editor.appendChild(image);
+
+          const paragraph = document.createElement("p");
+
+          paragraph.innerHTML = "<br>";
+
+          editor.appendChild(paragraph);
+
+          updateStats();
+
+          updateStatus("Image inserted");
+        };
+
+        reader.readAsDataURL(file);
+
+        this.value = "";
+      });
+
+      /* =========================================================
+   TABLE
+========================================================= */
+
+      document
+        .getElementById("insertTableBtn")
+        .addEventListener("click", openTableModal);
+
+      document
+        .getElementById("quickTableBtn")
+        .addEventListener("click", openTableModal);
+
+      function openTableModal() {
+        tableModal.classList.remove("hidden");
+      }
+
+      document
+        .getElementById("closeTableModal")
+        .addEventListener("click", function () {
+          tableModal.classList.add("hidden");
+        });
+
+      document
+        .getElementById("createTableBtn")
+        .addEventListener("click", function () {
+          let rows = parseInt(document.getElementById("tableRows").value, 10);
+
+          let columns = parseInt(
+            document.getElementById("tableColumns").value,
+            10,
+          );
+
+          rows = Math.max(1, Math.min(20, rows || 1));
+
+          columns = Math.max(1, Math.min(12, columns || 1));
+
+          insertTable(rows, columns);
+
+          tableModal.classList.add("hidden");
+        });
+
+      function insertTable(rows, columns) {
+        focusEditor();
+
+        const table = document.createElement("table");
+
+        table.className = "document-table";
+
+        const tbody = document.createElement("tbody");
+
+        for (let row = 0; row < rows; row++) {
+          const tr = document.createElement("tr");
+
+          for (let col = 0; col < columns; col++) {
+            const cell = document.createElement(row === 0 ? "th" : "td");
+
+            cell.textContent =
+              row === 0 ? `Header ${col + 1}` : `Cell ${row}, ${col + 1}`;
+
+            tr.appendChild(cell);
+          }
+
+          tbody.appendChild(tr);
+        }
+
+        table.appendChild(tbody);
+
+        editor.appendChild(table);
+
+        editor.appendChild(document.createElement("p"));
+
+        updateStats();
+
+        updateStatus("Table inserted");
+      }
+
+      /* =========================================================
+   LINE SPACING
+========================================================= */
+
+      document
+        .getElementById("lineSpacingBtn")
+        .addEventListener("click", function (event) {
+          event.stopPropagation();
+
+          const rect = this.getBoundingClientRect();
+
+          spacingMenu.style.left = `${rect.left}px`;
+
+          spacingMenu.style.top = `${rect.bottom + 5}px`;
+
+          spacingMenu.classList.toggle("hidden");
+        });
+
+      document.querySelectorAll("[data-spacing]").forEach((button) => {
+        button.addEventListener("click", function () {
+          focusEditor();
+
+          const spacing = this.dataset.spacing;
+
+          document.execCommand("formatBlock", false, "p");
+
+          const selection = window.getSelection();
+
+          if (selection && selection.rangeCount) {
+            let node = selection.anchorNode;
+
+            if (node && node.nodeType === 3) {
+              node = node.parentElement;
+            }
+
+            const paragraph = node
+              ? node.closest("p, h1, h2, h3, blockquote, li")
+              : null;
+
+            if (paragraph) {
+              paragraph.style.lineHeight = spacing;
+            }
+          }
+
+          spacingMenu.classList.add("hidden");
+        });
+      });
+
+      document.addEventListener("click", function (event) {
+        if (
+          !spacingMenu.contains(event.target) &&
+          event.target.id !== "lineSpacingBtn"
+        ) {
+          spacingMenu.classList.add("hidden");
+        }
+      });
+
+      /* =========================================================
+   QUICK TOOLS
+========================================================= */
+
+      document
+        .getElementById("quickHeadingBtn")
+        .addEventListener("click", function () {
+          focusEditor();
+
+          document.execCommand("formatBlock", false, "h2");
+        });
+
+      document
+        .getElementById("quickBulletBtn")
+        .addEventListener("click", function () {
+          executeCommand("insertUnorderedList");
+        });
+
+      document
+        .getElementById("quickNumberBtn")
+        .addEventListener("click", function () {
+          executeCommand("insertOrderedList");
+        });
+
+      /* =========================================================
+   HEADER / FOOTER
+========================================================= */
+
+      headerEnabled.addEventListener("change", function () {
+        headerText.disabled = !this.checked;
+
+        documentHeader.classList.toggle("hidden-content", !this.checked);
+
+        if (this.checked) {
+          documentHeader.querySelector("span").textContent =
+            headerText.value || "Header";
+        }
+      });
+
+      footerEnabled.addEventListener("change", function () {
+        footerText.disabled = !this.checked;
+
+        documentFooter.classList.toggle("hidden-content", !this.checked);
+
+        if (this.checked) {
+          documentFooter.querySelector("span").textContent =
+            footerText.value || "Footer";
+        }
+      });
+
+      headerText.addEventListener("input", function () {
+        documentHeader.querySelector("span").textContent =
+          this.value || "Header";
+      });
+
+      footerText.addEventListener("input", function () {
+        documentFooter.querySelector("span").textContent =
+          this.value || "Footer";
+      });
+
+      pageNumbers.addEventListener("change", function () {
+        pageNumberDisplay.classList.toggle("hidden-content", !this.checked);
+      });
+
+      /* =========================================================
+   PAGE SIZE
+========================================================= */
+
+      function applyPageSettings() {
+        documentPaper.classList.remove(
+          "portrait",
+          "landscape",
+          "page-a4",
+          "page-letter",
+          "page-legal",
+          "margin-normal",
+          "margin-narrow",
+          "margin-wide",
+        );
+
+        documentPaper.classList.add(
+          orientation.value === "landscape" ? "landscape" : "portrait",
+        );
+
+        documentPaper.classList.add(`page-${pageSize.value.toLowerCase()}`);
+
+        documentPaper.classList.add(`margin-${margins.value}`);
+
+        updateStatus("Page settings updated");
+      }
+
+      pageSize.addEventListener("change", applyPageSettings);
+
+      orientation.addEventListener("change", applyPageSettings);
+
+      margins.addEventListener("change", applyPageSettings);
+
+      /* =========================================================
+   TITLE SYNC
+========================================================= */
+
+      documentTitle.addEventListener("input", function () {
+        topDocumentName.value = this.value;
+
+        updateDocumentTitle();
+      });
+
+      topDocumentName.addEventListener("input", function () {
+        documentTitle.value = this.value;
+
+        updateDocumentTitle();
+      });
+
+      function updateDocumentTitle() {
+        const firstHeading = editor.querySelector("h1");
+
+        if (firstHeading) {
+          firstHeading.textContent = documentTitle.value || "My Document";
+        }
+      }
+
+      /* =========================================================
+   EDITOR EVENTS
+========================================================= */
+
+      editor.addEventListener("input", function () {
+        updateStats();
+
+        updateStatus("Editing");
+
+        saveLocalDraft();
+      });
+
+      editor.addEventListener("keyup", updateStats);
+
+      editor.addEventListener("mouseup", updateToolbarState);
+
+      editor.addEventListener("keyup", updateToolbarState);
+
+      /* =========================================================
+   TOOLBAR STATE
+========================================================= */
+
+      function updateToolbarState() {
+        const commands = ["bold", "italic", "underline", "strikeThrough"];
+
+        commands.forEach((command) => {
+          const active = document.queryCommandState(command);
+
+          const button = document.querySelector(`[data-command="${command}"]`);
+
+          if (button) {
+            button.classList.toggle("active", active);
+          }
+        });
+      }
+
+      /* =========================================================
+   STATISTICS
+========================================================= */
+
+      function updateStats() {
+        const text = editor.innerText.replace(/\u00a0/g, " ").trim();
+
+        const words = text ? text.split(/\s+/).length : 0;
+
+        const characters = text.length;
+
+        const paragraphs = editor.querySelectorAll(
+          "p, h1, h2, h3, blockquote, li",
+        ).length;
+
+        const images = editor.querySelectorAll("img").length;
+
+        document.getElementById("wordCount").textContent = words;
+
+        document.getElementById("characterCount").textContent = characters;
+
+        document.getElementById("paragraphCount").textContent = paragraphs;
+
+        document.getElementById("sideWords").textContent = words;
+
+        document.getElementById("sideCharacters").textContent = characters;
+
+        document.getElementById("sideParagraphs").textContent = paragraphs;
+
+        document.getElementById("sideImages").textContent = images;
+
+        updatePageCount();
+      }
+
+      /* =========================================================
+   PAGE COUNT
+========================================================= */
+
+      function updatePageCount() {
+        const pageHeight = documentPaper.clientHeight;
+
+        const contentHeight = editor.scrollHeight;
+
+        const estimated = Math.max(
+          1,
+          Math.ceil(contentHeight / Math.max(500, pageHeight - 200)),
+        );
+
+        document.getElementById("pageCountText").textContent = `${estimated} ${
+          estimated === 1 ? "page" : "pages"
+        }`;
+      }
+
+      /* =========================================================
+   STATUS
+========================================================= */
+
+      let statusTimer = null;
+
+      function updateStatus(message) {
+        const status = document.getElementById("editorStatus");
+
+        status.textContent = message;
+
+        clearTimeout(statusTimer);
+
+        statusTimer = setTimeout(() => {
+          status.textContent = "Ready";
+        }, 1800);
+      }
+
+      /* =========================================================
+   LOCAL DRAFT
+========================================================= */
+
+      function saveLocalDraft() {
+        try {
+          const data = {
+            title: documentTitle.value,
+
+            author: documentAuthor.value,
+
+            subject: documentSubject.value,
+
+            type: documentType.value,
+
+            html: editor.innerHTML,
+          };
+
+          localStorage.setItem("docbuddy_create_draft", JSON.stringify(data));
+        } catch (error) {
+          console.warn("Could not save local draft.", error);
+        }
+      }
+
+      function loadLocalDraft() {
+        try {
+          const raw = localStorage.getItem("docbuddy_create_draft");
+
+          if (!raw) {
+            return;
+          }
+
+          const data = JSON.parse(raw);
+
+          if (!data || !data.html) {
+            return;
+          }
+
+          const restore = confirm(
+            "A previous Create Document draft was found. Restore it?",
+          );
+
+          if (!restore) {
+            return;
+          }
+
+          documentTitle.value = data.title || "My Document";
+
+          topDocumentName.value = documentTitle.value;
+
+          documentAuthor.value = data.author || "";
+
+          documentSubject.value = data.subject || "";
+
+          documentType.value = data.type || "General Document";
+
+          editor.innerHTML = data.html;
+
+          updateStats();
+        } catch (error) {
+          console.warn("Could not restore draft.", error);
+        }
+      }
+
+      /* =========================================================
+   BUILD DOCUMENT DATA
+========================================================= */
+
+      function getDocumentData() {
+        return {
+          title: documentTitle.value.trim() || "My Document",
+
+          author: documentAuthor.value.trim(),
+
+          subject: documentSubject.value.trim(),
+
+          document_type: documentType.value,
+
+          page_size: pageSize.value,
+
+          orientation: orientation.value,
+
+          margins: margins.value,
+
+          header_enabled: headerEnabled.checked,
+
+          header_text: headerText.value.trim(),
+
+          footer_enabled: footerEnabled.checked,
+
+          footer_text: footerText.value.trim(),
+
+          page_numbers: pageNumbers.checked,
+
+          content_html: editor.innerHTML,
+        };
+      }
+
+      /* =========================================================
+   CREATE DOCUMENT
+========================================================= */
+
+      async function createDocument() {
+        const data = getDocumentData();
+
+        if (!data.content_html.trim()) {
+          alert("Please add some content before creating the document.");
+
+          focusEditor();
+
+          return;
+        }
+
+        const button = document.getElementById("createBtnTop");
+
+        const oldText = button.textContent;
+
+        button.disabled = true;
+
+        button.textContent = "Creating...";
+
+        updateStatus("Generating DOCX...");
+
+        try {
+          const response = await fetch("/api/create-document", {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || "Document creation failed.");
+          }
+
+          document.getElementById("resultFilename").textContent =
+            result.filename || "DocBuddy_Document.docx";
+
+          document.getElementById("downloadBtn").href = result.download_url;
+
+          resultModal.classList.remove("hidden");
+
+          updateStatus("Document created");
+        } catch (error) {
+          console.error(error);
+
+          alert(error.message || "Unable to create document.");
+
+          updateStatus("Creation failed");
+        } finally {
+          button.disabled = false;
+
+          button.textContent = oldText;
+        }
+      }
+
+      /* =========================================================
+   PREVIEW
+========================================================= */
+
+      function openPreview() {
+        const data = getDocumentData();
+
+        let modal = document.getElementById("livePreviewModal");
+
+        if (!modal) {
+          modal = document.createElement("div");
+          modal.id = "livePreviewModal";
+          modal.className = "live-preview-modal";
+          modal.innerHTML = `
+            <div class="live-preview-backdrop"></div>
+            <div class="live-preview-window">
+              <div class="live-preview-head">
+                <div>
+                  <span class="preview-eyebrow">DOCUMENT PREVIEW</span>
+                  <h2 id="livePreviewTitle">Preview</h2>
+                </div>
+                <button type="button" id="closeLivePreview" class="preview-close" aria-label="Close preview">×</button>
+              </div>
+              <div id="livePreviewBody" class="live-preview-body"></div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+
+          modal
+            .querySelector(".live-preview-backdrop")
+            .addEventListener("click", closePreview);
+          modal
+            .querySelector("#closeLivePreview")
+            .addEventListener("click", closePreview);
+        }
+
+        modal.querySelector("#livePreviewTitle").textContent =
+          data.title || "Document Preview";
+
+        modal.querySelector("#livePreviewBody").innerHTML =
+          buildPreviewDocument(data);
+
+        modal.classList.add("open");
+        document.body.classList.add("preview-open");
+      }
+
+      function closePreview() {
+        const modal = document.getElementById("livePreviewModal");
+
+        if (modal) {
+          modal.classList.remove("open");
+        }
+
+        document.body.classList.remove("preview-open");
+      }
+
+      function buildPreviewDocument(data) {
+        const pageClass =
+          `${data.orientation === "landscape" ? "preview-landscape" : "preview-portrait"} ` +
+          `preview-${String(data.page_size || "A4").toLowerCase()}`;
+
+        const marginClass = `preview-margin-${data.margins || "normal"}`;
+
+        const header =
+          data.header_enabled && data.header_text
+            ? `<div class="preview-doc-header">${escapeHtml(data.header_text)}</div>`
+            : "";
+
+        const footer =
+          data.footer_enabled || data.page_numbers
+            ? `
+              <div class="preview-doc-footer">
+                <span>${data.footer_enabled ? escapeHtml(data.footer_text) : ""}</span>
+                ${data.page_numbers ? "<span>Page 1</span>" : ""}
+              </div>
+            `
+            : "";
+
+        return `
+          <div class="preview-stage">
+            <article class="preview-paper ${pageClass} ${marginClass}">
+              ${header}
+              <div class="preview-content">
+                ${data.content_html || "<p>No content.</p>"}
+              </div>
+              ${footer}
+            </article>
+          </div>
+        `;
+      }
+
+      function escapeHtml(value) {
+        const div = document.createElement("div");
+        div.textContent = value == null ? "" : String(value);
+        return div.innerHTML;
+      }
+      /* =========================================================
+   CLOSE RESULT
+========================================================= */
+
+      document
+        .getElementById("closeResultBtn")
+        .addEventListener("click", function () {
+          resultModal.classList.add("hidden");
+        });
+
+      /* =========================================================
+   CLOSE MODALS BY BACKDROP
+========================================================= */
+
+      document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
+        backdrop.addEventListener("click", function () {
+          this.parentElement.classList.add("hidden");
+        });
+      });
+
+      /* =========================================================
+   ESCAPE
+========================================================= */
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          document.querySelectorAll(".modal").forEach((modal) => {
+            modal.classList.add("hidden");
+          });
+        }
+      });
+
+      /* =========================================================
+   HTML ESCAPE
+========================================================= */
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      /* =========================================================
+   CREATE / PREVIEW BUTTONS
+========================================================= */
+
+      const createButton = document.getElementById("createBtnTop");
+      const previewButton = document.getElementById("previewBtn");
+
+      if (createButton) {
+        createButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          createDocument();
+        });
+      }
+
+      if (previewButton) {
+        previewButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          openPreview();
+        });
+      }
+
+      /* =========================================================
+   INITIALIZATION
+========================================================= */
+
+      applyPageSettings();
+
+      updateStats();
+
+      loadLocalDraft();
+    </script>
+  </body>
+</html>

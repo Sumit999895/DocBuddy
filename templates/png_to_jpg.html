@@ -1,0 +1,1215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>PNG to JPG - DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='png_to_jpg.css') }}" />
+
+    <style>
+      /* =====================================================
+         SELECTED IMAGES
+      ====================================================== */
+
+      .selected-files {
+        margin-top: 28px;
+        padding: 24px;
+        background: #eef1f2;
+        border: 1px solid #d8dddf;
+        border-radius: 14px;
+      }
+
+      .selected-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+
+        padding-bottom: 16px;
+
+        border-bottom: 1px solid #d6dbdd;
+      }
+
+      .selected-header h3 {
+        margin: 0;
+
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 25px;
+        font-weight: 700;
+
+        color: #20252a;
+      }
+
+      .selected-header span {
+        font-size: 13px;
+        color: #65727c;
+      }
+
+      /* =====================================================
+         FILE LIST
+      ====================================================== */
+
+      .file-list {
+        display: flex;
+        flex-direction: column;
+
+        gap: 12px;
+
+        margin-top: 18px;
+      }
+
+      /* =====================================================
+         FILE ITEM
+      ====================================================== */
+
+      .file-item {
+        display: flex;
+        align-items: center;
+
+        gap: 14px;
+
+        min-height: 86px;
+
+        padding: 12px;
+
+        background: #ffffff;
+
+        border: 1px solid #d9dfe1;
+
+        border-radius: 9px;
+
+        box-sizing: border-box;
+
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .file-item:hover {
+        border-color: #c8d0d4;
+
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      }
+
+      /* =====================================================
+         THUMBNAIL
+      ====================================================== */
+
+      .file-preview {
+        width: 60px;
+        height: 60px;
+
+        flex: 0 0 60px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        overflow: hidden;
+
+        background: #eef1f2;
+
+        border: 1px solid #d8dddf;
+
+        border-radius: 8px;
+      }
+
+      .file-preview img {
+        display: block;
+
+        width: 100%;
+        height: 100%;
+
+        object-fit: contain;
+      }
+
+      /* =====================================================
+         FILE DETAILS
+      ====================================================== */
+
+      .file-details {
+        flex: 1;
+
+        min-width: 0;
+
+        display: flex;
+        flex-direction: column;
+
+        justify-content: center;
+
+        gap: 5px;
+      }
+
+      .file-name {
+        max-width: 100%;
+
+        font-size: 15px;
+        font-weight: 500;
+
+        color: #2c343b;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .file-size {
+        font-size: 13px;
+
+        color: #68757e;
+      }
+
+      /* =====================================================
+         PREVIEW ACTION
+      ====================================================== */
+
+      .file-actions {
+        flex-shrink: 0;
+
+        display: flex;
+        align-items: center;
+      }
+
+      .file-preview-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        gap: 7px;
+
+        min-width: 95px;
+
+        padding: 9px 13px;
+
+        background: #f7f8f8;
+
+        border: 1px solid #cfd6d9;
+
+        border-radius: 7px;
+
+        color: #3f4a52;
+
+        font-size: 13px;
+        font-weight: 600;
+
+        cursor: pointer;
+
+        transition:
+          background 0.2s ease,
+          border-color 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .file-preview-button:hover {
+        background: #ffffff;
+
+        border-color: #b9c2c7;
+
+        transform: translateY(-1px);
+      }
+
+      .file-preview-button span {
+        font-size: 14px;
+      }
+
+      /* =====================================================
+         PREVIEW MODAL
+      ====================================================== */
+
+      body.preview-open {
+        overflow: hidden;
+      }
+
+      .image-preview-modal {
+        position: fixed;
+
+        inset: 0;
+
+        z-index: 99999;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        padding: 25px;
+
+        box-sizing: border-box;
+      }
+
+      .image-preview-overlay {
+        position: absolute;
+
+        inset: 0;
+
+        background: rgba(0, 0, 0, 0.72);
+
+        backdrop-filter: blur(4px);
+      }
+
+      .image-preview-content {
+        position: relative;
+
+        z-index: 2;
+
+        width: min(900px, 95vw);
+
+        max-height: 90vh;
+
+        display: flex;
+        flex-direction: column;
+
+        overflow: hidden;
+
+        background: #ffffff;
+
+        border-radius: 14px;
+
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+      }
+
+      /* =====================================================
+         MODAL HEADER
+      ====================================================== */
+
+      .image-preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 20px;
+
+        padding: 15px 18px;
+
+        border-bottom: 1px solid #e2e5e7;
+
+        background: #ffffff;
+      }
+
+      .image-preview-title {
+        flex: 1;
+
+        min-width: 0;
+
+        font-size: 15px;
+        font-weight: 600;
+
+        color: #303940;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .image-preview-close {
+        width: 34px;
+        height: 34px;
+
+        flex-shrink: 0;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 0;
+
+        border: 0;
+
+        border-radius: 50%;
+
+        background: #f0f2f3;
+
+        color: #3f474d;
+
+        font-size: 24px;
+
+        line-height: 1;
+
+        cursor: pointer;
+
+        transition:
+          background 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .image-preview-close:hover {
+        background: #e2e5e7;
+
+        transform: rotate(90deg);
+      }
+
+      /* =====================================================
+         MODAL BODY
+      ====================================================== */
+
+      .image-preview-body {
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        min-height: 300px;
+
+        max-height: calc(90vh - 65px);
+
+        padding: 25px;
+
+        overflow: auto;
+
+        background: #f5f6f7;
+
+        box-sizing: border-box;
+      }
+
+      .image-preview-body img {
+        display: block;
+
+        max-width: 100%;
+
+        max-height: calc(90vh - 120px);
+
+        width: auto;
+        height: auto;
+
+        object-fit: contain;
+
+        border-radius: 5px;
+
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.12);
+      }
+
+      /* =====================================================
+         DRAGGING
+      ====================================================== */
+
+      #dropZone.dragging {
+        border-color: #c9572d;
+
+        background-color: rgba(201, 87, 45, 0.04);
+
+        transform: scale(1.005);
+      }
+
+      /* =====================================================
+         MOBILE
+      ====================================================== */
+
+      @media (max-width: 600px) {
+        .selected-files {
+          padding: 18px;
+        }
+
+        .selected-header h3 {
+          font-size: 21px;
+        }
+
+        .file-item {
+          align-items: flex-start;
+
+          flex-wrap: wrap;
+        }
+
+        .file-details {
+          width: calc(100% - 88px);
+        }
+
+        .file-actions {
+          width: 100%;
+
+          margin-left: 74px;
+        }
+
+        .file-preview-button {
+          width: 100%;
+        }
+
+        .image-preview-modal {
+          padding: 15px;
+        }
+
+        .image-preview-content {
+          width: 100%;
+
+          max-height: 95vh;
+        }
+
+        .image-preview-body {
+          padding: 15px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="converter-page">
+      <!-- =====================================================
+           HEADER
+      ====================================================== -->
+
+      <header class="converter-header">
+        <a href="/dashboard" class="back-button"> ← Dashboard </a>
+
+        <div class="header-title">
+          <div class="header-icon">🖼️</div>
+
+          <div>
+            <h1>PNG to JPG</h1>
+
+            <p>Convert your PNG images into JPG files</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- =====================================================
+           MAIN CONTENT
+      ====================================================== -->
+
+      <main class="converter-container">
+        <!-- ===================================================
+             CONVERTER CARD
+        ==================================================== -->
+
+        <section class="converter-card">
+          <div class="card-heading">
+            <h2>Convert PNG to JPG</h2>
+
+            <p>
+              Select one or more PNG images and convert them into JPG files.
+            </p>
+          </div>
+
+          <!-- =================================================
+               FLASH MESSAGES
+          ================================================== -->
+
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %}
+
+          <div class="flash-messages">
+            {% for category, message in messages %}
+
+            <div class="flash-message {{ category }}">{{ message }}</div>
+
+            {% endfor %}
+          </div>
+
+          {% endif %} {% endwith %}
+
+          <!-- =================================================
+               UPLOAD FORM
+          ================================================== -->
+
+          <form
+            action="{{ url_for('png_to_jpg.convert') }}"
+            method="POST"
+            enctype="multipart/form-data"
+            id="pngToJpgForm">
+            <!-- ===============================================
+                 UPLOAD AREA
+            ================================================ -->
+
+            <label for="imageFiles" class="choose-file-box" id="dropZone">
+              <div class="upload-icon">🖼️</div>
+
+              <div class="choose-title">Choose PNG Images</div>
+
+              <div class="choose-subtitle">PNG • Select multiple images</div>
+
+              <input
+                type="file"
+                name="files"
+                id="imageFiles"
+                accept=".png,image/png"
+                multiple
+                required />
+            </label>
+
+            <!-- =================================================
+                 SELECTED IMAGES
+            ================================================== -->
+
+            <div
+              class="selected-files"
+              id="selectedFiles"
+              style="display: none">
+              <div class="selected-header">
+                <h3>Selected Images</h3>
+
+                <span id="fileCount"> 0 files </span>
+              </div>
+
+              <div class="file-list" id="fileList"></div>
+            </div>
+
+            <!-- =================================================
+                 CONVERT BUTTON
+            ================================================== -->
+
+            <button type="submit" class="convert-button" id="convertButton">
+              <span> Convert to JPG </span>
+
+              <span class="button-arrow"> → </span>
+            </button>
+          </form>
+        </section>
+
+        <!-- =====================================================
+             INFORMATION
+        ====================================================== -->
+
+        <section class="info-section">
+          <div class="info-card">
+            <div class="info-icon">🖼️</div>
+
+            <div>
+              <h3>JPG Format</h3>
+
+              <p>Convert your PNG images into widely supported JPG files.</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">🔒</div>
+
+            <div>
+              <h3>Secure Processing</h3>
+
+              <p>Your files are processed by your DocBuddy application.</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">⚡</div>
+
+            <div>
+              <h3>Fast Conversion</h3>
+
+              <p>Convert your PNG images into JPG quickly and easily.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- =====================================================
+             TEMPORARY HISTORY
+        ====================================================== -->
+
+        <section class="history-section">
+          <div class="history-heading">
+            <div>
+              <p class="history-label">TEMPORARY HISTORY</p>
+
+              <h2>PNG to JPG History</h2>
+            </div>
+          </div>
+
+          {% if conversions %}
+
+          <div class="history-list">
+            {% for item in conversions %}
+
+            <article class="history-item" id="history-{{ item.id }}">
+              <!-- =========================================
+                       HISTORY FILE ICON
+                  ========================================== -->
+
+              <div class="history-file-icon">🖼️</div>
+
+              <!-- =========================================
+                       HISTORY INFORMATION
+                  ========================================== -->
+
+              <div class="history-information">
+                <strong title="{{ item.output_filename }}">
+                  {{ item.output_filename }}
+                </strong>
+
+                <span title="{{ item.original_filename }}">
+                  {{ item.original_filename }}
+                </span>
+
+                <small> PNG → JPG </small>
+              </div>
+
+              <!-- =========================================
+                       HISTORY ACTIONS
+                  ========================================== -->
+
+              <div class="history-actions">
+                <!-- =======================================
+                         PREVIEW
+                    ======================================== -->
+
+                <a
+                  href="{{ url_for(
+                        'png_to_jpg.preview',
+                        conversion_id=item.id
+                      ) }}"
+                  target="_blank"
+                  class="history-button preview">
+                  <span> 👁 </span>
+
+                  Preview
+                </a>
+
+                <!-- =======================================
+                         DOWNLOAD
+                    ======================================== -->
+
+                <a
+                  href="{{ url_for(
+                        'png_to_jpg.download',
+                        conversion_id=item.id
+                      ) }}"
+                  class="history-button download">
+                  <span> ↓ </span>
+
+                  Download
+                </a>
+
+                <!-- =======================================
+                         DELETE
+                    ======================================== -->
+
+                <form
+                  method="POST"
+                  action="{{ url_for(
+                        'png_to_jpg.delete',
+                        conversion_id=item.id
+                      ) }}"
+                  class="delete-form"
+                  onsubmit="return confirm('Delete this converted JPG?');">
+                  <button type="submit" class="history-button delete">
+                    <span> 🗑 </span>
+
+                    Delete
+                  </button>
+                </form>
+              </div>
+            </article>
+
+            {% endfor %}
+          </div>
+
+          {% else %}
+
+          <!-- ===============================================
+                 EMPTY HISTORY
+            ================================================ -->
+
+          <div class="empty-history">
+            <div class="empty-icon">🗂️</div>
+
+            <strong> No PNG to JPG conversions yet </strong>
+
+            <span>
+              Your converted JPG files will appear here while you are using the
+              converter.
+            </span>
+          </div>
+
+          {% endif %}
+        </section>
+      </main>
+    </div>
+
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
+
+    <script>
+      /* =========================================================
+         ELEMENT REFERENCES
+      ========================================================== */
+
+      const imageFiles = document.getElementById("imageFiles");
+
+      const selectedFiles = document.getElementById("selectedFiles");
+
+      const fileList = document.getElementById("fileList");
+
+      const fileCount = document.getElementById("fileCount");
+
+      const dropZone = document.getElementById("dropZone");
+
+      /* =========================================================
+         TEMPORARY PREVIEW URLS
+      ========================================================== */
+
+      let previewUrls = [];
+
+      /* =========================================================
+         FILE INPUT CHANGE
+      ========================================================== */
+
+      imageFiles.addEventListener("change", function () {
+        const files = Array.from(this.files || []);
+
+        renderSelectedFiles(files);
+      });
+
+      /* =========================================================
+         RENDER SELECTED FILES
+      ========================================================== */
+
+      function renderSelectedFiles(files) {
+        /*
+         * Release previously generated object URLs.
+         */
+
+        previewUrls.forEach(function (url) {
+          URL.revokeObjectURL(url);
+        });
+
+        previewUrls = [];
+
+        /*
+         * Clear existing list.
+         */
+
+        fileList.innerHTML = "";
+
+        /*
+         * Only keep valid PNG files.
+         */
+
+        const validFiles = files.filter(function (file) {
+          return (
+            file.type === "image/png" ||
+            file.name.toLowerCase().endsWith(".png")
+          );
+        });
+
+        /*
+         * No valid files.
+         */
+
+        if (validFiles.length === 0) {
+          selectedFiles.style.display = "none";
+
+          fileCount.textContent = "0 files";
+
+          return;
+        }
+
+        /*
+         * Show selected section.
+         */
+
+        selectedFiles.style.display = "block";
+
+        /*
+         * Correct file count.
+         */
+
+        fileCount.textContent =
+          validFiles.length + (validFiles.length === 1 ? " file" : " files");
+
+        /*
+         * Create a row for every image.
+         */
+
+        validFiles.forEach(function (file) {
+          createFileItem(file);
+        });
+      }
+
+      /* =========================================================
+         CREATE SELECTED FILE ITEM
+      ========================================================== */
+
+      function createFileItem(file) {
+        /*
+         * Main row.
+         */
+
+        const item = document.createElement("div");
+
+        item.className = "file-item";
+
+        /*
+         * Create temporary preview URL.
+         */
+
+        const previewUrl = URL.createObjectURL(file);
+
+        previewUrls.push(previewUrl);
+
+        /* =====================================================
+           THUMBNAIL
+        ====================================================== */
+
+        const preview = document.createElement("div");
+
+        preview.className = "file-preview";
+
+        const image = document.createElement("img");
+
+        image.src = previewUrl;
+
+        image.alt = file.name;
+
+        image.loading = "lazy";
+
+        preview.appendChild(image);
+
+        /* =====================================================
+           FILE INFORMATION
+        ====================================================== */
+
+        const details = document.createElement("div");
+
+        details.className = "file-details";
+
+        const fileName = document.createElement("div");
+
+        fileName.className = "file-name";
+
+        fileName.textContent = file.name;
+
+        fileName.title = file.name;
+
+        const fileSize = document.createElement("div");
+
+        fileSize.className = "file-size";
+
+        fileSize.textContent = formatFileSize(file.size);
+
+        details.appendChild(fileName);
+
+        details.appendChild(fileSize);
+
+        /* =====================================================
+           ACTIONS
+        ====================================================== */
+
+        const actions = document.createElement("div");
+
+        actions.className = "file-actions";
+
+        const previewButton = document.createElement("button");
+
+        previewButton.type = "button";
+
+        previewButton.className = "file-preview-button";
+
+        const eye = document.createElement("span");
+
+        eye.textContent = "👁";
+
+        previewButton.appendChild(eye);
+
+        previewButton.appendChild(document.createTextNode(" Preview"));
+
+        /*
+         * Open image preview.
+         */
+
+        previewButton.addEventListener("click", function (event) {
+          event.preventDefault();
+
+          event.stopPropagation();
+
+          openImagePreview(previewUrl, file.name);
+        });
+
+        actions.appendChild(previewButton);
+
+        /* =====================================================
+           BUILD COMPLETE ROW
+        ====================================================== */
+
+        item.appendChild(preview);
+
+        item.appendChild(details);
+
+        item.appendChild(actions);
+
+        fileList.appendChild(item);
+      }
+
+      /* =========================================================
+         OPEN IMAGE PREVIEW
+      ========================================================== */
+
+      function openImagePreview(imageUrl, fileName) {
+        /*
+         * Prevent multiple preview modals.
+         */
+
+        const existingModal = document.querySelector(".image-preview-modal");
+
+        if (existingModal) {
+          closeImagePreview(existingModal);
+        }
+
+        /* =====================================================
+           MODAL
+        ====================================================== */
+
+        const modal = document.createElement("div");
+
+        modal.className = "image-preview-modal";
+
+        /* =====================================================
+           OVERLAY
+        ====================================================== */
+
+        const overlay = document.createElement("div");
+
+        overlay.className = "image-preview-overlay";
+
+        /* =====================================================
+           CONTENT
+        ====================================================== */
+
+        const content = document.createElement("div");
+
+        content.className = "image-preview-content";
+
+        /* =====================================================
+           HEADER
+        ====================================================== */
+
+        const header = document.createElement("div");
+
+        header.className = "image-preview-header";
+
+        const title = document.createElement("div");
+
+        title.className = "image-preview-title";
+
+        title.textContent = fileName;
+
+        title.title = fileName;
+
+        const closeButton = document.createElement("button");
+
+        closeButton.type = "button";
+
+        closeButton.className = "image-preview-close";
+
+        closeButton.setAttribute("aria-label", "Close preview");
+
+        closeButton.textContent = "×";
+
+        header.appendChild(title);
+
+        header.appendChild(closeButton);
+
+        /* =====================================================
+           BODY
+        ====================================================== */
+
+        const body = document.createElement("div");
+
+        body.className = "image-preview-body";
+
+        const previewImage = document.createElement("img");
+
+        previewImage.src = imageUrl;
+
+        previewImage.alt = fileName;
+
+        body.appendChild(previewImage);
+
+        /* =====================================================
+           BUILD MODAL
+        ====================================================== */
+
+        content.appendChild(header);
+
+        content.appendChild(body);
+
+        modal.appendChild(overlay);
+
+        modal.appendChild(content);
+
+        document.body.appendChild(modal);
+
+        document.body.classList.add("preview-open");
+
+        /* =====================================================
+           CLOSE BUTTON
+        ====================================================== */
+
+        closeButton.addEventListener("click", function () {
+          closeImagePreview(modal);
+        });
+
+        /* =====================================================
+           CLICK OUTSIDE
+        ====================================================== */
+
+        overlay.addEventListener("click", function () {
+          closeImagePreview(modal);
+        });
+
+        /* =====================================================
+           ESCAPE KEY
+        ====================================================== */
+
+        function escapeHandler(event) {
+          if (event.key === "Escape") {
+            closeImagePreview(modal);
+          }
+        }
+
+        document.addEventListener("keydown", escapeHandler);
+
+        modal._escapeHandler = escapeHandler;
+      }
+
+      /* =========================================================
+         CLOSE IMAGE PREVIEW
+      ========================================================== */
+
+      function closeImagePreview(modal) {
+        if (!modal) {
+          return;
+        }
+
+        if (modal._escapeHandler) {
+          document.removeEventListener("keydown", modal._escapeHandler);
+        }
+
+        modal.remove();
+
+        document.body.classList.remove("preview-open");
+      }
+
+      /* =========================================================
+         FILE SIZE FORMATTER
+      ========================================================== */
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) {
+          return "0 Bytes";
+        }
+
+        const units = ["Bytes", "KB", "MB", "GB"];
+
+        const index = Math.floor(Math.log(bytes) / Math.log(1024));
+
+        return (
+          parseFloat((bytes / Math.pow(1024, index)).toFixed(2)) +
+          " " +
+          units[index]
+        );
+      }
+
+      /* =========================================================
+         DRAG OVER
+      ========================================================== */
+
+      dropZone.addEventListener("dragover", function (event) {
+        event.preventDefault();
+
+        dropZone.classList.add("dragging");
+      });
+
+      /* =========================================================
+         DRAG LEAVE
+      ========================================================== */
+
+      dropZone.addEventListener("dragleave", function () {
+        dropZone.classList.remove("dragging");
+      });
+
+      /* =========================================================
+         DROP FILES
+      ========================================================== */
+
+      dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+
+        dropZone.classList.remove("dragging");
+
+        const droppedFiles = Array.from(event.dataTransfer.files || []);
+
+        if (droppedFiles.length === 0) {
+          return;
+        }
+
+        /*
+         * Keep only PNG files.
+         */
+
+        const pngFiles = droppedFiles.filter(function (file) {
+          return (
+            file.type === "image/png" ||
+            file.name.toLowerCase().endsWith(".png")
+          );
+        });
+
+        if (pngFiles.length === 0) {
+          selectedFiles.style.display = "none";
+
+          fileList.innerHTML = "";
+
+          fileCount.textContent = "0 files";
+
+          imageFiles.value = "";
+
+          return;
+        }
+
+        /*
+         * Put dropped files into
+         * the actual file input.
+         */
+
+        try {
+          const dataTransfer = new DataTransfer();
+
+          pngFiles.forEach(function (file) {
+            dataTransfer.items.add(file);
+          });
+
+          imageFiles.files = dataTransfer.files;
+        } catch (error) {
+          console.error("Unable to assign dropped files:", error);
+        }
+
+        /*
+         * Render selected images.
+         */
+
+        renderSelectedFiles(pngFiles);
+      });
+
+      /* =========================================================
+         FORM SUBMISSION
+      ========================================================== */
+
+      document
+        .getElementById("pngToJpgForm")
+        .addEventListener("submit", function (event) {
+          /*
+           * Don't submit if no PNG is selected.
+           */
+
+          if (!imageFiles.files || imageFiles.files.length === 0) {
+            event.preventDefault();
+
+            return;
+          }
+        });
+
+      /* =========================================================
+         CLEANUP OBJECT URLS
+      ========================================================== */
+
+      window.addEventListener("beforeunload", function () {
+        previewUrls.forEach(function (url) {
+          URL.revokeObjectURL(url);
+        });
+
+        previewUrls = [];
+      });
+    </script>
+  </body>
+</html>

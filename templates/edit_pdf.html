@@ -1,0 +1,2816 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#eef1f5" />
+    <title>Edit PDF - DocBuddy</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='edit_pdf.css') }}" />
+  </head>
+  <body>
+    <div class="ep-page">
+      <header class="ep-topbar">
+        <div class="ep-brand">
+          <div class="ep-brand-icon">✎</div>
+          <div class="ep-brand-text">
+            <strong>Edit PDF <span class="ep-pro-pill">PRO</span></strong>
+            <div class="ep-filename" id="epFilename">No document open</div>
+          </div>
+        </div>
+
+        <div class="ep-topbar-center" id="epTopbarCenter" style="display: none">
+          <button
+            type="button"
+            class="ep-icon-btn"
+            id="epUndoBtn"
+            title="Undo (Ctrl+Z)"
+            disabled>
+            ↶
+          </button>
+          <button
+            type="button"
+            class="ep-icon-btn"
+            id="epRedoBtn"
+            title="Redo (Ctrl+Y)"
+            disabled>
+            ↷
+          </button>
+          <div class="ep-toolbar-divider"></div>
+          <button
+            type="button"
+            class="ep-icon-btn"
+            id="epZoomOutBtn"
+            title="Zoom out">
+            −
+          </button>
+          <span class="ep-zoom-label" id="epZoomLabel">100%</span>
+          <button
+            type="button"
+            class="ep-icon-btn"
+            id="epZoomInBtn"
+            title="Zoom in">
+            +
+          </button>
+          <button
+            type="button"
+            class="ep-icon-btn"
+            id="epZoomFitBtn"
+            title="Fit page">
+            ⛶
+          </button>
+        </div>
+
+        <div class="ep-topbar-right">
+          <a href="{{ url_for('dashboard') }}" class="ep-back-btn"
+            >← Dashboard</a
+          >
+          <button
+            type="button"
+            class="ep-icon-btn"
+            id="epSearchBtn"
+            title="Search PDF"
+            style="display: none">
+            ⌕
+          </button>
+          <button
+            type="button"
+            class="ep-btn ep-preview-top-btn"
+            id="epPreviewBtn"
+            style="display: none">
+            👁 Preview
+          </button>
+          <button
+            type="button"
+            class="ep-icon-btn"
+            id="epMobilePropsBtn"
+            title="Document text & properties"
+            style="display: none">
+            ☷
+          </button>
+          <button
+            type="button"
+            class="ep-export-btn"
+            id="epExportBtn"
+            style="display: none">
+            ↓ Export PDF
+          </button>
+        </div>
+      </header>
+
+      <section class="ep-upload-screen" id="epUploadScreen">
+        <div class="ep-upload-box" id="epUploadBox">
+          <div class="ep-upload-icon">✎</div>
+          <h2>Open a PDF to edit</h2>
+          <p>
+            Add text, draw, highlight, redact, insert signatures, manage pages
+            and export a clean PDF. Your editing work stays temporary until
+            export.
+          </p>
+          <label for="epDocumentInput" class="ep-upload-btn"
+            >📁 Choose PDF</label
+          >
+          <input type="file" id="epDocumentInput" accept="application/pdf" />
+          <div class="ep-upload-formats">PDF ONLY · MAX 40 MB</div>
+          <div
+            class="ep-upload-progress"
+            id="epUploadProgress"
+            aria-live="polite"
+            hidden>
+            <div class="ep-upload-progress-head">
+              <span id="epUploadProgressLabel">Uploading PDF…</span
+              ><strong id="epUploadProgressPercent">0%</strong>
+            </div>
+            <div class="ep-upload-progress-track">
+              <div
+                class="ep-upload-progress-fill"
+                id="epUploadProgressFill"></div>
+            </div>
+            <div class="ep-upload-progress-meta">
+              <span id="epUploadProgressMeta">Preparing file…</span
+              ><span id="epUploadProgressPages">Waiting for pages…</span>
+            </div>
+          </div>
+          <div class="ep-upload-feature-list">
+            <div class="ep-upload-feature-chip">✎ Text</div>
+            <div class="ep-upload-feature-chip">🖍 Highlight</div>
+            <div class="ep-upload-feature-chip">■ Redact</div>
+            <div class="ep-upload-feature-chip">🖼 Signature</div>
+            <div class="ep-upload-feature-chip">📑 Pages</div>
+            <div class="ep-upload-feature-chip">💧 Watermark</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ep-editor" id="epEditor">
+        <aside class="ep-pages-panel">
+          <div class="ep-panel-header">
+            <span id="epPageCountLabel">0 pages</span>
+            <button
+              type="button"
+              class="ep-icon-btn"
+              id="epSelectModeBtn"
+              title="Select pages to export only those"
+              style="width: 26px; height: 26px; font-size: 10px">
+              ☑
+            </button>
+          </div>
+          <div class="ep-pages-list" id="epPagesList"></div>
+          <div class="ep-add-page-row">
+            <button type="button" id="epAddBlankBtn">＋ Blank page</button>
+            <button type="button" id="epMergePdfBtn">📎 Add / merge PDF</button>
+            <input
+              type="file"
+              id="epMergeInput"
+              accept="application/pdf"
+              style="display: none" />
+          </div>
+        </aside>
+
+        <main class="ep-canvas-panel">
+          <div class="ep-toolbar" id="epToolbar">
+            <button
+              type="button"
+              class="ep-tool-btn active"
+              data-tool="select"
+              title="Select / Move">
+              ↖
+            </button>
+            <div class="ep-toolbar-divider"></div>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="text"
+              title="Add text">
+              T
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="edittext"
+              title="Edit existing PDF text">
+              ✎T
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="erasetext"
+              title="Permanently remove existing text">
+              ⌫T
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="draw"
+              title="Freehand">
+              ✎
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="rect"
+              title="Rectangle">
+              ▭
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="ellipse"
+              title="Ellipse">
+              ◯
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="line"
+              title="Line">
+              ╱
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="arrow"
+              title="Arrow">
+              ↗
+            </button>
+            <div class="ep-toolbar-divider"></div>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="highlight"
+              title="Highlight">
+              🖍
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="whiteout"
+              title="Visual whiteout">
+              ▢
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="redact"
+              title="Permanent redaction">
+              ■
+            </button>
+            <div class="ep-toolbar-divider"></div>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="stamp"
+              title="Image / signature">
+              🖼
+            </button>
+            <button
+              type="button"
+              class="ep-tool-btn"
+              data-tool="note"
+              title="Note">
+              🗨
+            </button>
+            <div class="ep-toolbar-divider"></div>
+            <button
+              type="button"
+              class="ep-icon-btn"
+              id="epWatermarkBtn"
+              title="Watermark">
+              💧
+            </button>
+            <button
+              type="button"
+              class="ep-icon-btn"
+              id="epPageNumberBtn"
+              title="Page numbers">
+              #
+            </button>
+            <button
+              type="button"
+              class="ep-icon-btn"
+              id="epBackgroundBtn"
+              title="Page background">
+              🎨
+            </button>
+          </div>
+
+          <div class="ep-page-meter" id="epPageMeter">
+            <div class="ep-page-meter-track">
+              <div class="ep-page-meter-fill" id="epPageMeterFill"></div>
+            </div>
+            <div class="ep-page-meter-info">
+              <span id="epPageMeterText">0 pages uploaded</span>
+              <span id="epPageMeterCurrent">Page 0 / 0</span>
+            </div>
+          </div>
+
+          <div class="ep-quick-style" id="epQuickStyle">
+            <span class="ep-quick-style-title">Style</span>
+            <div class="ep-quick-colors" id="epQuickColors">
+              <button
+                type="button"
+                class="ep-color-swatch active"
+                data-quick-color="#111111"
+                style="background: #111111"></button>
+              <button
+                type="button"
+                class="ep-color-swatch"
+                data-quick-color="#ef4444"
+                style="background: #ef4444"></button>
+              <button
+                type="button"
+                class="ep-color-swatch"
+                data-quick-color="#2563eb"
+                style="background: #2563eb"></button>
+              <button
+                type="button"
+                class="ep-color-swatch"
+                data-quick-color="#16a34a"
+                style="background: #16a34a"></button>
+              <button
+                type="button"
+                class="ep-color-swatch"
+                data-quick-color="#f59e0b"
+                style="background: #f59e0b"></button>
+              <input
+                type="color"
+                id="epQuickColor"
+                class="ep-color-custom"
+                value="#111111"
+                title="Custom color" />
+            </div>
+            <label class="ep-quick-control"
+              >Width
+              <input
+                type="range"
+                id="epQuickWidth"
+                min="1"
+                max="20"
+                step=".5"
+                value="2" /><b id="epQuickWidthValue">2 pt</b></label
+            >
+            <label class="ep-quick-control"
+              >Opacity
+              <input
+                type="range"
+                id="epQuickOpacity"
+                min="10"
+                max="100"
+                value="100" /><b id="epQuickOpacityValue">100%</b></label
+            >
+          </div>
+
+          <div class="ep-canvas-scroll" id="epCanvasScroll">
+            <div class="ep-page-stage" id="epPageStage">
+              <img id="epPageImage" alt="PDF page" draggable="false" />
+              <div id="epBackgroundOverlay" class="ep-background-overlay"></div>
+              <svg
+                class="ep-object-layer"
+                id="epSvgLayer"
+                style="
+                  position: absolute;
+                  inset: 0;
+                  pointer-events: none;
+                "></svg>
+              <div class="ep-object-layer mode-select" id="epObjectLayer"></div>
+            </div>
+          </div>
+        </main>
+
+        <aside class="ep-props-panel" id="epPropsPanel">
+          <div class="ep-empty-props" id="epEmptyProps">
+            <span>☷</span>
+            <strong>Document text & properties</strong><br />
+            Select an object, or choose <b>✎T</b> to edit text already inside
+            the PDF.
+          </div>
+        </aside>
+      </section>
+
+      <!-- Watermark -->
+      <div class="ep-modal-overlay" id="epWatermarkModal">
+        <div class="ep-modal">
+          <div class="ep-modal-header">
+            <h3>Watermark</h3>
+            <button class="ep-modal-close" data-close-modal>×</button>
+          </div>
+          <div class="ep-checkbox-row ep-field">
+            <label style="margin: 0">Apply to every page</label
+            ><label class="ep-switch"
+              ><input type="checkbox" id="epWatermarkEnabled" /><span
+                class="ep-switch-track"
+                ><span class="ep-switch-thumb"></span></span
+            ></label>
+          </div>
+          <div class="ep-field">
+            <label>Text</label
+            ><input
+              type="text"
+              id="epWatermarkText"
+              placeholder="CONFIDENTIAL" />
+          </div>
+          <div class="ep-field-row">
+            <div class="ep-field">
+              <label>Font size</label
+              ><input
+                type="number"
+                id="epWatermarkSize"
+                value="48"
+                min="10"
+                max="200" />
+            </div>
+            <div class="ep-field">
+              <label>Opacity</label
+              ><input
+                type="number"
+                id="epWatermarkOpacity"
+                value="30"
+                min="5"
+                max="100" />
+            </div>
+          </div>
+          <div class="ep-field">
+            <label>Color</label>
+            <div class="ep-color-row" id="epWatermarkColorRow">
+              <button
+                class="ep-color-swatch active"
+                type="button"
+                style="background: #6b7280"
+                data-color="#6b7280"></button>
+              <button
+                class="ep-color-swatch"
+                type="button"
+                style="background: #ef4444"
+                data-color="#ef4444"></button>
+              <button
+                class="ep-color-swatch"
+                type="button"
+                style="background: #2563eb"
+                data-color="#2563eb"></button>
+              <input
+                type="color"
+                class="ep-color-custom"
+                id="epWatermarkColorCustom"
+                value="#6b7280" />
+            </div>
+          </div>
+          <button class="ep-btn ep-btn-primary" data-close-modal>Done</button>
+        </div>
+      </div>
+
+      <!-- Page numbers -->
+      <div class="ep-modal-overlay" id="epPageNumberModal">
+        <div class="ep-modal">
+          <div class="ep-modal-header">
+            <h3>Page numbers</h3>
+            <button class="ep-modal-close" data-close-modal>×</button>
+          </div>
+          <div class="ep-checkbox-row ep-field">
+            <label style="margin: 0">Apply to every page</label
+            ><label class="ep-switch"
+              ><input type="checkbox" id="epPageNumberEnabled" /><span
+                class="ep-switch-track"
+                ><span class="ep-switch-thumb"></span></span
+            ></label>
+          </div>
+          <div class="ep-field">
+            <label>Format</label
+            ><select id="epPageNumberFormat">
+              <option value="Page {n} of {total}">Page 1 of 10</option>
+              <option value="{n} / {total}">1 / 10</option>
+              <option value="{n}">1</option>
+              <option value="- {n} -">- 1 -</option>
+            </select>
+          </div>
+          <div class="ep-field-row">
+            <div class="ep-field">
+              <label>Position</label
+              ><select id="epPageNumberPosition">
+                <option value="bottom-center">Bottom center</option>
+                <option value="bottom-right">Bottom right</option>
+                <option value="bottom-left">Bottom left</option>
+                <option value="top-center">Top center</option>
+                <option value="top-right">Top right</option>
+                <option value="top-left">Top left</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>Font size</label
+              ><input
+                type="number"
+                id="epPageNumberSize"
+                value="10"
+                min="6"
+                max="30" />
+            </div>
+          </div>
+          <button class="ep-btn ep-btn-primary" data-close-modal>Done</button>
+        </div>
+      </div>
+
+      <!-- Stamp -->
+      <div class="ep-modal-overlay" id="epStampModal">
+        <div class="ep-modal">
+          <div class="ep-modal-header">
+            <h3>Insert image / signature</h3>
+            <button class="ep-modal-close" data-close-modal>×</button>
+          </div>
+          <div class="ep-field">
+            <label for="epStampInput">Upload PNG, JPG or WEBP</label
+            ><input
+              type="file"
+              id="epStampInput"
+              accept="image/png,image/jpeg,image/webp" />
+          </div>
+          <div
+            id="epStampLibrary"
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+              margin-top: 10px;
+            "></div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="ep-modal-overlay" id="epSearchModal">
+        <div class="ep-modal ep-search-modal">
+          <div class="ep-modal-header">
+            <div>
+              <h3>Search PDF</h3>
+              <div class="ep-modal-subtitle">
+                Jump directly to matching pages.
+              </div>
+            </div>
+            <button class="ep-modal-close" data-close-modal>×</button>
+          </div>
+          <div class="ep-field">
+            <label>Find text</label>
+            <div class="ep-search-row">
+              <input
+                id="epSearchInput"
+                type="text"
+                placeholder="Search in this PDF…" /><button
+                class="ep-btn ep-btn-primary"
+                id="epSearchRun">
+                Search
+              </button>
+            </div>
+          </div>
+          <div id="epSearchResults" class="ep-search-results"></div>
+        </div>
+      </div>
+
+      <!-- Background -->
+      <div class="ep-modal-overlay" id="epBackgroundModal">
+        <div class="ep-modal">
+          <div class="ep-modal-header">
+            <div>
+              <h3>Page background</h3>
+              <div class="ep-modal-subtitle">
+                Use a soft background when working on a blank page.
+              </div>
+            </div>
+            <button class="ep-modal-close" data-close-modal>×</button>
+          </div>
+          <div class="ep-field">
+            <label>Background color</label>
+            <div class="ep-field-row">
+              <input
+                type="color"
+                id="epBackgroundColor"
+                value="#ffffff" /><input
+                type="text"
+                id="epBackgroundHex"
+                value="#ffffff"
+                maxlength="7" />
+            </div>
+          </div>
+          <div class="ep-field">
+            <label
+              >Overlay opacity:
+              <span id="epBackgroundOpacityLabel">100%</span></label
+            ><input
+              type="range"
+              id="epBackgroundOpacity"
+              min="0"
+              max="100"
+              value="100" />
+          </div>
+          <div class="ep-field-row">
+            <button class="ep-btn" id="epBackgroundCurrent">Current page</button
+            ><button class="ep-btn ep-btn-primary" id="epBackgroundAll">
+              All pages
+            </button>
+          </div>
+          <button class="ep-btn" data-close-modal>Done</button>
+        </div>
+      </div>
+
+      <!-- Text edit -->
+      <div class="ep-modal-overlay" id="epTextEditModal">
+        <div class="ep-modal">
+          <div class="ep-modal-header">
+            <div>
+              <h3>Edit existing text</h3>
+              <div class="ep-modal-subtitle" id="epTextEditDetected">
+                Detected font
+              </div>
+            </div>
+            <button class="ep-modal-close" data-close-modal>×</button>
+          </div>
+          <div class="ep-field">
+            <label>Text</label><textarea id="epTextEditValue"></textarea>
+          </div>
+          <div class="ep-field-row">
+            <div class="ep-field">
+              <label>Font</label
+              ><select id="epTextEditFont">
+                <option value="helv">Helvetica</option>
+                <option value="tiro">Times</option>
+                <option value="cour">Courier</option>
+              </select>
+            </div>
+            <div class="ep-field">
+              <label>Size</label
+              ><input
+                type="number"
+                id="epTextEditSize"
+                min="4"
+                max="200"
+                step=".5" />
+            </div>
+          </div>
+          <div class="ep-field-row">
+            <div class="ep-field">
+              <label>X</label><input type="number" id="epTextEditX" step=".1" />
+            </div>
+            <div class="ep-field">
+              <label>Y</label><input type="number" id="epTextEditY" step=".1" />
+            </div>
+          </div>
+          <div class="ep-field-row">
+            <div class="ep-field">
+              <label>Width</label
+              ><input type="number" id="epTextEditW" min="5" step=".1" />
+            </div>
+            <div class="ep-field">
+              <label>Height</label
+              ><input type="number" id="epTextEditH" min="5" step=".1" />
+            </div>
+          </div>
+          <div class="ep-field-row">
+            <div class="ep-field">
+              <label>Text color</label
+              ><input type="color" id="epTextEditColor" value="#111111" />
+            </div>
+            <div class="ep-field">
+              <label>Alignment</label
+              ><select id="epTextEditAlign">
+                <option value="0">Left</option>
+                <option value="1">Center</option>
+                <option value="2">Right</option>
+                <option value="3">Justify</option>
+              </select>
+            </div>
+          </div>
+          <div class="ep-field-row">
+            <label class="ep-check-inline"
+              ><input type="checkbox" id="epTextEditBold" /> Bold</label
+            >
+            <label class="ep-check-inline"
+              ><input type="checkbox" id="epTextEditItalic" /> Italic</label
+            >
+            <label class="ep-check-inline"
+              ><input type="checkbox" id="epTextEditUnderline" />
+              Underline</label
+            >
+            <label class="ep-check-inline"
+              ><input type="checkbox" id="epTextEditStrike" /> Strike</label
+            >
+          </div>
+          <div class="ep-field-row">
+            <button class="ep-btn" id="epTextEditCancel">Cancel</button
+            ><button class="ep-btn ep-btn-primary" id="epTextEditApply">
+              Apply changes
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="ep-modal-overlay" id="epPreviewModal">
+        <div class="ep-preview-modal">
+          <div class="ep-modal-header" style="padding: 12px 14px; margin: 0">
+            <div>
+              <h3>PDF Preview</h3>
+              <div class="ep-modal-subtitle" id="epPreviewMeta">
+                Your edited PDF is ready.
+              </div>
+            </div>
+            <button class="ep-modal-close" id="epPreviewClose">×</button>
+          </div>
+          <div class="ep-preview-frame-wrap">
+            <iframe id="epPreviewFrame" title="Edited PDF preview"></iframe>
+          </div>
+          <div class="ep-preview-actions">
+            <a
+              class="ep-btn ep-btn-primary"
+              id="epPreviewDownload"
+              href="#"
+              target="_blank"
+              >↓ Download PDF</a
+            ><button class="ep-btn" id="epPreviewNewTab">
+              ↗ Open in new tab</button
+            ><button class="ep-btn" id="epPreviewDone">Done</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ep-toast-stack" id="epToastStack"></div>
+
+      <script>
+        "use strict";
+
+        const $ = (id) => document.getElementById(id);
+        const els = {
+          uploadScreen: $("epUploadScreen"),
+          uploadBox: $("epUploadBox"),
+          documentInput: $("epDocumentInput"),
+          editor: $("epEditor"),
+          filename: $("epFilename"),
+          topbarCenter: $("epTopbarCenter"),
+          exportBtn: $("epExportBtn"),
+          searchBtn: $("epSearchBtn"),
+          searchModal: $("epSearchModal"),
+          searchInput: $("epSearchInput"),
+          searchRun: $("epSearchRun"),
+          searchResults: $("epSearchResults"),
+          previewModal: $("epPreviewModal"),
+          previewFrame: $("epPreviewFrame"),
+          previewDownload: $("epPreviewDownload"),
+          previewNewTab: $("epPreviewNewTab"),
+          previewClose: $("epPreviewClose"),
+          previewDone: $("epPreviewDone"),
+          previewMeta: $("epPreviewMeta"),
+          previewBtn: $("epPreviewBtn"),
+          pageMeterFill: $("epPageMeterFill"),
+          pageMeterText: $("epPageMeterText"),
+          pageMeterCurrent: $("epPageMeterCurrent"),
+          quickColor: $("epQuickColor"),
+          uploadProgress: $("epUploadProgress"),
+          uploadProgressFill: $("epUploadProgressFill"),
+          uploadProgressPercent: $("epUploadProgressPercent"),
+          uploadProgressLabel: $("epUploadProgressLabel"),
+          uploadProgressMeta: $("epUploadProgressMeta"),
+          uploadProgressPages: $("epUploadProgressPages"),
+          quickWidth: $("epQuickWidth"),
+          quickWidthValue: $("epQuickWidthValue"),
+          quickOpacity: $("epQuickOpacity"),
+          quickOpacityValue: $("epQuickOpacityValue"),
+          backgroundBtn: $("epBackgroundBtn"),
+          backgroundModal: $("epBackgroundModal"),
+          backgroundColor: $("epBackgroundColor"),
+          backgroundHex: $("epBackgroundHex"),
+          backgroundOpacity: $("epBackgroundOpacity"),
+          backgroundOpacityLabel: $("epBackgroundOpacityLabel"),
+          backgroundCurrent: $("epBackgroundCurrent"),
+          backgroundAll: $("epBackgroundAll"),
+          textEditModal: $("epTextEditModal"),
+          textEditDetected: $("epTextEditDetected"),
+          textEditValue: $("epTextEditValue"),
+          textEditFont: $("epTextEditFont"),
+          textEditSize: $("epTextEditSize"),
+          textEditX: $("epTextEditX"),
+          textEditY: $("epTextEditY"),
+          textEditW: $("epTextEditW"),
+          textEditH: $("epTextEditH"),
+          textEditColor: $("epTextEditColor"),
+          textEditAlign: $("epTextEditAlign"),
+          textEditBold: $("epTextEditBold"),
+          textEditItalic: $("epTextEditItalic"),
+          textEditUnderline: $("epTextEditUnderline"),
+          textEditStrike: $("epTextEditStrike"),
+          textEditCancel: $("epTextEditCancel"),
+          textEditApply: $("epTextEditApply"),
+          pagesList: $("epPagesList"),
+          pageCountLabel: $("epPageCountLabel"),
+          selectModeBtn: $("epSelectModeBtn"),
+          addBlankBtn: $("epAddBlankBtn"),
+          mergeBtn: $("epMergePdfBtn"),
+          mergeInput: $("epMergeInput"),
+          toolbar: $("epToolbar"),
+          canvasScroll: $("epCanvasScroll"),
+          pageStage: $("epPageStage"),
+          pageImage: $("epPageImage"),
+          backgroundOverlay: $("epBackgroundOverlay"),
+          objectLayer: $("epObjectLayer"),
+          svgLayer: $("epSvgLayer"),
+          propsPanel: $("epPropsPanel"),
+          emptyProps: $("epEmptyProps"),
+          undoBtn: $("epUndoBtn"),
+          redoBtn: $("epRedoBtn"),
+          zoomInBtn: $("epZoomInBtn"),
+          zoomOutBtn: $("epZoomOutBtn"),
+          zoomFitBtn: $("epZoomFitBtn"),
+          zoomLabel: $("epZoomLabel"),
+          toastStack: $("epToastStack"),
+          watermarkBtn: $("epWatermarkBtn"),
+          watermarkModal: $("epWatermarkModal"),
+          pageNumberBtn: $("epPageNumberBtn"),
+          pageNumberModal: $("epPageNumberModal"),
+          stampModal: $("epStampModal"),
+          stampInput: $("epStampInput"),
+          stampLibrary: $("epStampLibrary"),
+          mobilePropsBtn: $("epMobilePropsBtn"),
+        };
+
+        let primaryFileId = null,
+          mergedFileId = null,
+          pageList = [],
+          objectsByPage = {},
+          currentPageId = null;
+        let currentTool = "select",
+          selectedObjectId = null,
+          zoomFactor = 1,
+          selectMode = false;
+        let detectedTextByPage = {},
+          textOverlayMode = false,
+          pageBackgrounds = {},
+          activeTextEditObjectId = null;
+        let stampLibraryData = [],
+          nextClientId = 1,
+          drawState = null;
+        let quickStyle = { color: "#111111", width: 2, opacity: 1 };
+        let watermarkSettings = {
+          enabled: false,
+          text: "",
+          font_size: 48,
+          opacity: 0.3,
+          color: "#6b7280",
+        };
+        let pageNumberSettings = {
+          enabled: false,
+          format: "Page {n} of {total}",
+          position: "bottom-center",
+          font_size: 10,
+          color: "#000000",
+        };
+        let history = [],
+          historyIndex = -1,
+          restoring = false;
+        let newlyAddedObjectId = null,
+          removingObjectIds = new Set();
+
+        function newId(prefix) {
+          return prefix + nextClientId++;
+        }
+        function showToast(message, type = "") {
+          const t = document.createElement("div");
+          t.className = "ep-toast " + type;
+          t.textContent = message;
+          els.toastStack.appendChild(t);
+          setTimeout(() => t.remove(), 2900);
+        }
+        function closeModal(m) {
+          if (m) m.classList.remove("active");
+        }
+        function currentPage() {
+          return pageList.find((p) => p.id === currentPageId);
+        }
+        function currentBackground() {
+          return pageBackgrounds[currentPageId] || "#ffffff";
+        }
+        function getSelectedObject() {
+          return (objectsByPage[currentPageId] || []).find(
+            (o) => o.id === selectedObjectId,
+          );
+        }
+        function escapeHtml(v) {
+          return String(v ?? "").replace(
+            /[&<>"']/g,
+            (c) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[c],
+          );
+        }
+        function hexToRgba(hex, a) {
+          const h = (hex || "#000000").replace("#", "");
+          const r = parseInt(h.slice(0, 2), 16) || 0,
+            g = parseInt(h.slice(2, 4), 16) || 0,
+            b = parseInt(h.slice(4, 6), 16) || 0;
+          return `rgba(${r},${g},${b},${a})`;
+        }
+
+        function snapshot() {
+          return JSON.stringify({
+            pageList,
+            objectsByPage,
+            currentPageId,
+            pageBackgrounds,
+          });
+        }
+        function pushHistory() {
+          if (restoring) return;
+          const s = snapshot();
+          if (historyIndex >= 0 && history[historyIndex] === s) return;
+          history = history.slice(0, historyIndex + 1);
+          history.push(s);
+          historyIndex = history.length - 1;
+          updateHistoryButtons();
+        }
+        function updateHistoryButtons() {
+          els.undoBtn.disabled = historyIndex <= 0;
+          els.redoBtn.disabled =
+            historyIndex < 0 || historyIndex >= history.length - 1;
+        }
+        function restoreSnapshot(s) {
+          const x = JSON.parse(s);
+          restoring = true;
+          pageList = x.pageList;
+          objectsByPage = x.objectsByPage;
+          currentPageId = x.currentPageId;
+          pageBackgrounds = x.pageBackgrounds || {};
+          renderPagesList();
+          renderCurrentPage();
+          restoring = false;
+        }
+        function undo() {
+          if (historyIndex <= 0) return;
+          historyIndex--;
+          restoreSnapshot(history[historyIndex]);
+          updateHistoryButtons();
+        }
+        function redo() {
+          if (historyIndex >= history.length - 1) return;
+          historyIndex++;
+          restoreSnapshot(history[historyIndex]);
+          updateHistoryButtons();
+        }
+        els.undoBtn.onclick = undo;
+        els.redoBtn.onclick = redo;
+
+        function updatePageMeter() {
+          const total = pageList.length,
+            pos =
+              Math.max(
+                0,
+                pageList.findIndex((p) => p.id === currentPageId),
+              ) + 1;
+          els.pageMeterText.textContent = total
+            ? `${total} page${total === 1 ? "" : "s"} uploaded`
+            : "0 pages uploaded";
+          els.pageMeterCurrent.textContent = total
+            ? `Page ${pos} / ${total}`
+            : "Page 0 / 0";
+          els.pageMeterFill.style.width = total
+            ? `${(pos / total) * 100}%`
+            : "0%";
+        }
+
+        function setUploadProgress(percent, label, meta, pages) {
+          const p = Math.max(0, Math.min(100, Number(percent) || 0));
+          els.uploadProgress.hidden = false;
+          els.uploadProgress.classList.remove("error");
+          els.uploadProgress.classList.toggle("complete", p >= 100);
+          els.uploadProgressFill.style.width = p + "%";
+          els.uploadProgressPercent.textContent = Math.round(p) + "%";
+          els.uploadProgressLabel.textContent = label || "Uploading PDF…";
+          els.uploadProgressMeta.textContent = meta || "";
+          els.uploadProgressPages.textContent = pages || "";
+        }
+        function setUploadProgressError(label) {
+          els.uploadProgress.hidden = false;
+          els.uploadProgress.classList.remove("complete");
+          els.uploadProgress.classList.add("error");
+          els.uploadProgressLabel.textContent = label || "Upload failed";
+        }
+        function hideUploadProgress() {
+          setTimeout(() => {
+            els.uploadProgress.hidden = true;
+            els.uploadProgress.classList.remove("complete", "error");
+          }, 900);
+        }
+        function formatBytes(bytes) {
+          if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+          const u = ["B", "KB", "MB", "GB"],
+            i = Math.min(3, Math.floor(Math.log(bytes) / Math.log(1024)));
+          return `${(bytes / Math.pow(1024, i)).toFixed(i ? 1 : 0)} ${u[i]}`;
+        }
+        function uploadPrimary(file) {
+          if (
+            file.type !== "application/pdf" &&
+            !/\.pdf$/i.test(file.name || "")
+          ) {
+            showToast("Please choose a PDF file.", "error");
+            return;
+          }
+          if (file.size > 40 * 1024 * 1024) {
+            showToast("PDF is larger than 40 MB.", "error");
+            return;
+          }
+          const fd = new FormData();
+          fd.append("document", file);
+          setUploadProgress(
+            0,
+            "Uploading PDF…",
+            formatBytes(file.size),
+            "Waiting for pages…",
+          );
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "{{ url_for('edit_pdf.upload_pdf') }}", true);
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable)
+              setUploadProgress(
+                (e.loaded / e.total) * 92,
+                "Uploading PDF…",
+                `${formatBytes(e.loaded)} / ${formatBytes(e.total)}`,
+                "Rendering pages after upload…",
+              );
+          };
+          xhr.onerror = () => {
+            setUploadProgressError("Could not upload the PDF.");
+            hideUploadProgress();
+            showToast("Could not upload the PDF.", "error");
+          };
+          xhr.onload = () => {
+            let d = {};
+            try {
+              d = JSON.parse(xhr.responseText || "{}");
+            } catch (e) {
+              d = { success: false, error: "Invalid server response." };
+            }
+            if (xhr.status < 200 || xhr.status >= 300 || !d.success) {
+              setUploadProgressError(d.error || "Upload failed.");
+              hideUploadProgress();
+              showToast(d.error || "Upload failed.", "error");
+              return;
+            }
+            setUploadProgress(
+              96,
+              "Preparing editor…",
+              "Upload complete",
+              `${d.page_count || d.pages?.length || 0} pages ready`,
+            );
+            primaryFileId = d.file_id;
+            mergedFileId = null;
+            els.filename.textContent = d.filename;
+            pageList = d.pages.map((p) => ({
+              id: newId("pg"),
+              source: "primary",
+              index: p.index,
+              width_pt: p.width_pt,
+              height_pt: p.height_pt,
+              width_px: p.width_px,
+              height_px: p.height_px,
+              image_url: p.image_url,
+              rotation: 0,
+              selected: false,
+            }));
+            objectsByPage = {};
+            pageBackgrounds = {};
+            pageList.forEach((p) => (objectsByPage[p.id] = []));
+            currentPageId = pageList[0]?.id || null;
+            history = [];
+            historyIndex = -1;
+            els.uploadScreen.style.display = "none";
+            els.editor.classList.add("active");
+            els.topbarCenter.style.display = "flex";
+            els.exportBtn.style.display = "inline-flex";
+            els.previewBtn.style.display = "inline-flex";
+            els.searchBtn.style.display = "inline-flex";
+            if (window.matchMedia("(max-width:760px)").matches)
+              els.mobilePropsBtn.style.display = "inline-grid";
+            renderPagesList();
+            renderCurrentPage();
+            fitZoom();
+            pushHistory();
+            setUploadProgress(
+              100,
+              "PDF loaded",
+              "Ready to edit",
+              `${d.page_count || pageList.length} pages uploaded`,
+            );
+            hideUploadProgress();
+            showToast(
+              `${d.page_count} page${d.page_count === 1 ? "" : "s"} loaded.`,
+              "success",
+            );
+            analyzePdfText(primaryFileId).catch(() =>
+              showToast("Text detection could not be completed.", ""),
+            );
+          };
+          xhr.send(fd);
+        }
+        els.documentInput.onchange = (e) => {
+          if (e.target.files[0]) uploadPrimary(e.target.files[0]);
+        };
+        els.uploadBox.ondragover = (e) => {
+          e.preventDefault();
+          els.uploadBox.classList.add("dragging");
+        };
+        els.uploadBox.ondragleave = () =>
+          els.uploadBox.classList.remove("dragging");
+        els.uploadBox.ondrop = (e) => {
+          e.preventDefault();
+          els.uploadBox.classList.remove("dragging");
+          const f = e.dataTransfer.files[0];
+          if (f) uploadPrimary(f);
+        };
+
+        async function analyzePdfText(fileId) {
+          const r = await fetch(
+              "{{ url_for('edit_pdf.analyze_text') }}?file_id=" +
+                encodeURIComponent(fileId),
+            ),
+            d = await r.json();
+          if (!d.success) throw Error(d.error || "Text analysis failed");
+          detectedTextByPage = d.pages || {};
+          if (textOverlayMode) renderObjects();
+          showToast(
+            "Document text is ready. Choose ✎T to edit exact text.",
+            "success",
+          );
+        }
+
+        async function mergePdf(file) {
+          if (file.type !== "application/pdf") {
+            showToast("Please choose a PDF.", "error");
+            return;
+          }
+          if (file.size > 40 * 1024 * 1024) {
+            showToast("Merged PDF is larger than 40 MB.", "error");
+            return;
+          }
+          const fd = new FormData();
+          fd.append("document", file);
+          try {
+            const r = await fetch("{{ url_for('edit_pdf.upload_pdf') }}", {
+                method: "POST",
+                body: fd,
+              }),
+              d = await r.json();
+            if (!d.success) {
+              showToast(d.error || "Could not add PDF.", "error");
+              return;
+            }
+            mergedFileId = d.file_id;
+            const np = d.pages.map((p) => ({
+              id: newId("pg"),
+              source: "merged",
+              index: p.index,
+              width_pt: p.width_pt,
+              height_pt: p.height_pt,
+              width_px: p.width_px,
+              height_px: p.height_px,
+              image_url: p.image_url,
+              rotation: 0,
+              selected: false,
+            }));
+            np.forEach((p) => {
+              objectsByPage[p.id] = [];
+              pageBackgrounds[p.id] = "#ffffff";
+            });
+            pageList.push(...np);
+            renderPagesList();
+            pushHistory();
+            showToast(
+              `${d.page_count} page${d.page_count === 1 ? "" : "s"} added.`,
+              "success",
+            );
+          } catch (e) {
+            console.error(e);
+            showToast("Could not add that PDF.", "error");
+          } finally {
+            els.mergeInput.value = "";
+          }
+        }
+        els.mergeBtn.onclick = () => els.mergeInput.click();
+        els.mergeInput.onchange = (e) => {
+          if (e.target.files[0]) mergePdf(e.target.files[0]);
+        };
+
+        els.addBlankBtn.onclick = () => {
+          const ref = currentPage() || pageList[0],
+            b = {
+              id: newId("pg"),
+              source: "blank",
+              width_pt: ref?.width_pt || 612,
+              height_pt: ref?.height_pt || 792,
+              rotation: 0,
+              selected: false,
+            };
+          objectsByPage[b.id] = [];
+          pageBackgrounds[b.id] = "#ffffff";
+          const i = pageList.findIndex((p) => p.id === currentPageId);
+          pageList.splice(i >= 0 ? i + 1 : pageList.length, 0, b);
+          currentPageId = b.id;
+          renderPagesList();
+          renderCurrentPage();
+          pushHistory();
+        };
+
+        function renderPagesList() {
+          els.pagesList.innerHTML = "";
+          els.pageCountLabel.textContent = `${pageList.length} ${pageList.length === 1 ? "page" : "pages"}`;
+          updatePageMeter();
+          pageList.forEach((p, i) => {
+            const t = document.createElement("div");
+            t.className =
+              "ep-page-thumb" +
+              (p.id === currentPageId ? " active" : "") +
+              (p.selected ? " selected" : "");
+            t.draggable = true;
+            t.dataset.pageId = p.id;
+            const frame = document.createElement("div");
+            frame.className = "ep-page-thumb-frame";
+            const img = document.createElement("img");
+            if (p.source === "blank") {
+              img.style.aspectRatio = `${p.width_pt}/${p.height_pt}`;
+              img.style.background = "#fff";
+            } else img.src = p.image_url;
+            img.style.transform = `rotate(${p.rotation}deg)`;
+            img.loading = "lazy";
+            img.alt = `Page ${i + 1}`;
+            frame.appendChild(img);
+            const number = document.createElement("div");
+            number.className = "ep-page-thumb-number";
+            number.textContent = i + 1;
+            frame.appendChild(number);
+            const label = document.createElement("div");
+            label.className = "ep-page-thumb-label";
+            label.innerHTML = `<span>Page ${i + 1}</span>`;
+            const actions = document.createElement("div");
+            actions.className = "ep-page-thumb-actions";
+            actions.innerHTML =
+              '<button data-action="rotate" title="Rotate">↻</button><button data-action="duplicate" title="Duplicate">⧉</button><button data-action="delete" title="Delete">🗑</button>';
+            t.append(frame, label, actions);
+            t.onclick = (e) => {
+              const a = e.target.closest("[data-action]");
+              if (a) {
+                e.stopPropagation();
+                handlePageAction(p.id, a.dataset.action);
+                return;
+              }
+              if (selectMode) {
+                p.selected = !p.selected;
+                renderPagesList();
+                return;
+              }
+              currentPageId = p.id;
+              selectedObjectId = null;
+              renderPagesList();
+              renderCurrentPage();
+            };
+            t.ondragstart = (e) => e.dataTransfer.setData("text/plain", p.id);
+            t.ondragover = (e) => e.preventDefault();
+            t.ondrop = (e) => {
+              e.preventDefault();
+              reorderPage(e.dataTransfer.getData("text/plain"), p.id);
+            };
+            els.pagesList.appendChild(t);
+          });
+        }
+        function reorderPage(a, b) {
+          if (!a || a === b) return;
+          const i = pageList.findIndex((p) => p.id === a),
+            j = pageList.findIndex((p) => p.id === b);
+          if (i < 0 || j < 0) return;
+          const [x] = pageList.splice(i, 1);
+          pageList.splice(j, 0, x);
+          renderPagesList();
+          pushHistory();
+        }
+        function handlePageAction(id, action) {
+          const i = pageList.findIndex((p) => p.id === id);
+          if (i < 0) return;
+          if (action === "rotate")
+            pageList[i].rotation = (pageList[i].rotation + 90) % 360;
+          if (action === "duplicate") {
+            const o = pageList[i],
+              c = { ...o, id: newId("pg"), selected: false };
+            objectsByPage[c.id] = JSON.parse(
+              JSON.stringify(objectsByPage[o.id] || []),
+            );
+            pageList.splice(i + 1, 0, c);
+          }
+          if (action === "delete") {
+            if (pageList.length <= 1) {
+              showToast("A PDF needs at least one page.", "error");
+              return;
+            }
+            delete objectsByPage[id];
+            delete pageBackgrounds[id];
+            pageList.splice(i, 1);
+            if (currentPageId === id)
+              currentPageId = pageList[Math.max(0, i - 1)].id;
+          }
+          renderPagesList();
+          renderCurrentPage();
+          pushHistory();
+        }
+        els.selectModeBtn.onclick = () => {
+          selectMode = !selectMode;
+          els.selectModeBtn.classList.toggle("active", selectMode);
+          if (!selectMode) pageList.forEach((p) => (p.selected = false));
+          renderPagesList();
+          showToast(
+            selectMode ? "Select pages to export." : "Exporting all pages.",
+          );
+        };
+
+        function fitZoom() {
+          const p = currentPage();
+          if (!p) return;
+          const nw = p.width_px || p.width_pt * 2,
+            nh = p.height_px || p.height_pt * 2;
+          zoomFactor = Math.max(
+            0.2,
+            Math.min(
+              1.4,
+              (els.canvasScroll.clientWidth - 45) / nw,
+              (els.canvasScroll.clientHeight - 45) / nh,
+            ),
+          );
+          applyZoom();
+        }
+        function applyZoom() {
+          els.zoomLabel.textContent = Math.round(zoomFactor * 100) + "%";
+          renderCurrentPage();
+        }
+        els.zoomInBtn.onclick = () => {
+          zoomFactor = Math.min(3, zoomFactor + 0.15);
+          applyZoom();
+        };
+        els.zoomOutBtn.onclick = () => {
+          zoomFactor = Math.max(0.2, zoomFactor - 0.15);
+          applyZoom();
+        };
+        els.zoomFitBtn.onclick = fitZoom;
+        function ptToPxFactor() {
+          const p = currentPage();
+          if (!p) return 1;
+          return ((p.width_px || p.width_pt * 2) / p.width_pt) * zoomFactor;
+        }
+
+        function renderCurrentPage() {
+          const p = currentPage();
+          if (!p) return;
+          updatePageMeter();
+          const bg = currentBackground(),
+            op =
+              pageBackgrounds[currentPageId + "_opacity"] ??
+              (p.source === "blank" ? 1 : 0);
+          els.pageStage.style.background = bg;
+          els.backgroundOverlay.style.background = bg;
+          els.backgroundOverlay.style.opacity = op;
+          const nw = p.width_px || Math.round(p.width_pt * 2),
+            nh = p.height_px || Math.round(p.height_pt * 2);
+          els.pageStage.style.width = nw * zoomFactor + "px";
+          els.pageStage.style.height = nh * zoomFactor + "px";
+          if (p.source === "blank") {
+            els.pageImage.removeAttribute("src");
+            els.pageImage.style.background = "#fff";
+          } else {
+            els.pageImage.src = p.image_url;
+            els.pageImage.style.background = "";
+          }
+          els.svgLayer.setAttribute("width", nw * zoomFactor);
+          els.svgLayer.setAttribute("height", nh * zoomFactor);
+          els.svgLayer.setAttribute(
+            "viewBox",
+            `0 0 ${nw * zoomFactor} ${nh * zoomFactor}`,
+          );
+          renderObjects();
+        }
+
+        function setTool(tool) {
+          currentTool = tool;
+          textOverlayMode = tool === "edittext" || tool === "erasetext";
+          els.toolbar
+            .querySelectorAll("[data-tool]")
+            .forEach((b) =>
+              b.classList.toggle("active", b.dataset.tool === tool),
+            );
+          els.objectLayer.classList.toggle(
+            "mode-select",
+            ["select", "edittext", "erasetext"].includes(tool),
+          );
+          selectedObjectId = null;
+          if (tool === "stamp") openStampModal();
+          else {
+            renderObjects();
+            renderPropsPanel();
+          }
+        }
+
+        els.toolbar
+          .querySelectorAll("[data-tool]")
+          .forEach((b) => (b.onclick = () => setTool(b.dataset.tool)));
+
+        function pxPointToPt(x, y) {
+          const f = ptToPxFactor();
+          return { x: x / f, y: y / f };
+        }
+        function clearPreview() {
+          els.svgLayer.querySelector("#epPreviewShape")?.remove();
+        }
+        function drawPreview(points, tool) {
+          clearPreview();
+          const ns = "http://www.w3.org/2000/svg",
+            el = document.createElementNS(
+              ns,
+              tool === "draw"
+                ? "polyline"
+                : tool === "ellipse"
+                  ? "ellipse"
+                  : tool === "line" || tool === "arrow"
+                    ? "line"
+                    : "rect",
+            );
+          el.id = "epPreviewShape";
+          el.setAttribute("stroke", quickStyle.color);
+          el.setAttribute(
+            "fill",
+            tool === "draw" || tool === "line" || tool === "arrow"
+              ? "none"
+              : hexToRgba(quickStyle.color, 0.12),
+          );
+          el.setAttribute(
+            "stroke-width",
+            Math.max(1, quickStyle.width * ptToPxFactor()),
+          );
+          if (tool === "draw")
+            el.setAttribute("points", points.map((p) => p.join(",")).join(" "));
+          else {
+            const [x1, y1, x2, y2] = points.flat();
+            if (tool === "ellipse") {
+              el.setAttribute("cx", (x1 + x2) / 2);
+              el.setAttribute("cy", (y1 + y2) / 2);
+              el.setAttribute("rx", Math.abs(x2 - x1) / 2);
+              el.setAttribute("ry", Math.abs(y2 - y1) / 2);
+            } else if (tool === "line" || tool === "arrow") {
+              el.setAttribute("x1", x1);
+              el.setAttribute("y1", y1);
+              el.setAttribute("x2", x2);
+              el.setAttribute("y2", y2);
+            } else {
+              el.setAttribute("x", Math.min(x1, x2));
+              el.setAttribute("y", Math.min(y1, y2));
+              el.setAttribute("width", Math.abs(x2 - x1));
+              el.setAttribute("height", Math.abs(y2 - y1));
+            }
+          }
+          els.svgLayer.appendChild(el);
+        }
+        els.objectLayer.onpointerdown = (e) => {
+          if (
+            ["select", "stamp", "edittext", "erasetext"].includes(
+              currentTool,
+            ) ||
+            e.target !== els.objectLayer
+          )
+            return;
+          const r = els.objectLayer.getBoundingClientRect(),
+            x = e.clientX - r.left,
+            y = e.clientY - r.top;
+          drawState = {
+            tool: currentTool,
+            startX: x,
+            startY: y,
+            currentX: x,
+            currentY: y,
+            points: [[x, y]],
+          };
+          els.objectLayer.setPointerCapture(e.pointerId);
+        };
+        els.objectLayer.onpointermove = (e) => {
+          if (!drawState) return;
+          const r = els.objectLayer.getBoundingClientRect(),
+            x = e.clientX - r.left,
+            y = e.clientY - r.top;
+          drawState.currentX = x;
+          drawState.currentY = y;
+          if (drawState.tool === "draw") drawState.points.push([x, y]);
+          drawPreview(
+            drawState.tool === "draw"
+              ? drawState.points
+              : [
+                  [drawState.startX, drawState.startY],
+                  [x, y],
+                ],
+            drawState.tool,
+          );
+        };
+        els.objectLayer.onpointerup = () => {
+          if (drawState) {
+            finalizeDraw(drawState);
+            drawState = null;
+            clearPreview();
+          }
+        };
+
+        function finalizeDraw(s) {
+          const f = ptToPxFactor(),
+            p1 = pxPointToPt(s.startX, s.startY);
+          if (s.tool === "text") {
+            const o = {
+              id: newId("obj"),
+              type: "text",
+              x: p1.x,
+              y: p1.y,
+              width: 180,
+              height: 30,
+              text: "Text",
+              font_size: 14,
+              color: "#111111",
+              font_family: "helv",
+              align: 0,
+              underline: false,
+              strike: false,
+              bold: false,
+              italic: false,
+            };
+            addObject(o);
+            startTextEditing(o.id);
+            return;
+          }
+          if (s.tool === "note") {
+            const o = {
+              id: newId("obj"),
+              type: "note",
+              x: p1.x,
+              y: p1.y,
+              width: 150,
+              height: 90,
+              text: "Note",
+              font_size: 12,
+              color: "#111111",
+              fill: "#fef08a",
+            };
+            addObject(o);
+            selectedObjectId = o.id;
+            setTool("select");
+            renderPropsPanel();
+            return;
+          }
+          if (s.tool === "draw") {
+            if (s.points.length < 2) return;
+            addObject({
+              id: newId("obj"),
+              type: "draw",
+              points: s.points.map((q) => {
+                const p = pxPointToPt(q[0], q[1]);
+                return [p.x, p.y];
+              }),
+              color: quickStyle.color,
+              width: quickStyle.width,
+              opacity: quickStyle.opacity,
+            });
+            setTool("select");
+            return;
+          }
+          const x2 = s.currentX,
+            y2 = s.currentY;
+          if (Math.abs(x2 - s.startX) < 4 && Math.abs(y2 - s.startY) < 4)
+            return;
+          const q = pxPointToPt(Math.min(s.startX, x2), Math.min(s.startY, y2)),
+            w = Math.abs(x2 - s.startX) / f,
+            h = Math.abs(y2 - s.startY) / f;
+          let o = null;
+          if (s.tool === "rect" || s.tool === "ellipse")
+            o = {
+              id: newId("obj"),
+              type: s.tool,
+              x: q.x,
+              y: q.y,
+              width: w,
+              height: h,
+              color: quickStyle.color,
+              fill: "",
+              stroke_width: quickStyle.width,
+              opacity: quickStyle.opacity,
+            };
+          if (s.tool === "highlight")
+            o = {
+              id: newId("obj"),
+              type: "highlight",
+              x: q.x,
+              y: q.y,
+              width: w,
+              height: h,
+              color: "#fde047",
+              opacity: 0.8,
+            };
+          if (s.tool === "whiteout")
+            o = {
+              id: newId("obj"),
+              type: "whiteout",
+              x: q.x,
+              y: q.y,
+              width: w,
+              height: h,
+              color: "#fff",
+            };
+          if (s.tool === "redact")
+            o = {
+              id: newId("obj"),
+              type: "redact",
+              x: q.x,
+              y: q.y,
+              width: w,
+              height: h,
+              color: "#000",
+            };
+          if (s.tool === "line" || s.tool === "arrow") {
+            const a = pxPointToPt(s.startX, s.startY),
+              b = pxPointToPt(x2, y2);
+            o = {
+              id: newId("obj"),
+              type: "line",
+              x1: a.x,
+              y1: a.y,
+              x2: b.x,
+              y2: b.y,
+              color: quickStyle.color,
+              width: quickStyle.width,
+              opacity: quickStyle.opacity,
+              arrow: s.tool === "arrow",
+            };
+          }
+          if (o) {
+            addObject(o);
+            selectedObjectId = o.id;
+            setTool("select");
+            selectObject(o.id);
+          }
+        }
+        function addObject(o) {
+          (objectsByPage[currentPageId] ??= []).push(o);
+          newlyAddedObjectId = o.id;
+          renderObjects();
+          pushHistory();
+        }
+        function selectObject(id) {
+          selectedObjectId = id;
+          setTool("select");
+          renderObjects();
+          renderPropsPanel();
+        }
+        function deleteObject(id, opts = {}) {
+          const list = objectsByPage[currentPageId] || [];
+          const exists = list.some((o) => o.id === id);
+          if (!exists) return;
+          if (selectedObjectId === id) selectedObjectId = null;
+          renderPropsPanel();
+          if (opts.skipAnimation) {
+            objectsByPage[currentPageId] = list.filter((o) => o.id !== id);
+            renderObjects();
+            pushHistory();
+            return;
+          }
+          // Animate the object out, then remove it from state so
+          // deletion always feels immediate and correct on screen.
+          removingObjectIds.add(id);
+          renderObjects();
+          setTimeout(() => {
+            removingObjectIds.delete(id);
+            objectsByPage[currentPageId] = (
+              objectsByPage[currentPageId] || []
+            ).filter((o) => o.id !== id);
+            renderObjects();
+            pushHistory();
+          }, 150);
+        }
+
+        function renderObjects() {
+          els.objectLayer.innerHTML = "";
+          Array.from(els.svgLayer.children).forEach((c) => {
+            if (c.id !== "epPreviewShape") c.remove();
+          });
+          const page = currentPage(),
+            factor = ptToPxFactor(),
+            base = objectsByPage[currentPageId] || [];
+          const source = (
+            textOverlayMode && page?.source === "primary"
+              ? detectedTextByPage[String(page.index)] || []
+              : []
+          ).map((s, i) => ({
+            id: `source-${page.id}-${i}`,
+            type: "source_text",
+            source_id: s.id ?? i,
+            x: s.x,
+            y: s.y,
+            width: Math.max(2, s.width),
+            height: Math.max(2, s.height),
+            text: s.text,
+            font_size: s.font_size || 11,
+            color: s.color || "#111",
+            bold: !!s.bold,
+            italic: !!s.italic,
+            detected_font: s.font || "Unknown",
+          }));
+          [...(textOverlayMode ? source : []), ...base].forEach((obj) => {
+            if (obj.type === "draw") {
+              const e = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "polyline",
+              );
+              e.setAttribute(
+                "points",
+                obj.points
+                  .map((p) => `${p[0] * factor},${p[1] * factor}`)
+                  .join(" "),
+              );
+              e.setAttribute("fill", "none");
+              e.setAttribute("stroke", obj.color);
+              e.setAttribute("stroke-width", Math.max(1, obj.width * factor));
+              e.setAttribute("stroke-linecap", "round");
+              e.style.pointerEvents = "stroke";
+              e.onclick = () => selectObject(obj.id);
+              els.svgLayer.appendChild(e);
+              return;
+            }
+            if (obj.type === "line") {
+              const e = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "line",
+              );
+              e.setAttribute("x1", obj.x1 * factor);
+              e.setAttribute("y1", obj.y1 * factor);
+              e.setAttribute("x2", obj.x2 * factor);
+              e.setAttribute("y2", obj.y2 * factor);
+              e.setAttribute("stroke", obj.color);
+              e.setAttribute("stroke-width", Math.max(1, obj.width * factor));
+              e.style.pointerEvents = "stroke";
+              e.onclick = () => selectObject(obj.id);
+              els.svgLayer.appendChild(e);
+              if (obj.arrow) {
+                const a = Math.atan2(obj.y2 - obj.y1, obj.x2 - obj.x1),
+                  hl = 10,
+                  s = 0.5,
+                  h = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "polyline",
+                  );
+                h.setAttribute(
+                  "points",
+                  `${obj.x2 * factor - hl * Math.cos(a - s)},${obj.y2 * factor - hl * Math.sin(a - s)} ${obj.x2 * factor},${obj.y2 * factor} ${obj.x2 * factor - hl * Math.cos(a + s)},${obj.y2 * factor - hl * Math.sin(a + s)}`,
+                );
+                h.setAttribute("fill", "none");
+                h.setAttribute("stroke", obj.color);
+                h.setAttribute("stroke-width", Math.max(1, obj.width * factor));
+                els.svgLayer.appendChild(h);
+              }
+              return;
+            }
+            if (obj.type === "source_text") {
+              const d = document.createElement("div");
+              d.className =
+                "ep-source-text-overlay" +
+                (currentTool === "erasetext" ? " erase-mode" : "");
+              d.style.left = obj.x * factor + "px";
+              d.style.top = obj.y * factor + "px";
+              d.style.width = obj.width * factor + "px";
+              d.style.height = obj.height * factor + "px";
+              d.style.fontSize = Math.max(7, obj.font_size * factor) + "px";
+              d.textContent = obj.text;
+              d.title =
+                currentTool === "erasetext"
+                  ? "Click to remove this text"
+                  : "Click to edit this text";
+              d.onclick = (e) => {
+                e.stopPropagation();
+                currentTool === "erasetext"
+                  ? createEraseFromSource(obj)
+                  : createEditTextFromSource(obj);
+              };
+              d.ondblclick = (e) => {
+                e.stopPropagation();
+                createEditTextFromSource(obj);
+              };
+              els.objectLayer.appendChild(d);
+              return;
+            }
+            const d = document.createElement("div");
+            d.className =
+              "ep-object" + (obj.id === selectedObjectId ? " selected" : "");
+            d.dataset.objId = obj.id;
+            d.style.left = obj.x * factor + "px";
+            d.style.top = obj.y * factor + "px";
+            d.style.width = obj.width * factor + "px";
+            d.style.height = obj.height * factor + "px";
+            if (obj.type === "text" || obj.type === "edit_text") {
+              const t = document.createElement("div");
+              t.className = "ep-text-object";
+              t.textContent = obj.text;
+              t.style.fontSize = obj.font_size * factor + "px";
+              t.style.color = obj.color;
+              t.style.fontWeight = obj.bold ? "700" : "400";
+              t.style.fontStyle = obj.italic ? "italic" : "normal";
+              t.style.fontFamily =
+                obj.font_family === "tiro"
+                  ? "Times New Roman,serif"
+                  : obj.font_family === "cour"
+                    ? "Courier New,monospace"
+                    : "Arial,sans-serif";
+              t.style.textDecoration = [
+                obj.underline ? "underline" : "",
+                obj.strike ? "line-through" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+              t.style.textAlign =
+                obj.align === 1
+                  ? "center"
+                  : obj.align === 2
+                    ? "right"
+                    : obj.align === 3
+                      ? "justify"
+                      : "left";
+              if (obj.type === "edit_text") {
+                d.style.background = "rgba(255,255,255,.96)";
+                d.style.padding = "1px 2px";
+              }
+              d.appendChild(t);
+              d.ondblclick = () => startTextEditing(obj.id);
+            } else if (obj.type === "rect" || obj.type === "ellipse") {
+              d.style.border = `${obj.stroke_width || 2}px solid ${obj.color}`;
+              d.style.background = obj.fill
+                ? hexToRgba(obj.fill, obj.opacity ?? 1)
+                : "transparent";
+              if (obj.type === "ellipse") d.style.borderRadius = "50%";
+            } else if (obj.type === "highlight")
+              d.style.background = hexToRgba(
+                obj.color,
+                0.45 * (obj.opacity ?? 1),
+              );
+            else if (obj.type === "whiteout" || obj.type === "redact") {
+              d.style.background = obj.color;
+              d.style.opacity = obj.type === "redact" ? 0.86 : 1;
+            } else if (obj.type === "stamp") {
+              const i = document.createElement("img");
+              i.src = obj.preview_url;
+              i.style.cssText = "width:100%;height:100%;object-fit:contain";
+              d.appendChild(i);
+            } else if (obj.type === "note") {
+              d.style.background = obj.fill || "#fef08a";
+              d.style.border = "1px solid #d7c56a";
+              const t = document.createElement("div");
+              t.className = "ep-text-object";
+              t.textContent = obj.text;
+              d.appendChild(t);
+            }
+            if (obj.id === selectedObjectId && obj.type !== "redact") {
+              const h = document.createElement("div");
+              h.className = "ep-object-handle";
+              h.onpointerdown = (e) => startResize(e, obj);
+              d.appendChild(h);
+              const x = document.createElement("div");
+              x.className = "ep-object-delete";
+              x.textContent = "×";
+              x.onclick = (e) => {
+                e.stopPropagation();
+                deleteObject(obj.id);
+              };
+              d.appendChild(x);
+            }
+            d.onpointerdown = (e) => {
+              if (
+                e.target.classList.contains("ep-object-handle") ||
+                e.target.classList.contains("ep-object-delete")
+              )
+                return;
+              if (currentTool !== "select") return;
+              selectObject(obj.id);
+              startMove(e, obj);
+            };
+            // Dynamic add/remove feedback so creating and deleting
+            // objects always reads as an intentional, immediate change.
+            if (removingObjectIds.has(obj.id)) {
+              d.classList.add("ep-anim-out");
+            } else if (obj.id === newlyAddedObjectId) {
+              d.classList.add("ep-anim-in");
+              requestAnimationFrame(() => {
+                d.addEventListener(
+                  "animationend",
+                  () => d.classList.remove("ep-anim-in"),
+                  { once: true },
+                );
+              });
+            }
+            els.objectLayer.appendChild(d);
+          });
+          newlyAddedObjectId = null;
+        }
+        function startMove(e, obj) {
+          const f = ptToPxFactor(),
+            sx = e.clientX,
+            sy = e.clientY,
+            x = obj.x,
+            y = obj.y;
+          const mv = (ev) => {
+            obj.x = x + (ev.clientX - sx) / f;
+            obj.y = y + (ev.clientY - sy) / f;
+            renderObjects();
+          };
+          const up = () => {
+            document.removeEventListener("pointermove", mv);
+            document.removeEventListener("pointerup", up);
+            pushHistory();
+          };
+          document.addEventListener("pointermove", mv);
+          document.addEventListener("pointerup", up);
+        }
+        function startResize(e, obj) {
+          e.stopPropagation();
+          const f = ptToPxFactor(),
+            sx = e.clientX,
+            sy = e.clientY,
+            w = obj.width,
+            h = obj.height;
+          const mv = (ev) => {
+            obj.width = Math.max(6, w + (ev.clientX - sx) / f);
+            obj.height = Math.max(6, h + (ev.clientY - sy) / f);
+            renderObjects();
+          };
+          const up = () => {
+            document.removeEventListener("pointermove", mv);
+            document.removeEventListener("pointerup", up);
+            pushHistory();
+          };
+          document.addEventListener("pointermove", mv);
+          document.addEventListener("pointerup", up);
+        }
+
+        function startTextEditing(id) {
+          selectedObjectId = id;
+          renderObjects();
+          renderPropsPanel();
+          const d = els.objectLayer.querySelector(
+            `[data-obj-id="${id}"] .ep-text-object`,
+          );
+          if (!d) return;
+          d.contentEditable = "true";
+          d.focus();
+          const r = document.createRange();
+          r.selectNodeContents(d);
+          const s = window.getSelection();
+          s.removeAllRanges();
+          s.addRange(r);
+          const commit = () => {
+            const o = getSelectedObject();
+            d.removeEventListener("blur", commit);
+            if (!o) return;
+            const text = d.textContent || "";
+            d.contentEditable = "false";
+            // Dynamic deletion: an emptied text box is removed instead
+            // of being left behind as a dead, invisible object.
+            if (!text.trim() && o.type === "text") {
+              deleteObject(o.id, { skipAnimation: true });
+              showToast("Empty text box removed.");
+              return;
+            }
+            o.text = text;
+            pushHistory();
+          };
+          d.addEventListener("blur", commit);
+        }
+        function createEditTextFromSource(s) {
+          const o = {
+            id: newId("obj"),
+            type: "edit_text",
+            source_id: s.source_id,
+            x: s.x,
+            y: s.y,
+            width: Math.max(20, s.width),
+            height: Math.max(12, s.height),
+            text: s.text,
+            original_text: s.text,
+            font_size: s.font_size || 11,
+            color: s.color || "#111",
+            bold: !!s.bold,
+            italic: !!s.italic,
+            underline: false,
+            strike: false,
+            font_family: closestFont(s.detected_font),
+            detected_font: s.detected_font,
+            align: 0,
+            opacity: 1,
+          };
+          objectsByPage[currentPageId].push(o);
+          selectedObjectId = o.id;
+          renderObjects();
+          renderPropsPanel();
+          openTextEditModal(o);
+        }
+        function createEraseFromSource(s) {
+          addObject({
+            id: newId("obj"),
+            type: "redact",
+            x: s.x - 1,
+            y: s.y - 1,
+            width: s.width + 2,
+            height: s.height + 2,
+            color: "#fff",
+            source_text: s.text,
+          });
+          setTool("select");
+          showToast(
+            "Text marked for permanent removal. Export to apply.",
+            "success",
+          );
+        }
+        function closestFont(n) {
+          n = String(n || "").toLowerCase();
+          return n.includes("cour") || n.includes("mono")
+            ? "cour"
+            : n.includes("times") || n.includes("roman") || n.includes("serif")
+              ? "tiro"
+              : "helv";
+        }
+
+        function renderPropsPanel() {
+          const o = getSelectedObject();
+          els.propsPanel.innerHTML = "";
+          if (!o) {
+            els.propsPanel.appendChild(els.emptyProps);
+            return;
+          }
+          const s = document.createElement("div");
+          s.className = "ep-props-section";
+          s.appendChild(propTitle(labelForType(o.type)));
+          if (o.type === "text" || o.type === "edit_text") {
+            s.appendChild(
+              fieldTextarea("Text", o.text, (v) => {
+                o.text = v;
+                renderObjects();
+              }),
+            );
+            if (o.type === "edit_text") {
+              const d = document.createElement("div");
+              d.className = "ep-detected-font";
+              d.innerHTML = `<b>Detected:</b> ${escapeHtml(o.detected_font || "Unknown")} · <b>Closest:</b> ${escapeHtml(o.font_family || "helv")}`;
+              s.appendChild(d);
+            }
+            s.appendChild(
+              fieldSelect(
+                "Font",
+                o.font_family || "helv",
+                [
+                  ["helv", "Helvetica"],
+                  ["tiro", "Times"],
+                  ["cour", "Courier"],
+                ],
+                (v) => {
+                  o.font_family = v;
+                  renderObjects();
+                },
+              ),
+            );
+            s.appendChild(
+              fieldRow([
+                fieldNumber("Font size", o.font_size, (v) => {
+                  o.font_size = v;
+                  renderObjects();
+                }),
+                fieldColor(
+                  "Color",
+                  o.color,
+                  ["#111111", "#dc2626", "#2563eb", "#16a34a"],
+                  (v) => {
+                    o.color = v;
+                    renderObjects();
+                  },
+                ),
+              ]),
+            );
+            ["bold", "italic", "underline", "strike"].forEach((k) =>
+              s.appendChild(
+                fieldToggleRow(k[0].toUpperCase() + k.slice(1), !!o[k], (v) => {
+                  o[k] = v;
+                  renderObjects();
+                }),
+              ),
+            );
+            s.appendChild(
+              fieldSelect(
+                "Alignment",
+                String(o.align || 0),
+                [
+                  ["0", "Left"],
+                  ["1", "Center"],
+                  ["2", "Right"],
+                  ["3", "Justify"],
+                ],
+                (v) => {
+                  o.align = +v;
+                  renderObjects();
+                },
+              ),
+            );
+          } else if (o.type === "note") {
+            s.appendChild(
+              fieldTextarea("Note", o.text, (v) => {
+                o.text = v;
+                renderObjects();
+              }),
+            );
+            s.appendChild(
+              fieldColor(
+                "Text color",
+                o.color || "#111",
+                ["#111111", "#dc2626", "#2563eb"],
+                (v) => {
+                  o.color = v;
+                  renderObjects();
+                },
+              ),
+            );
+            s.appendChild(
+              fieldColor(
+                "Background",
+                o.fill || "#fef08a",
+                ["#fef08a", "#bfdbfe", "#bbf7d0", "#fecaca", "#fff"],
+                (v) => {
+                  o.fill = v;
+                  renderObjects();
+                },
+              ),
+            );
+          } else if (["rect", "ellipse"].includes(o.type)) {
+            s.appendChild(
+              fieldColor(
+                "Stroke",
+                o.color,
+                ["#111111", "#dc2626", "#2563eb", "#16a34a"],
+                (v) => {
+                  o.color = v;
+                  renderObjects();
+                },
+              ),
+            );
+            s.appendChild(
+              fieldColorOptional(
+                "Fill",
+                o.fill,
+                ["", "#fde047", "#93c5fd", "#86efac"],
+                (v) => {
+                  o.fill = v;
+                  renderObjects();
+                },
+              ),
+            );
+            s.appendChild(
+              fieldNumber("Stroke width", o.stroke_width, (v) => {
+                o.stroke_width = v;
+                renderObjects();
+              }),
+            );
+          } else if (o.type === "line" || o.type === "draw") {
+            s.appendChild(
+              fieldColor(
+                "Color",
+                o.color,
+                ["#111111", "#dc2626", "#2563eb", "#16a34a"],
+                (v) => {
+                  o.color = v;
+                  renderObjects();
+                },
+              ),
+            );
+            s.appendChild(
+              fieldNumber("Width", o.width, (v) => {
+                o.width = v;
+                renderObjects();
+              }),
+            );
+            if (o.type === "line")
+              s.appendChild(
+                fieldToggleRow("Arrowhead", !!o.arrow, (v) => {
+                  o.arrow = v;
+                  renderObjects();
+                }),
+              );
+          } else if (o.type === "highlight")
+            s.appendChild(
+              fieldColor(
+                "Color",
+                o.color,
+                ["#fde047", "#86efac", "#93c5fd", "#fca5a5"],
+                (v) => {
+                  o.color = v;
+                  renderObjects();
+                },
+              ),
+            );
+          else if (o.type === "whiteout")
+            s.appendChild(
+              fieldColor("Cover color", o.color, ["#fff", "#000"], (v) => {
+                o.color = v;
+                renderObjects();
+              }),
+            );
+          else if (o.type === "redact") {
+            const w = document.createElement("div");
+            w.className = "ep-redact-warning";
+            w.textContent = "Permanent removal is applied during export.";
+            s.appendChild(w);
+          }
+          els.propsPanel.appendChild(s);
+          const d = document.createElement("div");
+          d.className = "ep-props-section";
+          const b = document.createElement("button");
+          b.className = "ep-btn ep-btn-danger";
+          b.textContent = "Delete object";
+          b.onclick = () => deleteObject(o.id);
+          d.appendChild(b);
+          els.propsPanel.appendChild(d);
+        }
+        function labelForType(t) {
+          return (
+            {
+              text: "Text",
+              edit_text: "Edited text",
+              note: "Note",
+              rect: "Rectangle",
+              ellipse: "Ellipse",
+              line: "Line",
+              draw: "Freehand",
+              highlight: "Highlight",
+              whiteout: "Whiteout",
+              redact: "Redaction",
+              stamp: "Image / signature",
+            }[t] || t
+          );
+        }
+        function propTitle(t) {
+          const d = document.createElement("div");
+          d.className = "ep-props-title";
+          d.textContent = t;
+          return d;
+        }
+        function fieldRow(cs) {
+          const d = document.createElement("div");
+          d.className = "ep-field-row";
+          cs.forEach((c) => d.appendChild(c));
+          return d;
+        }
+        function fieldTextarea(l, v, fn) {
+          const d = document.createElement("div");
+          d.className = "ep-field";
+          d.innerHTML = `<label>${l}</label>`;
+          const t = document.createElement("textarea");
+          t.value = v || "";
+          t.oninput = () => fn(t.value);
+          t.onchange = pushHistory;
+          d.appendChild(t);
+          return d;
+        }
+        function fieldNumber(l, v, fn) {
+          const d = document.createElement("div");
+          d.className = "ep-field";
+          d.innerHTML = `<label>${l}</label>`;
+          const i = document.createElement("input");
+          i.type = "number";
+          i.value = v ?? 0;
+          i.oninput = () => fn(parseFloat(i.value) || 0);
+          i.onchange = pushHistory;
+          d.appendChild(i);
+          return d;
+        }
+        function fieldSelect(l, v, opts, fn) {
+          const d = document.createElement("div");
+          d.className = "ep-field";
+          d.innerHTML = `<label>${l}</label>`;
+          const s = document.createElement("select");
+          opts.forEach(([a, b]) => {
+            const o = document.createElement("option");
+            o.value = a;
+            o.textContent = b;
+            o.selected = String(a) === String(v);
+            s.appendChild(o);
+          });
+          s.onchange = () => {
+            fn(s.value);
+            pushHistory();
+            renderPropsPanel();
+          };
+          d.appendChild(s);
+          return d;
+        }
+        function fieldToggleRow(l, v, fn) {
+          const d = document.createElement("div");
+          d.className = "ep-checkbox-row ep-field";
+          const lab = document.createElement("label");
+          lab.style.margin = "0";
+          lab.textContent = l;
+          const sw = document.createElement("label");
+          sw.className = "ep-switch";
+          const i = document.createElement("input");
+          i.type = "checkbox";
+          i.checked = v;
+          const tr = document.createElement("span");
+          tr.className = "ep-switch-track";
+          tr.innerHTML = '<span class="ep-switch-thumb"></span>';
+          i.onchange = () => {
+            fn(i.checked);
+            pushHistory();
+          };
+          sw.append(i, tr);
+          d.append(lab, sw);
+          return d;
+        }
+        function fieldColor(l, v, ps, fn) {
+          const d = document.createElement("div");
+          d.className = "ep-field";
+          d.innerHTML = `<label>${l}</label>`;
+          const r = document.createElement("div");
+          r.className = "ep-color-row";
+          ps.forEach((c) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "ep-color-swatch" + (c === v ? " active" : "");
+            b.style.background = c;
+            b.onclick = () => {
+              fn(c);
+              pushHistory();
+              renderPropsPanel();
+            };
+            r.appendChild(b);
+          });
+          const i = document.createElement("input");
+          i.type = "color";
+          i.className = "ep-color-custom";
+          i.value = v || "#000";
+          i.oninput = () => fn(i.value);
+          i.onchange = pushHistory;
+          r.appendChild(i);
+          d.appendChild(r);
+          return d;
+        }
+        function fieldColorOptional(l, v, ps, fn) {
+          return fieldColor(l, v || "", ps, fn);
+        }
+
+        function updateQuickStyleUI() {
+          els.quickColor.value = quickStyle.color;
+          els.quickWidth.value = quickStyle.width;
+          els.quickWidthValue.textContent = quickStyle.width + " pt";
+          els.quickOpacity.value = Math.round(quickStyle.opacity * 100);
+          els.quickOpacityValue.textContent =
+            Math.round(quickStyle.opacity * 100) + "%";
+          document
+            .querySelectorAll("[data-quick-color]")
+            .forEach((b) =>
+              b.classList.toggle(
+                "active",
+                b.dataset.quickColor.toLowerCase() ===
+                  quickStyle.color.toLowerCase(),
+              ),
+            );
+        }
+        function applyQuickStyle() {
+          const o = getSelectedObject();
+          if (!o) return;
+          if (["draw", "line"].includes(o.type)) {
+            o.color = quickStyle.color;
+            o.width = quickStyle.width;
+            o.opacity = quickStyle.opacity;
+          } else if (["rect", "ellipse"].includes(o.type)) {
+            o.color = quickStyle.color;
+            o.stroke_width = quickStyle.width;
+            o.opacity = quickStyle.opacity;
+          } else if (
+            ["text", "edit_text", "note", "highlight"].includes(o.type)
+          )
+            o.color = quickStyle.color;
+          renderObjects();
+          renderPropsPanel();
+          pushHistory();
+        }
+        els.quickColor.oninput = (e) => {
+          quickStyle.color = e.target.value;
+          updateQuickStyleUI();
+          applyQuickStyle();
+        };
+        els.quickWidth.oninput = (e) => {
+          quickStyle.width = +e.target.value;
+          updateQuickStyleUI();
+          applyQuickStyle();
+        };
+        els.quickOpacity.oninput = (e) => {
+          quickStyle.opacity = (+e.target.value || 100) / 100;
+          updateQuickStyleUI();
+          applyQuickStyle();
+        };
+        document.querySelectorAll("[data-quick-color]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              quickStyle.color = b.dataset.quickColor;
+              updateQuickStyleUI();
+              applyQuickStyle();
+            }),
+        );
+        updateQuickStyleUI();
+
+        function openStampModal() {
+          els.stampModal.classList.add("active");
+          renderStampLibrary();
+        }
+        function renderStampLibrary() {
+          els.stampLibrary.innerHTML = "";
+          stampLibraryData.forEach((s) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.style.cssText =
+              "width:64px;height:64px;border:1px solid #dfe3e8;border-radius:8px;overflow:hidden;padding:0;background:#fff";
+            const i = document.createElement("img");
+            i.src = s.preview_url;
+            i.style.cssText = "width:100%;height:100%;object-fit:contain";
+            b.appendChild(i);
+            b.onclick = () => placeStamp(s);
+            els.stampLibrary.appendChild(b);
+          });
+        }
+        els.stampInput.onchange = async (e) => {
+          const f = e.target.files[0];
+          if (!f) return;
+          const fd = new FormData();
+          fd.append("image", f);
+          try {
+            const r = await fetch("{{ url_for('edit_pdf.upload_stamp') }}", {
+                method: "POST",
+                body: fd,
+              }),
+              d = await r.json();
+            if (!d.success) {
+              showToast(d.error || "Could not upload image.", "error");
+              return;
+            }
+            stampLibraryData.push(d);
+            renderStampLibrary();
+            placeStamp(d);
+          } catch (err) {
+            showToast("Could not upload image.", "error");
+          } finally {
+            e.target.value = "";
+          }
+        };
+        function placeStamp(s) {
+          const p = currentPage();
+          if (!p) return;
+          const w = Math.min(140, p.width_pt * 0.35),
+            h = w * (s.height / s.width),
+            o = {
+              id: newId("obj"),
+              type: "stamp",
+              stamp_id: s.stamp_id,
+              preview_url: s.preview_url,
+              x: (p.width_pt - w) / 2,
+              y: (p.height_pt - h) / 2,
+              width: w,
+              height: h,
+            };
+          addObject(o);
+          selectObject(o.id);
+          closeModal(els.stampModal);
+        }
+
+        function openBackgroundModal() {
+          const bg = currentBackground(),
+            op = pageBackgrounds[currentPageId + "_opacity"] ?? 1;
+          els.backgroundColor.value = bg;
+          els.backgroundHex.value = bg;
+          els.backgroundOpacity.value = Math.round(op * 100);
+          els.backgroundOpacityLabel.textContent = Math.round(op * 100) + "%";
+          els.backgroundModal.classList.add("active");
+        }
+        els.backgroundBtn.onclick = openBackgroundModal;
+        els.backgroundColor.oninput = (e) =>
+          (els.backgroundHex.value = e.target.value);
+        els.backgroundHex.oninput = (e) => {
+          if (/^#[0-9a-fA-F]{6}$/.test(e.target.value))
+            els.backgroundColor.value = e.target.value;
+        };
+        els.backgroundOpacity.oninput = (e) =>
+          (els.backgroundOpacityLabel.textContent = e.target.value + "%");
+        function setBg(id) {
+          pageBackgrounds[id] = els.backgroundColor.value;
+          pageBackgrounds[id + "_opacity"] =
+            (+els.backgroundOpacity.value || 100) / 100;
+        }
+        els.backgroundCurrent.onclick = () => {
+          setBg(currentPageId);
+          closeModal(els.backgroundModal);
+          renderCurrentPage();
+          pushHistory();
+        };
+        els.backgroundAll.onclick = () => {
+          pageList.forEach((p) => setBg(p.id));
+          closeModal(els.backgroundModal);
+          renderCurrentPage();
+          pushHistory();
+        };
+
+        function openTextEditModal(o) {
+          activeTextEditObjectId = o.id;
+          els.textEditDetected.textContent = `Detected: ${o.detected_font || "Unknown"} · Closest: ${o.font_family || "helv"}`;
+          els.textEditValue.value = o.text || "";
+          els.textEditFont.value = o.font_family || "helv";
+          els.textEditSize.value = o.font_size || 11;
+          els.textEditX.value = o.x.toFixed(1);
+          els.textEditY.value = o.y.toFixed(1);
+          els.textEditW.value = o.width.toFixed(1);
+          els.textEditH.value = o.height.toFixed(1);
+          els.textEditColor.value = o.color || "#111";
+          els.textEditAlign.value = String(o.align || 0);
+          els.textEditBold.checked = !!o.bold;
+          els.textEditItalic.checked = !!o.italic;
+          els.textEditUnderline.checked = !!o.underline;
+          els.textEditStrike.checked = !!o.strike;
+          els.textEditModal.classList.add("active");
+          setTimeout(() => els.textEditValue.focus(), 50);
+        }
+        els.textEditApply.onclick = () => {
+          const o = getSelectedObject();
+          if (!o || o.id !== activeTextEditObjectId) return;
+          const newText = els.textEditValue.value;
+          // Dynamic deletion: applying an edit that empties an
+          // inserted-text-replacement box removes it instead of
+          // leaving a blank, unusable object behind.
+          if (!newText.trim() && o.type === "edit_text") {
+            closeModal(els.textEditModal);
+            activeTextEditObjectId = null;
+            setTool("select");
+            deleteObject(o.id, { skipAnimation: true });
+            showToast("Text removed.", "success");
+            return;
+          }
+          o.text = newText;
+          o.font_family = els.textEditFont.value;
+          o.font_size = Math.max(4, +els.textEditSize.value || 11);
+          o.x = +els.textEditX.value || o.x;
+          o.y = +els.textEditY.value || o.y;
+          o.width = Math.max(5, +els.textEditW.value || o.width);
+          o.height = Math.max(5, +els.textEditH.value || o.height);
+          o.color = els.textEditColor.value;
+          o.align = +els.textEditAlign.value || 0;
+          o.bold = els.textEditBold.checked;
+          o.italic = els.textEditItalic.checked;
+          o.underline = els.textEditUnderline.checked;
+          o.strike = els.textEditStrike.checked;
+          closeModal(els.textEditModal);
+          activeTextEditObjectId = null;
+          setTool("select");
+          pushHistory();
+          showToast("Existing text updated.", "success");
+        };
+        els.textEditCancel.onclick = () => {
+          const o = getSelectedObject();
+          if (o?.type === "edit_text" && o.original_text === o.text)
+            deleteObject(o.id, { skipAnimation: true });
+          closeModal(els.textEditModal);
+          activeTextEditObjectId = null;
+          setTool("select");
+        };
+
+        document.querySelectorAll("[data-close-modal]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              const m = b.closest(".ep-modal-overlay");
+              closeModal(m);
+              if (m === els.stampModal && currentTool === "stamp")
+                setTool("select");
+              if (m === els.textEditModal) {
+                activeTextEditObjectId = null;
+                setTool("select");
+              }
+            }),
+        );
+        document.querySelectorAll(".ep-modal-overlay").forEach(
+          (m) =>
+            (m.onclick = (e) => {
+              if (e.target === m) {
+                closeModal(m);
+                if (currentTool === "stamp") setTool("select");
+              }
+            }),
+        );
+
+        els.watermarkBtn.onclick = () =>
+          els.watermarkModal.classList.add("active");
+        els.pageNumberBtn.onclick = () =>
+          els.pageNumberModal.classList.add("active");
+        $("epWatermarkEnabled").onchange = (e) =>
+          (watermarkSettings.enabled = e.target.checked);
+        $("epWatermarkText").oninput = (e) =>
+          (watermarkSettings.text = e.target.value);
+        $("epWatermarkSize").oninput = (e) =>
+          (watermarkSettings.font_size = +e.target.value || 48);
+        $("epWatermarkOpacity").oninput = (e) =>
+          (watermarkSettings.opacity = (+e.target.value || 30) / 100);
+        document
+          .querySelectorAll("#epWatermarkColorRow .ep-color-swatch")
+          .forEach(
+            (b) =>
+              (b.onclick = () => {
+                document
+                  .querySelectorAll("#epWatermarkColorRow .ep-color-swatch")
+                  .forEach((x) => x.classList.remove("active"));
+                b.classList.add("active");
+                watermarkSettings.color = b.dataset.color;
+              }),
+          );
+        $("epWatermarkColorCustom").oninput = (e) =>
+          (watermarkSettings.color = e.target.value);
+        $("epPageNumberEnabled").onchange = (e) =>
+          (pageNumberSettings.enabled = e.target.checked);
+        $("epPageNumberFormat").onchange = (e) =>
+          (pageNumberSettings.format = e.target.value);
+        $("epPageNumberPosition").onchange = (e) =>
+          (pageNumberSettings.position = e.target.value);
+        $("epPageNumberSize").oninput = (e) =>
+          (pageNumberSettings.font_size = +e.target.value || 10);
+
+        async function exportPdf() {
+          const pagesToExport = selectMode
+            ? pageList.filter((p) => p.selected)
+            : pageList;
+          if (!pagesToExport.length) {
+            showToast("Select at least one page.", "error");
+            return;
+          }
+          const pages = pagesToExport.map((p) => ({
+            source: p.source,
+            index: p.index,
+            rotation: p.rotation,
+            width: p.width_pt,
+            height: p.height_pt,
+          }));
+          const objects = {};
+          pagesToExport.forEach(
+            (p, i) =>
+              (objects[i] = (objectsByPage[p.id] || []).map((o) => {
+                const c = { ...o };
+                delete c.id;
+                return c;
+              })),
+          );
+          const payload = {
+            file_id: primaryFileId,
+            merged_file_id: mergedFileId,
+            pages,
+            objects,
+            watermark: watermarkSettings,
+            page_numbers: pageNumberSettings,
+            background: Object.fromEntries(
+              pagesToExport.map((p, i) => [
+                String(i),
+                {
+                  enabled: !!pageBackgrounds[p.id],
+                  color: pageBackgrounds[p.id] || "#fff",
+                  opacity:
+                    pageBackgrounds[p.id + "_opacity"] ??
+                    (p.source === "blank" ? 1 : 0),
+                },
+              ]),
+            ),
+          };
+          els.exportBtn.disabled = true;
+          els.exportBtn.textContent = "Exporting…";
+          try {
+            const r = await fetch("{{ url_for('edit_pdf.process') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              }),
+              d = await r.json();
+            if (!d.success) {
+              showToast(d.error || "Export failed.", "error");
+              return;
+            }
+            const u = d.download_url + "?preview=1";
+            els.previewFrame.src = u;
+            els.previewDownload.href = d.download_url;
+            els.previewNewTab.onclick = () =>
+              window.open(u, "_blank", "noopener");
+            els.previewMeta.textContent = `${d.page_count} page${d.page_count === 1 ? "" : "s"} • Preview before download`;
+            els.previewModal.classList.add("active");
+            showToast("Preview generated.", "success");
+          } catch (e) {
+            console.error(e);
+            showToast("Could not export the PDF.", "error");
+          } finally {
+            els.exportBtn.disabled = false;
+            els.exportBtn.textContent = "↓ Export PDF";
+          }
+        }
+        els.exportBtn.onclick = exportPdf;
+        els.previewBtn.onclick = exportPdf;
+        [els.previewClose, els.previewDone].forEach(
+          (b) =>
+            (b.onclick = () => {
+              closeModal(els.previewModal);
+              els.previewFrame.src = "about:blank";
+            }),
+        );
+
+        els.searchBtn.onclick = () => {
+          els.searchModal.classList.add("active");
+          els.searchInput.focus();
+        };
+        async function runSearch() {
+          const q = els.searchInput.value.trim();
+          if (!q || !primaryFileId) return;
+          els.searchResults.innerHTML =
+            '<div class="ep-search-loading">Searching…</div>';
+          try {
+            const r = await fetch(
+                "{{ url_for('edit_pdf.search_text') }}?file_id=" +
+                  encodeURIComponent(primaryFileId) +
+                  "&q=" +
+                  encodeURIComponent(q),
+              ),
+              d = await r.json();
+            if (!d.success) throw Error(d.error || "Search failed");
+            els.searchResults.innerHTML = "";
+            if (!d.results.length) {
+              els.searchResults.innerHTML =
+                '<div class="ep-search-empty">No matches found.</div>';
+              return;
+            }
+            d.results.forEach((x) => {
+              const b = document.createElement("button");
+              b.type = "button";
+              b.className = "ep-search-result";
+              b.innerHTML = `<b>Page ${x.page + 1}</b><span>${escapeHtml(x.text)}</span>`;
+              b.onclick = () => {
+                const p = pageList.find(
+                  (y) => y.source === "primary" && y.index === x.page,
+                );
+                if (p) {
+                  currentPageId = p.id;
+                  renderPagesList();
+                  renderCurrentPage();
+                  closeModal(els.searchModal);
+                }
+              };
+              els.searchResults.appendChild(b);
+            });
+          } catch (e) {
+            els.searchResults.innerHTML = `<div class="ep-search-empty">${escapeHtml(e.message)}</div>`;
+          }
+        }
+        els.searchRun.onclick = runSearch;
+        els.searchInput.onkeydown = (e) => {
+          if (e.key === "Enter") runSearch();
+        };
+
+        els.mobilePropsBtn.onclick = () =>
+          els.propsPanel.classList.toggle("mobile-open");
+        document.addEventListener("keydown", (e) => {
+          if (!els.editor.classList.contains("active")) return;
+          const tag = (e.target.tagName || "").toLowerCase();
+          if (
+            tag === "input" ||
+            tag === "textarea" ||
+            e.target.isContentEditable
+          )
+            return;
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+            e.preventDefault();
+            e.shiftKey ? redo() : undo();
+          } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+            e.preventDefault();
+            redo();
+          } else if (e.key === "Delete" || e.key === "Backspace") {
+            if (selectedObjectId) {
+              e.preventDefault();
+              deleteObject(selectedObjectId);
+            }
+          } else if (e.key.toLowerCase() === "t") setTool("text");
+          else if (e.key.toLowerCase() === "e") setTool("edittext");
+          else if (e.key.toLowerCase() === "p") exportPdf();
+          else if (e.key === "Escape") {
+            selectedObjectId = null;
+            renderObjects();
+            renderPropsPanel();
+          }
+        });
+        window.addEventListener("resize", () => {
+          if (els.editor.classList.contains("active")) fitZoom();
+        });
+      </script>
+    </div>
+  </body>
+</html>

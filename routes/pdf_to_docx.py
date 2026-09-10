@@ -1,0 +1,1227 @@
+from flask import (
+    Blueprint,
+    request,
+    render_template,
+    redirect,
+    url_for,
+    send_file,
+    jsonify,
+    flash,
+    abort,
+)
+from pathlib import Path
+from werkzeug.utils import secure_filename
+from threading import Thread, Lock
+from datetime import datetime
+import os
+import json
+import shutil
+import time
+import uuid
+import logging
+import traceback
+
+from services.pdf_service import convert_pdf_to_docx
+
+
+# ============================================================
+# BLUEPRINT
+# ============================================================
+
+pdf_to_docx_bp = Blueprint(
+    "pdf_to_docx",
+    __name__,
+)
+
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+TEMP_FOLDER = (
+    BASE_DIR
+    / "temp"
+    / "pdf_to_docx"
+)
+
+TEMP_FOLDER.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+
+# Temporary files live for 30 minutes by default.
+TEMP_FILE_TTL = int(
+    os.getenv(
+        "PDF_TO_DOCX_TEMP_TTL",
+        30 * 60,
+    )
+)
+
+# Cleanup runs every 5 minutes.
+CLEANUP_INTERVAL = int(
+    os.getenv(
+        "PDF_TO_DOCX_CLEANUP_INTERVAL",
+        5 * 60,
+    )
+)
+
+
+# Maximum upload size: 100 MB.
+MAX_FILE_SIZE = 100 * 1024 * 1024
+
+
+ALLOWED_EXTENSIONS = {
+    ".pdf",
+}
+
+
+logger = logging.getLogger(__name__)
+
+
+# Prevent multiple cleanup operations from running together.
+_cleanup_lock = Lock()
+
+
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+
+def allowed_file(filename):
+    """Return True if the filename has an allowed extension."""
+
+    if not filename:
+        return False
+
+    return Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
+
+
+def get_user_id():
+    """
+    Get a stable user identifier.
+
+    The application may use Flask-Login or session-based
+    authentication. We avoid making the conversion system
+    dependent on either one.
+    """
+
+    try:
+        from flask_login import current_user
+
+        if current_user.is_authenticated:
+            return str(current_user.get_id())
+
+    except Exception:
+        pass
+
+    # Fallback for applications that store user information
+    # inside Flask session.
+    try:
+        from flask import session
+
+        user = session.get("user")
+
+        if isinstance(user, dict):
+            user_id = (
+                user.get("id")
+                or user.get("user_id")
+                or user.get("username")
+                or user.get("email")
+            )
+
+            if user_id:
+                return str(user_id)
+
+    except Exception:
+        pass
+
+    return "guest"
+
+
+def get_user_folder():
+    """Return the temporary folder for the current user."""
+
+    user_id = secure_filename(get_user_id())
+
+    if not user_id:
+        user_id = "guest"
+
+    folder = TEMP_FOLDER / user_id
+
+    folder.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    return folder
+
+
+def create_conversion_folder():
+    """
+    Create a unique temporary folder for one conversion.
+    """
+
+    user_folder = get_user_folder()
+
+    conversion_id = uuid.uuid4().hex
+
+    conversion_folder = (
+        user_folder / conversion_id
+    )
+
+    conversion_folder.mkdir(
+        parents=True,
+        exist_ok=False,
+    )
+
+    return conversion_id, conversion_folder
+
+
+def metadata_path(conversion_folder):
+    """Return metadata file path."""
+
+    return conversion_folder / ".metadata.json"
+
+
+def save_metadata(
+    conversion_folder,
+    conversion_id,
+    original_filename,
+    output_filename,
+):
+    """Save conversion metadata."""
+
+    now = time.time()
+
+    metadata = {
+        "id": conversion_id,
+        "original_filename": original_filename,
+        "output_filename": output_filename,
+        "created_at": now,
+        "expires_at": now + TEMP_FILE_TTL,
+    }
+
+    metadata_file = metadata_path(
+        conversion_folder
+    )
+
+    with open(
+        metadata_file,
+        "w",
+        encoding="utf-8",
+    ) as file:
+        json.dump(
+            metadata,
+            file,
+            indent=2,
+        )
+
+    return metadata
+
+
+def load_metadata(conversion_folder):
+    """Load conversion metadata."""
+
+    file = metadata_path(
+        conversion_folder
+    )
+
+    if not file.exists():
+        return None
+
+    try:
+        with open(
+            file,
+            "r",
+            encoding="utf-8",
+        ) as f:
+            return json.load(f)
+
+    except Exception:
+        logger.exception(
+            "Could not read metadata: %s",
+            file,
+        )
+
+        return None
+
+
+def find_conversion_folder(
+    conversion_id,
+):
+    """
+    Find a conversion belonging to the current user.
+
+    This prevents users from accessing another user's
+    temporary conversion simply by knowing an ID.
+    """
+
+    if not conversion_id:
+        return None
+
+    user_folder = get_user_folder()
+
+    # UUIDs generated by this module are hexadecimal.
+    # Reject suspicious paths before touching the filesystem.
+    if not conversion_id.isalnum():
+        return None
+
+    conversion_folder = (
+        user_folder / conversion_id
+    )
+
+    if not conversion_folder.exists():
+        return None
+
+    if not conversion_folder.is_dir():
+        return None
+
+    return conversion_folder
+
+
+def delete_conversion_folder(
+    conversion_folder,
+):
+    """Delete one conversion folder."""
+
+    if not conversion_folder:
+        return
+
+    try:
+        if conversion_folder.exists():
+            shutil.rmtree(
+                conversion_folder,
+                ignore_errors=True,
+            )
+
+    except Exception:
+        logger.exception(
+            "Failed to delete temporary folder: %s",
+            conversion_folder,
+        )
+
+
+def format_timestamp(timestamp):
+    """Convert UNIX timestamp to readable time."""
+
+    try:
+        return datetime.fromtimestamp(
+            timestamp
+        ).strftime(
+            "%d %b %Y, %I:%M %p"
+        )
+
+    except Exception:
+        return ""
+
+
+def cleanup_expired_files():
+    """
+    Delete expired temporary conversions.
+
+    Expiration is based on metadata.expires_at,
+    not on the last time the user previewed/downloaded
+    the file.
+    """
+
+    if not _cleanup_lock.acquire(
+        blocking=False
+    ):
+        return
+
+    try:
+
+        if not TEMP_FOLDER.exists():
+            return
+
+        current_time = time.time()
+
+        for user_folder in TEMP_FOLDER.iterdir():
+
+            if not user_folder.is_dir():
+                continue
+
+            for conversion_folder in user_folder.iterdir():
+
+                if not conversion_folder.is_dir():
+                    continue
+
+                metadata = load_metadata(
+                    conversion_folder
+                )
+
+                should_delete = False
+
+                if metadata:
+                    expires_at = metadata.get(
+                        "expires_at"
+                    )
+
+                    if expires_at:
+                        try:
+                            if current_time >= float(
+                                expires_at
+                            ):
+                                should_delete = True
+
+                        except (
+                            ValueError,
+                            TypeError,
+                        ):
+                            should_delete = True
+
+                else:
+                    # If metadata is missing, use the
+                    # folder modification time as fallback.
+                    try:
+                        age = (
+                            current_time
+                            - conversion_folder.stat().st_mtime
+                        )
+
+                        if age >= TEMP_FILE_TTL:
+                            should_delete = True
+
+                    except OSError:
+                        should_delete = True
+
+                if should_delete:
+                    logger.info(
+                        "Deleting expired PDF→DOCX conversion: %s",
+                        conversion_folder,
+                    )
+
+                    delete_conversion_folder(
+                        conversion_folder
+                    )
+
+            # Remove empty user folder.
+            try:
+                if user_folder.exists():
+                    next(
+                        user_folder.iterdir()
+                    )
+
+            except StopIteration:
+                try:
+                    user_folder.rmdir()
+                except OSError:
+                    pass
+
+            except OSError:
+                pass
+
+    except Exception:
+        logger.exception(
+            "Temporary PDF→DOCX cleanup failed"
+        )
+
+    finally:
+        _cleanup_lock.release()
+
+
+def cleanup_worker():
+    """
+    Background cleanup worker.
+
+    Runs every CLEANUP_INTERVAL seconds.
+    """
+
+    while True:
+
+        try:
+            time.sleep(
+                CLEANUP_INTERVAL
+            )
+
+            cleanup_expired_files()
+
+        except Exception:
+            logger.exception(
+                "PDF→DOCX cleanup worker error"
+            )
+
+
+# ============================================================
+# START CLEANUP THREAD
+# ============================================================
+
+_cleanup_thread_started = False
+_cleanup_thread_lock = Lock()
+
+
+def start_cleanup_thread():
+    """Start cleanup worker once."""
+
+    global _cleanup_thread_started
+
+    with _cleanup_thread_lock:
+
+        if _cleanup_thread_started:
+            return
+
+        thread = Thread(
+            target=cleanup_worker,
+            daemon=True,
+            name="pdf-to-docx-cleanup",
+        )
+
+        thread.start()
+
+        _cleanup_thread_started = True
+
+        logger.info(
+            "PDF→DOCX cleanup thread started. "
+            "TTL=%s seconds, interval=%s seconds",
+            TEMP_FILE_TTL,
+            CLEANUP_INTERVAL,
+        )
+
+
+start_cleanup_thread()
+
+
+# ============================================================
+# MAIN PDF → DOCX PAGE
+# IMPORTANT:
+# Endpoint = pdf_to_docx.pdf_to_docx
+# ============================================================
+
+@pdf_to_docx_bp.route(
+    "/pdf-to-docx",
+    methods=["GET"],
+)
+def pdf_to_docx():
+    """
+    PDF → DOCX page.
+
+    This exact function name is required because
+    dashboard.html uses:
+
+        url_for('pdf_to_docx.pdf_to_docx')
+    """
+
+    # Clean expired files before showing history.
+    cleanup_expired_files()
+
+    history = get_conversion_history()
+
+    return render_template(
+        "pdf_to_docx.html",
+        history=history,
+    )
+
+
+# ============================================================
+# CONVERT PDF → DOCX
+# ============================================================
+
+@pdf_to_docx_bp.route(
+    "/pdf-to-docx/convert",
+    methods=["POST"],
+)
+def convert():
+    """Upload and convert PDF to DOCX."""
+
+    # --------------------------------------------------------
+    # Check uploaded file
+    # --------------------------------------------------------
+
+    pdf_file = request.files.get(
+        "pdf_file"
+    )
+
+    if pdf_file is None:
+        pdf_file = request.files.get(
+            "file"
+        )
+
+    if pdf_file is None:
+        flash(
+            "Please select a PDF file.",
+            "error",
+        )
+
+        return redirect(
+            url_for(
+                "pdf_to_docx.pdf_to_docx"
+            )
+        )
+
+    if not pdf_file.filename:
+        flash(
+            "Please select a PDF file.",
+            "error",
+        )
+
+        return redirect(
+            url_for(
+                "pdf_to_docx.pdf_to_docx"
+            )
+        )
+
+    original_filename = secure_filename(
+        pdf_file.filename
+    )
+
+    if not original_filename:
+        flash(
+            "Invalid filename.",
+            "error",
+        )
+
+        return redirect(
+            url_for(
+                "pdf_to_docx.pdf_to_docx"
+            )
+        )
+
+    if not allowed_file(
+        original_filename
+    ):
+        flash(
+            "Only PDF files are allowed.",
+            "error",
+        )
+
+        return redirect(
+            url_for(
+                "pdf_to_docx.pdf_to_docx"
+            )
+        )
+
+    # --------------------------------------------------------
+    # Check file size
+    # --------------------------------------------------------
+
+    try:
+        pdf_file.seek(
+            0,
+            os.SEEK_END,
+        )
+
+        file_size = pdf_file.tell()
+
+        pdf_file.seek(
+            0
+        )
+
+        if file_size > MAX_FILE_SIZE:
+            flash(
+                "PDF file is too large. "
+                "Maximum size is 100 MB.",
+                "error",
+            )
+
+            return redirect(
+                url_for(
+                    "pdf_to_docx.pdf_to_docx"
+                )
+            )
+
+    except Exception:
+        # Continue if the stream does not support size detection.
+        pass
+
+    # --------------------------------------------------------
+    # Create temporary conversion folder
+    # --------------------------------------------------------
+
+    conversion_id = None
+    conversion_folder = None
+
+    try:
+
+        conversion_id, conversion_folder = (
+            create_conversion_folder()
+        )
+
+        # ----------------------------------------------------
+        # Temporary source PDF
+        # ----------------------------------------------------
+
+        pdf_path = (
+            conversion_folder
+            / "_source.pdf"
+        )
+
+        # ----------------------------------------------------
+        # Temporary DOCX output
+        # ----------------------------------------------------
+
+        docx_path = (
+            conversion_folder
+            / "converted.docx"
+        )
+
+        # ----------------------------------------------------
+        # Save uploaded PDF
+        # ----------------------------------------------------
+
+        pdf_file.save(
+            str(pdf_path)
+        )
+
+        if not pdf_path.exists():
+            raise RuntimeError(
+                "Uploaded PDF could not be saved."
+            )
+
+        if pdf_path.stat().st_size == 0:
+            raise RuntimeError(
+                "Uploaded PDF is empty."
+            )
+
+        # ----------------------------------------------------
+        # Convert PDF → DOCX
+        # ----------------------------------------------------
+
+        logger.info(
+            "Starting PDF→DOCX conversion: %s",
+            pdf_path,
+        )
+
+        convert_pdf_to_docx(
+            pdf_path,
+            docx_path,
+        )
+
+        # ----------------------------------------------------
+        # Verify output
+        # ----------------------------------------------------
+
+        if not docx_path.exists():
+            raise RuntimeError(
+                "DOCX file was not created."
+            )
+
+        if docx_path.stat().st_size == 0:
+            raise RuntimeError(
+                "Generated DOCX file is empty."
+            )
+
+        # ----------------------------------------------------
+        # Save metadata
+        # ----------------------------------------------------
+
+        save_metadata(
+            conversion_folder=conversion_folder,
+            conversion_id=conversion_id,
+            original_filename=original_filename,
+            output_filename="converted.docx",
+        )
+
+        # ----------------------------------------------------
+        # Remove source PDF?
+        #
+        # KEEPING IT temporarily is useful if the preview
+        # page displays the original PDF.
+        # It will automatically be deleted with the folder.
+        # ----------------------------------------------------
+
+        flash(
+            "PDF converted to DOCX successfully.",
+            "success",
+        )
+
+        return redirect(
+            url_for(
+                "pdf_to_docx.pdf_to_docx",
+                conversion_id=conversion_id,
+            )
+        )
+
+    except Exception as exc:
+
+        logger.exception(
+            "PDF→DOCX conversion failed"
+        )
+
+        # This prints the complete error in the terminal,
+        # which makes debugging much easier.
+        traceback.print_exc()
+
+        # Delete failed conversion folder.
+        if conversion_folder:
+            delete_conversion_folder(
+                conversion_folder
+            )
+
+        flash(
+            f"PDF to DOCX conversion failed: {exc}",
+            "error",
+        )
+
+        return redirect(
+            url_for(
+                "pdf_to_docx.pdf_to_docx"
+            )
+        )
+
+
+# ============================================================
+# CONVERSION HISTORY
+# ============================================================
+
+def get_conversion_history():
+    """
+    Return temporary conversion history.
+
+    No database is used.
+    No permanent history is used.
+    """
+
+    cleanup_expired_files()
+
+    user_folder = get_user_folder()
+
+    if not user_folder.exists():
+        return []
+
+    history = []
+
+    current_time = time.time()
+
+    for conversion_folder in user_folder.iterdir():
+
+        if not conversion_folder.is_dir():
+            continue
+
+        metadata = load_metadata(
+            conversion_folder
+        )
+
+        if not metadata:
+            continue
+
+        expires_at = metadata.get(
+            "expires_at",
+            0,
+        )
+
+        try:
+            expires_at = float(
+                expires_at
+            )
+
+        except (
+            ValueError,
+            TypeError,
+        ):
+            continue
+
+        # Do not show expired files.
+        if current_time >= expires_at:
+            continue
+
+        conversion_id = metadata.get(
+            "id"
+        )
+
+        if not conversion_id:
+            continue
+
+        docx_path = (
+            conversion_folder
+            / metadata.get(
+                "output_filename",
+                "converted.docx",
+            )
+        )
+
+        if not docx_path.exists():
+            continue
+
+        created_at = metadata.get(
+            "created_at",
+            current_time,
+        )
+
+        history.append(
+            {
+                "id": conversion_id,
+                "original_filename": metadata.get(
+                    "original_filename",
+                    "document.pdf",
+                ),
+                "output_filename": metadata.get(
+                    "output_filename",
+                    "converted.docx",
+                ),
+                "created_at": created_at,
+                "created_at_display": format_timestamp(
+                    created_at
+                ),
+                "expires_at": expires_at,
+                "expires_at_display": format_timestamp(
+                    expires_at
+                ),
+                "size": docx_path.stat().st_size,
+            }
+        )
+
+    # Newest first.
+    history.sort(
+        key=lambda item: item.get(
+            "created_at",
+            0,
+        ),
+        reverse=True,
+    )
+
+    return history
+
+
+@pdf_to_docx_bp.route(
+    "/pdf-to-docx/history",
+    methods=["GET"],
+)
+def history():
+    """Return temporary conversion history as JSON."""
+
+    return jsonify(
+        get_conversion_history()
+    )
+
+
+# ============================================================
+# PREVIEW
+# ============================================================
+
+@pdf_to_docx_bp.route(
+    "/pdf-to-docx/preview/<conversion_id>",
+    methods=["GET"],
+)
+def preview_docx(conversion_id):
+    """
+    Preview the generated DOCX.
+
+    If the browser/page needs the original PDF for preview,
+    this route can also return it using ?source=1.
+    """
+
+    conversion_folder = (
+        find_conversion_folder(
+            conversion_id
+        )
+    )
+
+    if not conversion_folder:
+        abort(404)
+
+    metadata = load_metadata(
+        conversion_folder
+    )
+
+    if not metadata:
+        abort(404)
+
+    expires_at = metadata.get(
+        "expires_at",
+        0,
+    )
+
+    try:
+        if time.time() >= float(
+            expires_at
+        ):
+            delete_conversion_folder(
+                conversion_folder
+            )
+
+            abort(404)
+
+    except (
+        ValueError,
+        TypeError,
+    ):
+        abort(404)
+
+    # --------------------------------------------------------
+    # Source PDF preview
+    # --------------------------------------------------------
+
+    if request.args.get(
+        "source"
+    ) == "1":
+
+        source_pdf = (
+            conversion_folder
+            / "_source.pdf"
+        )
+
+        if not source_pdf.exists():
+            abort(404)
+
+        return send_file(
+            source_pdf,
+            mimetype="application/pdf",
+            as_attachment=False,
+            download_name=(
+                metadata.get(
+                    "original_filename",
+                    "document.pdf",
+                )
+            ),
+        )
+
+    # --------------------------------------------------------
+    # DOCX preview/download
+    #
+    # Browsers cannot natively display DOCX in the same way
+    # they display PDF. This returns the DOCX file.
+    # --------------------------------------------------------
+
+    docx_path = (
+        conversion_folder
+        / metadata.get(
+            "output_filename",
+            "converted.docx",
+        )
+    )
+
+    if not docx_path.exists():
+        abort(404)
+
+    return send_file(
+        docx_path,
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
+        as_attachment=False,
+        download_name=metadata.get(
+            "output_filename",
+            "converted.docx",
+        ),
+    )
+
+
+# ============================================================
+# DOWNLOAD DOCX
+# ============================================================
+
+@pdf_to_docx_bp.route(
+    "/pdf-to-docx/download/<conversion_id>",
+    methods=["GET"],
+)
+def download_docx(conversion_id):
+    """Download temporary DOCX file."""
+
+    conversion_folder = (
+        find_conversion_folder(
+            conversion_id
+        )
+    )
+
+    if not conversion_folder:
+        abort(404)
+
+    metadata = load_metadata(
+        conversion_folder
+    )
+
+    if not metadata:
+        abort(404)
+
+    expires_at = metadata.get(
+        "expires_at",
+        0,
+    )
+
+    try:
+        if time.time() >= float(
+            expires_at
+        ):
+            delete_conversion_folder(
+                conversion_folder
+            )
+
+            abort(404)
+
+    except (
+        ValueError,
+        TypeError,
+    ):
+        abort(404)
+
+    output_filename = metadata.get(
+        "output_filename",
+        "converted.docx",
+    )
+
+    docx_path = (
+        conversion_folder
+        / output_filename
+    )
+
+    if not docx_path.exists():
+        abort(404)
+
+    original_filename = metadata.get(
+        "original_filename",
+        "document.pdf",
+    )
+
+    original_stem = Path(
+        original_filename
+    ).stem
+
+    download_name = (
+        f"{original_stem}.docx"
+    )
+
+    return send_file(
+        docx_path,
+        mimetype=(
+            "application/vnd.openxmlformats-officedocument."
+            "wordprocessingml.document"
+        ),
+        as_attachment=True,
+        download_name=download_name,
+    )
+
+
+# ============================================================
+# DELETE ONE CONVERSION
+# ============================================================
+
+@pdf_to_docx_bp.route(
+    "/pdf-to-docx/delete/<conversion_id>",
+    methods=["POST", "DELETE"],
+)
+def delete_conversion(conversion_id):
+    """Delete one temporary conversion."""
+
+    conversion_folder = (
+        find_conversion_folder(
+            conversion_id
+        )
+    )
+
+    if not conversion_folder:
+        if request.is_json:
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Conversion not found.",
+                }
+            ), 404
+
+        flash(
+            "Conversion not found.",
+            "error",
+        )
+
+        return redirect(
+            url_for(
+                "pdf_to_docx.pdf_to_docx"
+            )
+        )
+
+    delete_conversion_folder(
+        conversion_folder
+    )
+
+    if request.is_json:
+        return jsonify(
+            {
+                "success": True,
+                "message": "Conversion deleted.",
+            }
+        )
+
+    flash(
+        "Conversion deleted.",
+        "success",
+    )
+
+    return redirect(
+        url_for(
+            "pdf_to_docx.pdf_to_docx"
+        )
+    )
+
+
+# ============================================================
+# CLEAR ALL HISTORY
+# ============================================================
+
+@pdf_to_docx_bp.route(
+    "/pdf-to-docx/clear-history",
+    methods=["POST"],
+)
+def clear_history():
+    """Delete all temporary conversions for current user."""
+
+    user_folder = get_user_folder()
+
+    deleted_count = 0
+
+    if user_folder.exists():
+
+        for conversion_folder in user_folder.iterdir():
+
+            if not conversion_folder.is_dir():
+                continue
+
+            delete_conversion_folder(
+                conversion_folder
+            )
+
+            deleted_count += 1
+
+    if request.is_json:
+        return jsonify(
+            {
+                "success": True,
+                "deleted": deleted_count,
+                "message": (
+                    f"{deleted_count} conversion(s) deleted."
+                ),
+            }
+        )
+
+    flash(
+        "Temporary conversion history cleared.",
+        "success",
+    )
+
+    return redirect(
+        url_for(
+            "pdf_to_docx.pdf_to_docx"
+        )
+    )
+
+
+# ============================================================
+# TEMPORARY STORAGE INFO
+# ============================================================
+
+@pdf_to_docx_bp.route(
+    "/pdf-to-docx/temp-info",
+    methods=["GET"],
+)
+def temp_info():
+    """Return temporary-storage configuration."""
+
+    return jsonify(
+        {
+            "success": True,
+            "storage": "temporary_filesystem",
+            "ttl_seconds": TEMP_FILE_TTL,
+            "ttl_minutes": round(
+                TEMP_FILE_TTL / 60,
+                2,
+            ),
+            "cleanup_interval_seconds": (
+                CLEANUP_INTERVAL
+            ),
+            "cleanup_interval_minutes": round(
+                CLEANUP_INTERVAL / 60,
+                2,
+            ),
+        }
+    )

@@ -1,0 +1,17 @@
+.venv/
+venv/
+env/
+
+.env
+
+__pycache__/
+*.pyc
+
+uploads/*
+conversions/*
+temp/*
+
+node_modules/
+
+.vscode/
+.idea/

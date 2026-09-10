@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>JPG to PDF - DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='jpg_to_pdf.css') }}" />
+  </head>
+
+  <body>
+    <div class="converter-page">
+      <!-- ==================================================
+           HEADER
+      =================================================== -->
+
+      <header class="converter-header">
+        <a href="{{ url_for('dashboard') }}" class="back-button">
+          ← Dashboard
+        </a>
+
+        <div class="header-title">
+          <div class="header-icon">🖼️</div>
+
+          <div>
+            <h1>JPG to PDF</h1>
+
+            <p>Convert your images into a PDF document</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- ==================================================
+           MAIN
+      =================================================== -->
+
+      <main class="converter-container">
+        {% if result %}
+
+        <!-- ==================================================
+             TEMPORARY RESULT
+        =================================================== -->
+
+        <section class="converter-card result-card">
+          <div class="result-success">
+            <div class="result-success-icon">✓</div>
+
+            <div>
+              <h2>PDF Created Successfully</h2>
+
+              <p>
+                Your PDF is ready. It is stored temporarily and will be
+                automatically deleted.
+              </p>
+            </div>
+          </div>
+
+          <!-- FILE INFORMATION -->
+
+          <div class="result-file">
+            <div class="result-file-icon">📄</div>
+
+            <div class="result-file-details">
+              <div class="result-file-name">{{ result.filename }}</div>
+
+              <div class="result-file-size">
+                {{ result.pdf_size | filesizeformat }}
+              </div>
+            </div>
+          </div>
+
+          <!-- EXPIRATION -->
+
+          <div class="temporary-warning">
+            <div class="temporary-warning-icon">⏱</div>
+
+            <div>
+              <strong> Temporary file </strong>
+
+              <p>
+                This PDF will automatically disappear after
+                <span id="countdown"> {{ result.remaining_seconds }} </span>
+                seconds.
+              </p>
+            </div>
+          </div>
+
+          <!-- ==================================================
+               PDF PREVIEW
+          =================================================== -->
+
+          <div class="pdf-preview-section">
+            <div class="pdf-preview-heading">
+              <div>
+                <span class="section-label"> Step 02 — Preview </span>
+
+                <h2>Your PDF</h2>
+              </div>
+            </div>
+
+            <div class="pdf-viewer">
+              <iframe
+                src="{{ result.preview_url }}"
+                title="PDF Preview"
+                loading="lazy"></iframe>
+            </div>
+          </div>
+
+          <!-- ==================================================
+               ACTIONS
+          =================================================== -->
+
+          <div class="result-actions">
+            <a
+              href="{{ result.download_url }}?name={{ result.filename | urlencode }}"
+              class="result-button result-download">
+              ↓ Download PDF
+            </a>
+
+            <a
+              href="{{ url_for('jpg_to_pdf.jpg_to_pdf') }}"
+              class="result-button result-new">
+              + Convert More Images
+            </a>
+
+            <form
+              action="{{ url_for(
+                'jpg_to_pdf.delete_jpg_to_pdf',
+                token=result.token
+              ) }}"
+              method="POST"
+              onsubmit="return confirm('Delete this temporary PDF now?');">
+              <button type="submit" class="result-button result-delete">
+                🗑 Delete Now
+              </button>
+            </form>
+          </div>
+
+          <!-- ==================================================
+               IMPORTANT PRIVACY MESSAGE
+          =================================================== -->
+
+          <div class="privacy-note">
+            🔒
+            <span>
+              No conversion history is stored in the database. This PDF exists
+              only temporarily for your current conversion.
+            </span>
+          </div>
+        </section>
+
+        {% else %}
+
+        <!-- ==================================================
+             UPLOAD CARD
+        =================================================== -->
+
+        <section class="converter-card">
+          <div class="card-heading">
+            <h2>Convert Images to PDF</h2>
+
+            <p>
+              Select one or more JPG, JPEG or PNG images and combine them into a
+              single PDF.
+            </p>
+          </div>
+
+          <!-- ==================================================
+               UPLOAD FORM
+          =================================================== -->
+
+          <form
+            action="{{ url_for('jpg_to_pdf.convert_jpg_to_pdf_route') }}"
+            method="POST"
+            enctype="multipart/form-data"
+            id="jpgToPdfForm">
+            <label for="imageFiles" class="choose-file-box" id="dropZone">
+              <div class="upload-icon">🖼️</div>
+
+              <div class="choose-title">Choose JPG Images</div>
+
+              <div class="choose-subtitle">
+                JPG, JPEG or PNG • Select multiple images
+              </div>
+
+              <input
+                type="file"
+                name="files"
+                id="imageFiles"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                multiple
+                required />
+            </label>
+
+            <!-- ==================================================
+                 SELECTED FILES
+            =================================================== -->
+
+            <div
+              class="selected-files"
+              id="selectedFiles"
+              style="display: none">
+              <div class="selected-header">
+                <h3>Selected Images</h3>
+
+                <span id="fileCount"> 0 files </span>
+              </div>
+
+              <div class="file-list" id="fileList"></div>
+            </div>
+
+            <!-- ==================================================
+                 CONVERT BUTTON
+            =================================================== -->
+
+            <button type="submit" class="convert-button" id="convertButton">
+              <span> Convert to PDF </span>
+
+              <span class="button-arrow"> → </span>
+            </button>
+          </form>
+        </section>
+
+        <!-- ==================================================
+             INFORMATION
+        =================================================== -->
+
+        <section class="info-section">
+          <div class="info-card">
+            <div class="info-icon">📑</div>
+
+            <div>
+              <h3>Multiple Images</h3>
+
+              <p>
+                Select multiple images and combine them into one PDF document.
+              </p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">🔒</div>
+
+            <div>
+              <h3>Temporary Processing</h3>
+
+              <p>
+                Your files are processed temporarily and are not saved in the
+                database.
+              </p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">⚡</div>
+
+            <div>
+              <h3>Fast Conversion</h3>
+
+              <p>
+                Images are converted directly into PDF without unnecessary
+                database operations.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {% endif %}
+      </main>
+    </div>
+
+    <!-- ==================================================
+         IMAGE PREVIEW MODAL
+    =================================================== -->
+
+    <div class="image-preview-modal" id="imagePreviewModal">
+      <div class="image-preview-content">
+        <button
+          type="button"
+          class="image-preview-close"
+          id="imagePreviewClose">
+          ✕
+        </button>
+
+        <img id="imagePreviewImg" alt="Preview" />
+
+        <div class="image-preview-filename" id="imagePreviewName"></div>
+      </div>
+    </div>
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
+    <script>
+      const imageFiles = document.getElementById("imageFiles");
+
+      const selectedFiles = document.getElementById("selectedFiles");
+
+      const fileList = document.getElementById("fileList");
+
+      const fileCount = document.getElementById("fileCount");
+
+      const dropZone = document.getElementById("dropZone");
+
+      const imagePreviewModal = document.getElementById("imagePreviewModal");
+
+      const imagePreviewImg = document.getElementById("imagePreviewImg");
+
+      const imagePreviewName = document.getElementById("imagePreviewName");
+
+      const imagePreviewClose = document.getElementById("imagePreviewClose");
+
+      let currentFiles = [];
+
+      /* ==================================================
+         FILE INPUT SYNC
+      =================================================== */
+
+      function updateInputFiles() {
+        const dataTransfer = new DataTransfer();
+
+        currentFiles.forEach(function (file) {
+          dataTransfer.items.add(file);
+        });
+
+        imageFiles.files = dataTransfer.files;
+      }
+
+      /* ==================================================
+         FILE SELECTION
+      =================================================== */
+
+      if (imageFiles) {
+        imageFiles.addEventListener("change", function () {
+          currentFiles = Array.from(this.files);
+
+          renderFileList();
+        });
+      }
+
+      /* ==================================================
+         RENDER FILE LIST
+      =================================================== */
+
+      function renderFileList() {
+        if (!fileList) {
+          return;
+        }
+
+        fileList.innerHTML = "";
+
+        if (currentFiles.length === 0) {
+          selectedFiles.style.display = "none";
+
+          fileCount.textContent = "0 files";
+
+          return;
+        }
+
+        selectedFiles.style.display = "block";
+
+        fileCount.textContent =
+          currentFiles.length +
+          (currentFiles.length === 1 ? " file" : " files");
+
+        currentFiles.forEach(function (file, index) {
+          const item = document.createElement("div");
+
+          item.className = "file-item";
+
+          /* NUMBER */
+
+          const number = document.createElement("div");
+
+          number.className = "file-number";
+
+          number.textContent = index + 1;
+
+          /* PREVIEW */
+
+          const preview = document.createElement("div");
+
+          preview.className = "file-preview";
+
+          if (file.type === "image/jpeg" || file.type === "image/png") {
+            const image = document.createElement("img");
+
+            const objectUrl = URL.createObjectURL(file);
+
+            image.src = objectUrl;
+
+            image.alt = file.name;
+
+            image.onload = function () {
+              URL.revokeObjectURL(objectUrl);
+            };
+
+            preview.appendChild(image);
+          } else {
+            preview.textContent = "🖼️";
+          }
+
+          /* DETAILS */
+
+          const details = document.createElement("div");
+
+          details.className = "file-details";
+
+          const name = document.createElement("div");
+
+          name.className = "file-name";
+
+          name.textContent = file.name;
+
+          const size = document.createElement("div");
+
+          size.className = "file-size";
+
+          size.textContent = formatFileSize(file.size);
+
+          details.appendChild(name);
+
+          details.appendChild(size);
+
+          /* ACTIONS */
+
+          const actions = document.createElement("div");
+
+          actions.className = "file-actions";
+
+          /* PREVIEW */
+
+          const previewBtn = document.createElement("button");
+
+          previewBtn.type = "button";
+
+          previewBtn.className = "file-action file-action-preview";
+
+          previewBtn.title = "Preview image";
+
+          previewBtn.textContent = "👁";
+
+          previewBtn.addEventListener("click", function () {
+            openImagePreview(file);
+          });
+
+          /* DOWNLOAD */
+
+          const downloadBtn = document.createElement("button");
+
+          downloadBtn.type = "button";
+
+          downloadBtn.className = "file-action file-action-download";
+
+          downloadBtn.title = "Download image";
+
+          downloadBtn.textContent = "↓";
+
+          downloadBtn.addEventListener("click", function () {
+            downloadSelectedFile(file);
+          });
+
+          /* DELETE */
+
+          const deleteBtn = document.createElement("button");
+
+          deleteBtn.type = "button";
+
+          deleteBtn.className = "file-action file-action-delete";
+
+          deleteBtn.title = "Remove image";
+
+          deleteBtn.textContent = "🗑";
+
+          deleteBtn.addEventListener("click", function () {
+            removeSelectedFile(index);
+          });
+
+          actions.appendChild(previewBtn);
+
+          actions.appendChild(downloadBtn);
+
+          actions.appendChild(deleteBtn);
+
+          item.appendChild(number);
+
+          item.appendChild(preview);
+
+          item.appendChild(details);
+
+          item.appendChild(actions);
+
+          fileList.appendChild(item);
+        });
+      }
+
+      /* ==================================================
+         REMOVE SELECTED IMAGE
+      =================================================== */
+
+      function removeSelectedFile(index) {
+        currentFiles.splice(index, 1);
+
+        updateInputFiles();
+
+        renderFileList();
+      }
+
+      /* ==================================================
+         DOWNLOAD SELECTED IMAGE
+      =================================================== */
+
+      function downloadSelectedFile(file) {
+        const url = URL.createObjectURL(file);
+
+        const link = document.createElement("a");
+
+        link.href = url;
+
+        link.download = file.name;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 100);
+      }
+
+      /* ==================================================
+         IMAGE PREVIEW
+      =================================================== */
+
+      let currentPreviewUrl = null;
+
+      function openImagePreview(file) {
+        if (currentPreviewUrl) {
+          URL.revokeObjectURL(currentPreviewUrl);
+        }
+
+        currentPreviewUrl = URL.createObjectURL(file);
+
+        imagePreviewImg.src = currentPreviewUrl;
+
+        imagePreviewName.textContent = file.name;
+
+        imagePreviewModal.classList.add("active");
+      }
+
+      function closeImagePreview() {
+        imagePreviewModal.classList.remove("active");
+
+        imagePreviewImg.src = "";
+
+        imagePreviewName.textContent = "";
+
+        if (currentPreviewUrl) {
+          URL.revokeObjectURL(currentPreviewUrl);
+
+          currentPreviewUrl = null;
+        }
+      }
+
+      imagePreviewClose.addEventListener("click", closeImagePreview);
+
+      imagePreviewModal.addEventListener("click", function (event) {
+        if (event.target === imagePreviewModal) {
+          closeImagePreview();
+        }
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (
+          event.key === "Escape" &&
+          imagePreviewModal.classList.contains("active")
+        ) {
+          closeImagePreview();
+        }
+      });
+
+      /* ==================================================
+         FILE SIZE
+      =================================================== */
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) {
+          return "0 Bytes";
+        }
+
+        const units = ["Bytes", "KB", "MB", "GB"];
+
+        const index = Math.floor(Math.log(bytes) / Math.log(1024));
+
+        return (
+          parseFloat((bytes / Math.pow(1024, index)).toFixed(2)) +
+          " " +
+          units[index]
+        );
+      }
+
+      /* ==================================================
+         DRAG & DROP
+      =================================================== */
+
+      if (dropZone) {
+        dropZone.addEventListener("dragover", function (event) {
+          event.preventDefault();
+
+          dropZone.classList.add("dragging");
+        });
+
+        dropZone.addEventListener("dragleave", function () {
+          dropZone.classList.remove("dragging");
+        });
+
+        dropZone.addEventListener("drop", function (event) {
+          event.preventDefault();
+
+          dropZone.classList.remove("dragging");
+
+          const files = event.dataTransfer.files;
+
+          if (!files || files.length === 0) {
+            return;
+          }
+
+          currentFiles = Array.from(files).filter(function (file) {
+            return file.type === "image/jpeg" || file.type === "image/png";
+          });
+
+          updateInputFiles();
+
+          renderFileList();
+        });
+      }
+
+      /* ==================================================
+         FORM SUBMIT
+      =================================================== */
+
+      const form = document.getElementById("jpgToPdfForm");
+
+      if (form) {
+        form.addEventListener("submit", function (event) {
+          if (currentFiles.length === 0) {
+            event.preventDefault();
+
+            alert("Please select at least one image.");
+
+            return;
+          }
+
+          const convertButton = document.getElementById("convertButton");
+
+          convertButton.disabled = true;
+
+          convertButton.querySelector("span:first-child").textContent =
+            "Converting...";
+
+          convertButton.querySelector(".button-arrow").textContent = "⏳";
+        });
+      }
+
+      /* ==================================================
+         TEMPORARY PDF COUNTDOWN
+      =================================================== */
+
+      const countdown = document.getElementById("countdown");
+
+      if (countdown) {
+        let seconds = parseInt(countdown.textContent, 10);
+
+        if (Number.isNaN(seconds)) {
+          seconds = 0;
+        }
+
+        const timer = setInterval(function () {
+          seconds--;
+
+          if (seconds <= 0) {
+            clearInterval(timer);
+
+            countdown.textContent = "0";
+
+            setTimeout(function () {
+              window.location.href = "{{ url_for('jpg_to_pdf.jpg_to_pdf') }}";
+            }, 1000);
+
+            return;
+          }
+
+          countdown.textContent = seconds;
+        }, 1000);
+      }
+    </script>
+  </body>
+</html>

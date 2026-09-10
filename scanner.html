@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>DocuForge - Scan Document</title>
+
+    <link rel="stylesheet" href="dashboard.css" />
+
+    <style>
+      .scanner-page {
+        max-width: 1000px;
+        margin: auto;
+      }
+
+      .scanner-header {
+        margin-bottom: 30px;
+      }
+
+      .scanner-header h1 {
+        font-size: clamp(28px, 4vw, 42px);
+        margin-bottom: 10px;
+      }
+
+      .scanner-header p {
+        color: #7a849b;
+        line-height: 1.6;
+      }
+
+      .upload-box {
+        background: white;
+        border: 2px dashed #cfd5e3;
+        border-radius: 20px;
+        padding: 50px 25px;
+        text-align: center;
+        transition: 0.2s;
+      }
+
+      .upload-box:hover {
+        border-color: #6256f5;
+      }
+
+      .upload-icon {
+        font-size: 50px;
+        margin-bottom: 15px;
+      }
+
+      .upload-box h2 {
+        margin-bottom: 10px;
+      }
+
+      .upload-box p {
+        color: #7a849b;
+        margin-bottom: 25px;
+      }
+
+      .upload-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .upload-btn {
+        padding: 13px 22px;
+        border: none;
+        border-radius: 10px;
+        background: #6256f5;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .camera-btn {
+        background: #17213a;
+      }
+
+      .preview-section {
+        margin-top: 35px;
+      }
+
+      .preview-section h2 {
+        margin-bottom: 20px;
+      }
+
+      .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+
+        gap: 20px;
+      }
+
+      .preview-card {
+        background: white;
+        border-radius: 15px;
+        padding: 12px;
+        border: 1px solid #e5e8ef;
+      }
+
+      .preview-card img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 10px;
+      }
+
+      .preview-card button {
+        width: 100%;
+        margin-top: 10px;
+        padding: 9px;
+        border: none;
+        border-radius: 8px;
+        background: #ffe5e5;
+        color: #d33;
+        cursor: pointer;
+      }
+
+      .create-pdf-btn {
+        margin-top: 25px;
+        padding: 14px 25px;
+        border: none;
+        border-radius: 10px;
+        background: #159b70;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      @media (max-width: 600px) {
+        .upload-box {
+          padding: 35px 15px;
+        }
+
+        .preview-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 400px) {
+        .preview-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- MOBILE MENU -->
+
+    <button class="mobile-menu" id="mobile-menu">☰</button>
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <span class="logo-icon"> ✦ </span>
+
+        <span> DocuForge </span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/dashboard.html" class="nav-item">
+          <span>⌂</span>
+          <span>Dashboard</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-section">
+        <p class="section-title">TOOLS</p>
+
+        <a href="/scanner.html" class="nav-item active">
+          <span>▤</span>
+          <span>Scan Document</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <span>⇄</span>
+          <span>Convert Files</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <span>▧</span>
+          <span>Create Document</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <span>◫</span>
+          <span>Page Format</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <span>⌕</span>
+          <span>OCR / Extract Text</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+
+    <main class="main-content">
+      <div class="scanner-page">
+        <!-- HEADER -->
+
+        <section class="scanner-header">
+          <p class="eyebrow">DOCUMENT SCANNER</p>
+
+          <h1>Scan your document</h1>
+
+          <p>
+            Upload images or use your phone camera to scan documents and create
+            a PDF.
+          </p>
+        </section>
+
+        <!-- UPLOAD -->
+
+        <section class="upload-box">
+          <div class="upload-icon">📷</div>
+
+          <h2>Add document pages</h2>
+
+          <p>Upload JPG, JPEG or PNG images.</p>
+
+          <div class="upload-buttons">
+            <!-- FILE UPLOAD -->
+
+            <label class="upload-btn">
+              📁 Choose Images
+
+              <input
+                type="file"
+                id="file-input"
+                accept="image/*"
+                multiple
+                hidden />
+            </label>
+
+            <!-- CAMERA -->
+
+            <label class="upload-btn camera-btn">
+              📷 Use Camera
+
+              <input
+                type="file"
+                id="camera-input"
+                accept="image/*"
+                capture="environment"
+                multiple
+                hidden />
+            </label>
+          </div>
+        </section>
+
+        <!-- PREVIEW -->
+
+        <section class="preview-section" id="preview-section" hidden>
+          <h2>Document Pages</h2>
+
+          <div class="preview-grid" id="preview-grid"></div>
+
+          <button class="create-pdf-btn" id="create-pdf-btn">
+            📄 Create PDF
+          </button>
+        </section>
+      </div>
+    </main>
+
+    <script src="scanner.js"></script>
+  </body>
+</html>

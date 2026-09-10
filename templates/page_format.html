@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Page Format | DocBuddy</title>
+<link rel="stylesheet" href="{{ url_for('page_format.static', filename='page_format.css') }}">
+</head>
+<body>
+<div class="pf-app">
+<header class="pf-topbar">
+  <div class="brand">
+    <a class="back-link" href="/dashboard" title="Back to dashboard">← Dashboard</a>
+    <div class="brand-icon">▤</div><div><strong>Page Format</strong><small>Resize, reflow &amp; format PDF pages</small></div>
+  </div>
+  <div class="top-actions">
+    <button class="btn ghost" id="savePresetBtn" title="Save current settings">💾 Save preset</button>
+    <button class="btn ghost" id="loadPresetBtn" title="Load saved settings">📂 Load preset</button>
+    <button class="btn ghost" id="resetBtn">↺ Reset</button>
+    <button class="btn primary" id="applyBtn">✓ Apply Format</button>
+  </div>
+</header>
+
+<div class="pf-layout">
+<aside class="settings-panel">
+  <div class="panel-title"><span>DOCUMENT SETUP</span><h1>Page Format</h1></div>
+
+  <section class="setting-section">
+    <label class="label">PDF DOCUMENT</label>
+    <div class="dropzone" id="dropzone">
+      <input id="fileInput" type="file" accept=".pdf,application/pdf" hidden>
+      <div class="upload-icon">↑</div><strong>Drop PDF here</strong><small>or choose a PDF from your computer (max 150 MB)</small>
+      <button type="button" class="btn outline" id="browseBtn">Choose PDF</button>
+    </div>
+    <div class="file-card hidden" id="fileCard"><div class="pdf-badge">PDF</div><div class="file-info"><strong id="fileName"></strong><small id="fileMeta"></small></div><button class="xbtn" id="removeFile" type="button">×</button></div>
+    <p class="field-error hidden" id="fileError"></p>
+  </section>
+
+  <section class="setting-section">
+    <div class="section-head"><label class="label">PAGE SIZE</label><span class="hint">Presets + custom</span></div>
+    <div class="preset-grid">
+      <button type="button" data-preset="A4">A4<small>210 × 297 mm</small></button>
+      <button type="button" data-preset="A3">A3<small>297 × 420 mm</small></button>
+      <button type="button" data-preset="A5">A5<small>148 × 210 mm</small></button>
+      <button type="button" data-preset="Letter">Letter<small>8.5 × 11 in</small></button>
+      <button type="button" data-preset="Legal">Legal<small>8.5 × 14 in</small></button>
+      <button type="button" data-preset="Tabloid">Tabloid<small>11 × 17 in</small></button>
+      <button type="button" data-preset="Executive">Executive<small>7.25 × 10.5 in</small></button>
+      <button type="button" data-preset="BusinessCard">Business card<small>85 × 55 mm</small></button>
+      <button type="button" data-preset="custom">Custom<small>Your dimensions</small></button>
+    </div>
+    <div class="field-grid">
+      <div><label>Width</label><input id="width" type="number" min="1" step="0.01"></div>
+      <div><label>Height</label><input id="height" type="number" min="1" step="0.01"></div>
+    </div>
+    <label>Unit</label><select id="unit"><option value="mm">Millimeters (mm)</option><option value="cm">Centimeters (cm)</option><option value="in">Inches (in)</option><option value="pt">Points (pt)</option><option value="px">Pixels (px)</option></select>
+    <div class="orientation"><button type="button" data-orientation="portrait">▯ <span>Portrait</span></button><button type="button" data-orientation="landscape">▭ <span>Landscape</span></button></div>
+    <label class="toggle-row"><input id="lockRatio" type="checkbox"><span>Lock aspect ratio</span></label>
+    <p class="field-error hidden" id="sizeError"></p>
+  </section>
+
+  <section class="setting-section">
+    <div class="section-head"><label class="label">MARGINS &amp; GUTTER</label><span class="hint">Inside page (mm)</span></div>
+    <div class="margin-grid">
+      <div><label>Top</label><input id="mt" type="number" min="0" step=".1" value="15"></div>
+      <div><label>Right</label><input id="mr" type="number" min="0" step=".1" value="15"></div>
+      <div><label>Bottom</label><input id="mb" type="number" min="0" step=".1" value="15"></div>
+      <div><label>Left</label><input id="ml" type="number" min="0" step=".1" value="15"></div>
+    </div>
+    <label class="toggle-row"><input id="linkMargins" type="checkbox" checked><span>Link all margins</span></label>
+    <div class="field-grid">
+      <div><label>Gutter (binding)</label><input id="gutter" type="number" min="0" step=".1" value="0"></div>
+      <div class="toggle-inline"><label class="toggle-row"><input id="mirrorMargins" type="checkbox"><span>Mirror on facing pages</span></label></div>
+    </div>
+    <p class="field-error hidden" id="marginError"></p>
+  </section>
+
+  <section class="setting-section">
+    <label class="label">CONTENT FIT</label>
+    <div class="choice-list">
+      <label><input type="radio" name="fit" value="contain" checked><span><b>Fit inside margins</b><small>Preserve the complete page without cropping.</small></span></label>
+      <label><input type="radio" name="fit" value="cover"><span><b>Fill page</b><small>Fill the available area; edges may be cropped.</small></span></label>
+      <label><input type="radio" name="fit" value="stretch"><span><b>Stretch to area</b><small>Use the entire available area, ignoring aspect ratio.</small></span></label>
+      <label><input type="radio" name="fit" value="original"><span><b>Keep original scale</b><small>Do not scale; center the original page.</small></span></label>
+    </div>
+    <label class="toggle-row"><input id="centerContent" type="checkbox" checked><span>Center content</span></label>
+  </section>
+
+  <section class="setting-section">
+    <label class="label">PAGE RANGE</label>
+    <div class="field-grid"><div><label>From</label><input id="pageStart" type="number" min="1" value="1"></div><div><label>To</label><input id="pageEnd" type="number" min="1" placeholder="All"></div></div>
+    <label>Apply to</label>
+    <select id="pageFilter"><option value="all">All pages in range</option><option value="odd">Odd pages only</option><option value="even">Even pages only</option></select>
+    <p class="micro">Pages outside the range (or filtered out) are copied through unchanged.</p>
+  </section>
+
+  <section class="setting-section">
+    <label class="label">RENDER QUALITY</label>
+    <select id="quality">
+      <option value="draft">Draft (fast, smaller file)</option>
+      <option value="standard" selected>Standard (~150 dpi)</option>
+      <option value="high">High (~215 dpi)</option>
+      <option value="print">Print (~300 dpi)</option>
+    </select>
+    <label>Rotate pages</label>
+    <select id="rotation"><option value="0">No rotation</option><option value="90">90° clockwise</option><option value="180">180°</option><option value="270">270° clockwise</option></select>
+  </section>
+
+  <section class="setting-section">
+    <label class="label">PRINT &amp; LAYOUT</label>
+    <div class="field-grid"><div><label>Bleed (mm)</label><input id="bleed" type="number" min="0" step=".1" value="0"></div><div><label class="tt" title="Repeats the page across this many side-by-side columns, e.g. for business cards or labels.">Columns (N-up)</label><input id="columns" type="number" min="1" max="12" value="1"></div></div>
+    <label>Column gap (mm)</label><input id="columnGap" type="number" min="0" step=".1" value="0">
+    <p class="micro">Bleed adds trim area with printer crop marks. Columns repeat the same page side by side.</p>
+  </section>
+
+  <section class="setting-section">
+    <label class="label">APPEARANCE</label>
+    <div class="color-row"><label>Background</label><input id="bgColor" type="color" value="#ffffff"><code id="bgHex">#ffffff</code></div>
+    <div class="color-row"><label>Border</label><input id="borderColor" type="color" value="#d8dde6"><code id="borderHex">#d8dde6</code></div>
+    <div class="field-grid"><div><label>Border width (mm)</label><input id="borderWidth" type="number" min="0" step=".1" value="0"></div><div><label>Corner radius</label><input id="radius" type="number" min="0" max="0.5" step=".01" value="0"></div></div>
+  </section>
+
+  <section class="setting-section">
+    <label class="label">HEADER &amp; FOOTER</label>
+    <input id="headerText" placeholder="Header text (optional)">
+    <select id="headerAlign"><option value="left">Header: Left</option><option value="center" selected>Header: Center</option><option value="right">Header: Right</option></select>
+    <input id="footerText" placeholder="Footer text (optional)">
+    <select id="footerAlign"><option value="left">Footer: Left</option><option value="center" selected>Footer: Center</option><option value="right">Footer: Right</option></select>
+    <div class="field-grid">
+      <div><label>Font</label><select id="hfFont"><option value="helvetica">Helvetica</option><option value="helvetica-bold">Helvetica Bold</option><option value="times">Times</option><option value="times-bold">Times Bold</option><option value="courier">Courier</option></select></div>
+      <div><label>Text color</label><input id="textColor" type="color" value="#40484f"></div>
+    </div>
+    <label class="toggle-row"><input id="pageNumbers" type="checkbox"><span>Add page numbers</span></label>
+    <input id="pageNumberFormat" placeholder="Page {page} of {total}" value="Page {page} of {total}">
+    <p class="micro">Use <code>{page}</code> and <code>{total}</code> as placeholders anywhere in header/footer text.</p>
+  </section>
+
+  <section class="setting-section">
+    <label class="label">WATERMARK</label>
+    <input id="watermarkText" placeholder="Watermark text (optional)">
+    <div class="field-grid">
+      <div><label>Size</label><input id="watermarkSize" type="number" min="6" max="400" value="48"></div>
+      <div><label>Angle (°)</label><input id="watermarkAngle" type="number" min="-180" max="180" value="45"></div>
+    </div>
+    <div class="field-grid">
+      <div><label>Opacity</label><input id="watermarkOpacity" type="range" min="0.02" max="1" step="0.02" value="0.15"></div>
+      <div><label>Color</label><input id="watermarkColor" type="color" value="#808080"></div>
+    </div>
+    <label class="toggle-row"><input id="watermarkTile" type="checkbox"><span>Tile across page</span></label>
+  </section>
+</aside>
+
+<main class="preview-panel">
+  <div class="preview-toolbar">
+    <div><span class="live-dot"></span><b id="status">Ready</b><span class="page-info" id="pageInfo">No PDF loaded</span></div>
+    <div class="zoom-tools"><button type="button" id="zoomOut">−</button><span id="zoomLabel">100%</span><button type="button" id="zoomIn">+</button><button type="button" id="fitView">Fit</button></div>
+  </div>
+  <div class="preview-stage" id="stage">
+    <div class="paper" id="paper">
+      <div class="paper-border" id="paperBorder"></div>
+      <div class="paper-content" id="paperContent">
+        <div class="sample-header" id="sampleHeader"></div>
+        <div class="sample-body" id="sampleBody"></div>
+        <div class="sample-footer" id="sampleFooter"></div>
+        <div class="sample-watermark" id="sampleWatermark"></div>
+      </div>
+      <div class="crop-marks hidden" id="cropMarks"></div>
+    </div>
+  </div>
+  <footer class="preview-footer">
+    <div><b id="sizeLabel">A4</b><span id="dimLabel">210 × 297 mm</span></div>
+    <div class="meter"><span id="meter"></span></div>
+    <div class="footer-stats"><span id="marginLabel">Margins 15 mm</span><span id="orientationLabel">Portrait</span></div>
+  </footer>
+</main>
+</div>
+
+<div class="modal hidden" id="resultModal">
+ <div class="modal-card">
+   <button class="modal-x" id="closeModal" type="button">×</button>
+   <div class="success">✓</div>
+   <h2>Page format applied</h2>
+   <p id="resultMessage"></p>
+   <iframe id="resultFrame" class="result-frame hidden" title="PDF preview"></iframe>
+   <div class="rename-row">
+     <label>File name</label>
+     <div class="rename-input"><input id="downloadName" type="text" value="page-formatted"><span>.pdf</span></div>
+   </div>
+   <div class="modal-actions"><a id="previewResult" class="btn outline" target="_blank">Open in new tab</a><a id="downloadResult" class="btn primary">Download PDF</a></div>
+ </div>
+</div>
+
+<div class="modal hidden" id="presetModal">
+  <div class="modal-card">
+    <button class="modal-x" id="closePresetModal" type="button">×</button>
+    <h2>Saved presets</h2>
+    <p class="micro">Stored only in this browser.</p>
+    <div id="presetList" class="preset-list"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const PRESETS = {
+  A4: [210, 297, 'mm'], A3: [297, 420, 'mm'], A5: [148, 210, 'mm'],
+  Letter: [8.5, 11, 'in'], Legal: [8.5, 14, 'in'], Tabloid: [11, 17, 'in'],
+  Executive: [7.25, 10.5, 'in'], BusinessCard: [85, 55, 'mm'],
+};
+const PRESET_KEY = 'pageFormatPresets_v1';
+
+let unit = 'mm', orientation = 'portrait', ratio = 210 / 297, zoom = 1, file = null;
+
+// ---- unit helpers ----------------------------------------------------
+const mm = (v, u) => {
+  v = Number(v) || 0;
+  return u === 'mm' ? v : u === 'cm' ? v * 10 : u === 'in' ? v * 25.4 : u === 'pt' ? v * 25.4 / 72 : u === 'px' ? v * 25.4 / 96 : v;
+};
+const val = (v, u) => (u === 'mm' ? v : u === 'cm' ? v / 10 : u === 'in' ? v / 25.4 : u === 'pt' ? v * 72 / 25.4 : u === 'px' ? v * 96 / 25.4 : v);
+const fmt = v => Number(v).toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+const dims = () => [mm($('width').value, unit), mm($('height').value, unit)];
+
+function showError(id, msg) {
+  const el = $(id);
+  if (!el) return;
+  if (msg) { el.textContent = msg; el.classList.remove('hidden'); }
+  else el.classList.add('hidden');
+}
+
+function setDims(w, h, u) {
+  unit = u; $('unit').value = u;
+  $('width').value = fmt(val(w, u)); $('height').value = fmt(val(h, u));
+  update();
+}
+
+function selectPreset(name) {
+  if (name === 'custom') {
+    document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
+    update();
+    return;
+  }
+  const p = PRESETS[name];
+  setDims(p[0], p[1], p[2]);
+  document.querySelectorAll('[data-preset]').forEach(b => b.classList.toggle('active', b.dataset.preset === name));
+}
+
+function setOrientation(o) {
+  let [w, h] = dims();
+  if (o !== orientation) [w, h] = [h, w];
+  orientation = o;
+  $('width').value = fmt(val(w, unit)); $('height').value = fmt(val(h, unit));
+  document.querySelectorAll('[data-orientation]').forEach(b => b.classList.toggle('active', b.dataset.orientation === o));
+  update();
+}
+
+// ---- live preview ------------------------------------------------------
+function update() {
+  let [w, h] = dims();
+  showError('sizeError', (w > 0 && h > 0) ? '' : 'Enter a width and height greater than zero.');
+  if (w <= 0 || h <= 0) return;
+  ratio = w / h;
+
+  const bleed = Number($('bleed').value) || 0;
+  const tw = w + bleed * 2, th = h + bleed * 2;
+  const px = Math.min(650, Math.max(220, tw * 2.6));
+  const py = Math.min(900, Math.max(280, th * 2.6));
+  const paper = $('paper');
+  paper.style.width = px + 'px'; paper.style.height = py + 'px';
+  paper.style.transform = `scale(${zoom})`;
+
+  const sx = px / tw, sy = py / th;
+  const bleedPx = bleed * Math.min(sx, sy);
+
+  const mt = Number($('mt').value) || 0, mr = Number($('mr').value) || 0;
+  const mb = Number($('mb').value) || 0, ml = Number($('ml').value) || 0;
+  const gutter = Number($('gutter').value) || 0;
+  const effMl = ml + (gutter && !$('mirrorMargins').checked ? gutter : 0);
+
+  $('paperContent').style.inset = `${bleedPx + mt * sy}px ${bleedPx + mr * sx}px ${bleedPx + mb * sy}px ${bleedPx + effMl * sx}px`;
+  paper.style.background = $('bgColor').value;
+
+  const bw = Number($('borderWidth').value) || 0;
+  const radiusFrac = Number($('radius').value) || 0;
+  const border = $('paperBorder');
+  border.style.inset = bleedPx + 'px';
+  border.style.border = bw ? `${Math.max(1, bw * Math.min(sx, sy))}px solid ${$('borderColor').value}` : 'none';
+  border.style.borderRadius = (radiusFrac * Math.min(px, py)) + 'px';
+
+  $('cropMarks').classList.toggle('hidden', bleed <= 0);
+
+  renderColumns(sx, sy);
+
+  $('sampleHeader').textContent = $('headerText').value;
+  let footerTxt = $('footerText').value || '';
+  if ($('pageNumbers').checked) {
+    const numbering = ($('pageNumberFormat').value || 'Page {page} of {total}').replace('{page}', '1').replace('{total}', '1');
+    footerTxt = footerTxt ? `${footerTxt}  •  ${numbering}` : numbering;
+  }
+  $('sampleFooter').textContent = footerTxt;
+
+  const wm = $('sampleWatermark');
+  if ($('watermarkText').value.trim()) {
+    wm.textContent = $('watermarkText').value;
+    wm.style.opacity = $('watermarkOpacity').value;
+    wm.style.color = $('watermarkColor').value;
+    wm.style.fontSize = Math.max(10, Number($('watermarkSize').value) * Math.min(sx, sy) * 0.5) + 'px';
+    wm.style.transform = `translate(-50%,-50%) rotate(${-Number($('watermarkAngle').value)}deg)`;
+    wm.classList.remove('hidden');
+  } else wm.classList.add('hidden');
+
+  $('bgHex').textContent = $('bgColor').value;
+  $('borderHex').textContent = $('borderColor').value;
+  $('dimLabel').textContent = `${fmt(val(w, unit))} × ${fmt(val(h, unit))} ${unit}${bleed ? ` (+${fmt(val(bleed, unit))} bleed)` : ''}`;
+  $('marginLabel').textContent = `Margins ${fmt((mt + mr + mb + ml) / 4)} mm`;
+  $('orientationLabel').textContent = orientation[0].toUpperCase() + orientation.slice(1);
+  const active = document.querySelector('[data-preset].active');
+  $('sizeLabel').textContent = active ? active.dataset.preset : 'Custom';
+  $('meter').style.width = Math.min(100, Math.max(8, (w * h) / (210 * 297) * 25)) + '%';
+}
+
+function renderColumns(sx, sy) {
+  const cols = Math.max(1, Number($('columns').value) || 1);
+  const body = $('sampleBody');
+  body.innerHTML = '';
+  const cell = document.createElement('div');
+  cell.className = 'sample-cell';
+  cell.innerHTML = '<i></i><i></i><i></i><i class="short"></i><div class="sample-box"></div><i></i><i class="short2"></i>';
+  if (cols === 1) { body.appendChild(cell); body.classList.remove('multi'); return; }
+  body.classList.add('multi');
+  body.style.gap = ((Number($('columnGap').value) || 0) * sx) + 'px';
+  for (let i = 0; i < cols; i++) body.appendChild(cell.cloneNode(true));
+}
+
+// ---- settings payload ---------------------------------------------------
+function settings() {
+  const [w, h] = dims();
+  const m = { mt: Number($('mt').value) || 0, mr: Number($('mr').value) || 0, mb: Number($('mb').value) || 0, ml: Number($('ml').value) || 0 };
+  return {
+    width_mm: w, height_mm: h, unit, orientation, margins: m,
+    gutter: Number($('gutter').value) || 0, mirror_margins: $('mirrorMargins').checked,
+    fit: document.querySelector('input[name=fit]:checked').value, center_content: $('centerContent').checked,
+    page_start: Math.max(1, Number($('pageStart').value) || 1),
+    page_end: $('pageEnd').value ? Number($('pageEnd').value) : null,
+    page_filter: $('pageFilter').value, quality: $('quality').value, rotation: Number($('rotation').value) || 0,
+    bleed: Number($('bleed').value) || 0, columns: Math.max(1, Number($('columns').value) || 1),
+    column_gap: Number($('columnGap').value) || 0,
+    background: $('bgColor').value, border_color: $('borderColor').value,
+    border_width: Number($('borderWidth').value) || 0, border_radius: Number($('radius').value) || 0,
+    header: $('headerText').value, footer: $('footerText').value,
+    header_align: $('headerAlign').value, footer_align: $('footerAlign').value,
+    header_footer_font: $('hfFont').value, text_color: $('textColor').value,
+    page_numbers: $('pageNumbers').checked, page_number_format: $('pageNumberFormat').value,
+    watermark_text: $('watermarkText').value, watermark_size: Number($('watermarkSize').value) || 48,
+    watermark_angle: Number($('watermarkAngle').value) || 0, watermark_opacity: Number($('watermarkOpacity').value) || 0.15,
+    watermark_color: $('watermarkColor').value, watermark_tile: $('watermarkTile').checked,
+  };
+}
+
+// ---- file handling --------------------------------------------------
+function loadFile(f) {
+  showError('fileError', '');
+  if (!f) return;
+  const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+  if (!isPdf) { showError('fileError', 'Please select a PDF file.'); return; }
+  if (f.size > 150 * 1024 * 1024) { showError('fileError', 'Maximum PDF size is 150 MB.'); return; }
+  file = f;
+  $('fileName').textContent = f.name;
+  $('fileMeta').textContent = (f.size / 1048576).toFixed(2) + ' MB';
+  $('fileCard').classList.remove('hidden');
+  $('status').textContent = 'PDF selected';
+  $('pageInfo').textContent = 'Ready to format';
+  const base = f.name.replace(/\.pdf$/i, '') + '-formatted';
+  $('downloadName').value = base;
+}
+
+async function applyFormat() {
+  showError('marginError', '');
+  if (!file) { showError('fileError', 'Please upload a PDF first.'); return; }
+  const [w, h] = dims();
+  const m = settings().margins;
+  if (w < 10 || h < 10) { showError('sizeError', 'Page dimensions must be at least 10 mm.'); return; }
+  if (m.mt + m.mb >= h || m.ml + m.mr >= w) { showError('marginError', 'Margins are too large for the selected page size.'); return; }
+
+  $('applyBtn').disabled = true;
+  $('status').textContent = 'Formatting…';
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('settings', JSON.stringify(settings()));
+  try {
+    const r = await fetch('/api/page-format/process', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || 'Unable to format PDF.');
+    $('resultMessage').textContent = `${d.pages} page(s) processed successfully${d.size_kb ? ` — ${d.size_kb} KB` : ''}.`;
+    $('previewResult').href = d.preview_url;
+    $('downloadName').value = (d.source_name || 'page-formatted') + '-formatted';
+    const frame = $('resultFrame');
+    frame.src = d.preview_url;
+    frame.classList.remove('hidden');
+    wireDownloadLink(d.download_url);
+    $('resultModal').classList.remove('hidden');
+    $('status').textContent = 'Complete';
+  } catch (e) {
+    showError('fileError', e.message);
+    $('status').textContent = 'Error';
+  } finally {
+    $('applyBtn').disabled = false;
+  }
+}
+
+function wireDownloadLink(base) {
+  const set = () => {
+    const name = encodeURIComponent(($('downloadName').value || 'page-formatted').trim() || 'page-formatted');
+    $('downloadResult').href = `${base}?name=${name}`;
+  };
+  $('downloadName').oninput = set;
+  set();
+}
+
+// ---- presets (saved in this browser only) ---------------------------
+function loadPresets() { try { return JSON.parse(localStorage.getItem(PRESET_KEY) || '{}'); } catch { return {}; } }
+function savePresets(p) { localStorage.setItem(PRESET_KEY, JSON.stringify(p)); }
+
+function applySettingsObject(s) {
+  $('width').value = fmt(s.unit ? val(s.width_mm, s.unit) : s.width_mm);
+  $('height').value = fmt(s.unit ? val(s.height_mm, s.unit) : s.height_mm);
+  unit = s.unit || 'mm'; $('unit').value = unit;
+  orientation = s.orientation || 'portrait';
+  document.querySelectorAll('[data-orientation]').forEach(b => b.classList.toggle('active', b.dataset.orientation === orientation));
+  document.querySelectorAll('[data-preset]').forEach(b => b.classList.remove('active'));
+  const map = { mt: 'mt', mr: 'mr', mb: 'mb', ml: 'ml' };
+  Object.entries(map).forEach(([k, id]) => { if (s.margins && s.margins[k] != null) $(id).value = s.margins[k]; });
+  $('gutter').value = s.gutter ?? 0; $('mirrorMargins').checked = !!s.mirror_margins;
+  const fitInput = document.querySelector(`input[name=fit][value="${s.fit || 'contain'}"]`);
+  if (fitInput) fitInput.checked = true;
+  $('centerContent').checked = s.center_content !== false;
+  $('pageStart').value = s.page_start || 1; $('pageEnd').value = s.page_end || '';
+  $('pageFilter').value = s.page_filter || 'all'; $('quality').value = s.quality || 'standard';
+  $('rotation').value = s.rotation || 0; $('bleed').value = s.bleed || 0;
+  $('columns').value = s.columns || 1; $('columnGap').value = s.column_gap || 0;
+  $('bgColor').value = s.background || '#ffffff'; $('borderColor').value = s.border_color || '#d8dde6';
+  $('borderWidth').value = s.border_width || 0; $('radius').value = s.border_radius || 0;
+  $('headerText').value = s.header || ''; $('footerText').value = s.footer || '';
+  $('headerAlign').value = s.header_align || 'center'; $('footerAlign').value = s.footer_align || 'center';
+  $('hfFont').value = s.header_footer_font || 'helvetica'; $('textColor').value = s.text_color || '#40484f';
+  $('pageNumbers').checked = !!s.page_numbers; $('pageNumberFormat').value = s.page_number_format || 'Page {page} of {total}';
+  $('watermarkText').value = s.watermark_text || ''; $('watermarkSize').value = s.watermark_size || 48;
+  $('watermarkAngle').value = s.watermark_angle ?? 45; $('watermarkOpacity').value = s.watermark_opacity ?? 0.15;
+  $('watermarkColor').value = s.watermark_color || '#808080'; $('watermarkTile').checked = !!s.watermark_tile;
+  update();
+}
+
+function renderPresetList() {
+  const presets = loadPresets();
+  const list = $('presetList');
+  list.innerHTML = '';
+  const names = Object.keys(presets);
+  if (!names.length) { list.innerHTML = '<p class="micro">No presets saved yet.</p>'; return; }
+  names.forEach(name => {
+    const row = document.createElement('div');
+    row.className = 'preset-row';
+    row.innerHTML = `<span>${name}</span><span class="preset-actions"><button class="btn outline" data-act="use">Use</button><button class="btn ghost" data-act="del">Delete</button></span>`;
+    row.querySelector('[data-act="use"]').onclick = () => { applySettingsObject(presets[name]); $('presetModal').classList.add('hidden'); };
+    row.querySelector('[data-act="del"]').onclick = () => { delete presets[name]; savePresets(presets); renderPresetList(); };
+    list.appendChild(row);
+  });
+}
+
+// ---- wiring -----------------------------------------------------------
+$('browseBtn').onclick = () => $('fileInput').click();
+$('dropzone').onclick = e => { if (!e.target.closest('button')) $('fileInput').click(); };
+$('fileInput').onchange = e => loadFile(e.target.files[0]);
+$('removeFile').onclick = () => {
+  file = null; $('fileInput').value = ''; $('fileCard').classList.add('hidden');
+  $('status').textContent = 'Ready'; $('pageInfo').textContent = 'No PDF loaded';
+};
+$('dropzone').ondragover = e => { e.preventDefault(); $('dropzone').classList.add('drag'); };
+$('dropzone').ondragleave = () => $('dropzone').classList.remove('drag');
+$('dropzone').ondrop = e => { e.preventDefault(); $('dropzone').classList.remove('drag'); loadFile(e.dataTransfer.files[0]); };
+
+document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => selectPreset(b.dataset.preset));
+document.querySelectorAll('[data-orientation]').forEach(b => b.onclick = () => setOrientation(b.dataset.orientation));
+
+$('unit').onchange = () => { const [w, h] = dims(); unit = $('unit').value; $('width').value = fmt(val(w, unit)); $('height').value = fmt(val(h, unit)); update(); };
+$('width').oninput = () => { if ($('lockRatio').checked) $('height').value = fmt(Number($('width').value || 0) / ratio); update(); };
+$('height').oninput = () => { if ($('lockRatio').checked) $('width').value = fmt(Number($('height').value || 0) * ratio); update(); };
+['mt', 'mr', 'mb', 'ml'].forEach(k => $(k).oninput = e => {
+  if ($('linkMargins').checked) ['mt', 'mr', 'mb', 'ml'].filter(x => x !== k).forEach(x => $(x).value = e.target.value);
+  update();
+});
+
+document.querySelectorAll('input,select').forEach(el => el.addEventListener('input', update));
+
+$('zoomIn').onclick = () => { zoom = Math.min(1.6, zoom + .1); update(); $('zoomLabel').textContent = Math.round(zoom * 100) + '%'; };
+$('zoomOut').onclick = () => { zoom = Math.max(.4, zoom - .1); update(); $('zoomLabel').textContent = Math.round(zoom * 100) + '%'; };
+$('fitView').onclick = () => { zoom = 1; update(); $('zoomLabel').textContent = '100%'; };
+
+$('applyBtn').onclick = applyFormat;
+$('closeModal').onclick = () => { $('resultModal').classList.add('hidden'); $('resultFrame').src = ''; };
+$('resultModal').onclick = e => { if (e.target === $('resultModal')) { $('resultModal').classList.add('hidden'); $('resultFrame').src = ''; } };
+$('resetBtn').onclick = () => { if (confirm('Reset all settings and remove the loaded file?')) location.reload(); };
+
+$('savePresetBtn').onclick = () => {
+  const name = prompt('Name this preset:');
+  if (!name) return;
+  const presets = loadPresets();
+  presets[name] = settings();
+  savePresets(presets);
+};
+$('loadPresetBtn').onclick = () => { renderPresetList(); $('presetModal').classList.remove('hidden'); };
+$('closePresetModal').onclick = () => $('presetModal').classList.add('hidden');
+$('presetModal').onclick = e => { if (e.target === $('presetModal')) $('presetModal').classList.add('hidden'); };
+
+selectPreset('A4');
+document.querySelector('[data-orientation=portrait]').classList.add('active');
+update();
+})();
+</script>
+</body>
+</html>

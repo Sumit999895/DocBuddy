@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Protect / Unlock PDF | DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for(
+            'protect_unlock.static',
+            filename='protect_unlock.css'
+        ) }}" />
+  </head>
+
+  <body>
+    <!-- ========================================================
+     TOP BAR
+========================================================= -->
+
+    <header class="topbar">
+      <div class="brand-area">
+        <div class="brand-mark">DB</div>
+
+        <div>
+          <div class="brand-name">DocBuddy</div>
+
+          <div class="brand-subtitle">PDF SECURITY</div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="secure-status">
+          <span class="status-dot"></span>
+          SECURE PROCESSING
+        </div>
+
+        <a href="{{ url_for('dashboard') }}" class="dashboard-link">
+          ← Dashboard
+        </a>
+      </div>
+    </header>
+
+    <!-- ========================================================
+     MAIN
+========================================================= -->
+
+    <main class="page-container">
+      <!-- HERO -->
+
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="pro-label">
+            <span>PRO</span>
+            SECURE PDF TOOL
+          </div>
+
+          <h1>
+            Protect or Unlock
+            <strong>PDF</strong>
+          </h1>
+
+          <p>
+            Password-protect your PDF files or remove existing PDF protection
+            securely.
+          </p>
+        </div>
+
+        <div class="hero-security">
+          <div class="security-icon">🔐</div>
+
+          <div>
+            <strong> Private processing </strong>
+
+            <span> Files are processed securely </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOOL -->
+
+      <section class="tool-card">
+        <!-- MODE SWITCH -->
+
+        <div class="mode-switch">
+          <button type="button" id="protectMode" class="mode-btn active">
+            <span class="mode-icon"> 🔒 </span>
+
+            <span>
+              <strong>Protect PDF</strong>
+              <small>Add password protection</small>
+            </span>
+          </button>
+
+          <button type="button" id="unlockMode" class="mode-btn">
+            <span class="mode-icon"> 🔓 </span>
+
+            <span>
+              <strong>Unlock PDF</strong>
+              <small>Remove PDF password</small>
+            </span>
+          </button>
+        </div>
+
+        <!-- UPLOAD -->
+
+        <div id="dropZone" class="drop-zone">
+          <input
+            type="file"
+            id="fileInput"
+            accept=".pdf,application/pdf"
+            hidden />
+
+          <div class="upload-icon">↑</div>
+
+          <h2>Drop your PDF here</h2>
+
+          <p>or click to browse from your computer</p>
+
+          <div class="upload-limit">PDF only · Maximum 150 MB</div>
+        </div>
+
+        <!-- SELECTED FILE -->
+
+        <div id="selectedFile" class="selected-file hidden">
+          <div class="file-icon">PDF</div>
+
+          <div class="file-information">
+            <div id="fileName" class="file-name">document.pdf</div>
+
+            <div id="fileSize" class="file-size">0 MB</div>
+          </div>
+
+          <button
+            type="button"
+            id="removeFile"
+            class="remove-file"
+            title="Remove file">
+            ×
+          </button>
+        </div>
+
+        <!-- SELECTED PDF PREVIEW -->
+
+        <div id="selectedPreview" class="selected-preview hidden">
+          <div class="preview-heading">
+            <span> PDF Preview </span>
+
+            <span id="pageCount" class="page-count"> 0 pages </span>
+          </div>
+
+          <iframe id="selectedPdfFrame" title="Selected PDF preview"></iframe>
+        </div>
+
+        <!-- PROTECT OPTIONS -->
+
+        <div id="protectOptions" class="options-panel">
+          <div class="section-title">
+            <span class="section-number"> 01 </span>
+
+            <div>
+              <strong> Create PDF password </strong>
+
+              <small> Set a password to protect this document. </small>
+            </div>
+          </div>
+
+          <div class="password-grid">
+            <div class="field">
+              <label for="password"> Password </label>
+
+              <div class="password-input">
+                <input
+                  type="password"
+                  id="password"
+                  autocomplete="new-password"
+                  placeholder="Enter password" />
+
+                <button
+                  type="button"
+                  class="password-toggle"
+                  data-target="password">
+                  Show
+                </button>
+              </div>
+
+              <div class="strength">
+                <div class="strength-track">
+                  <div id="strengthBar" class="strength-bar"></div>
+                </div>
+
+                <span id="strengthText"> Enter a password </span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="confirmPassword"> Confirm password </label>
+
+              <div class="password-input">
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  autocomplete="new-password"
+                  placeholder="Re-enter password" />
+
+                <button
+                  type="button"
+                  class="password-toggle"
+                  data-target="confirmPassword">
+                  Show
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UNLOCK OPTIONS -->
+
+        <div id="unlockOptions" class="options-panel hidden">
+          <div class="section-title">
+            <span class="section-number"> 01 </span>
+
+            <div>
+              <strong> Enter PDF password </strong>
+
+              <small> Enter the existing password to unlock the file. </small>
+            </div>
+          </div>
+
+          <div class="field unlock-field">
+            <label for="unlockPassword"> Current PDF password </label>
+
+            <div class="password-input">
+              <input
+                type="password"
+                id="unlockPassword"
+                autocomplete="off"
+                placeholder="Enter current PDF password" />
+
+              <button
+                type="button"
+                class="password-toggle"
+                data-target="unlockPassword">
+                Show
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROCESS BAR -->
+
+        <div id="progressArea" class="progress-area hidden">
+          <div class="progress-info">
+            <span id="progressLabel"> Processing PDF... </span>
+
+            <span id="progressPercent"> 0% </span>
+          </div>
+
+          <div class="progress-track">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- ERROR -->
+
+        <div id="errorBox" class="error-box hidden">
+          <span>!</span>
+
+          <span id="errorMessage"> Something went wrong. </span>
+        </div>
+
+        <!-- PROCESS BUTTON -->
+
+        <button type="button" id="processBtn" class="process-btn">
+          <span id="processIcon"> 🔒 </span>
+
+          <span id="processText"> Protect PDF </span>
+
+          <span class="button-arrow"> → </span>
+        </button>
+
+        <div class="tool-note">
+          <span>✓</span>
+
+          Your PDF is processed locally on the server and is not added to your
+          public files.
+        </div>
+      </section>
+
+      <!-- ====================================================
+         RESULT
+    ===================================================== -->
+
+      <section id="resultSection" class="result-section hidden">
+        <div class="result-header">
+          <div>
+            <div class="result-label">COMPLETE</div>
+
+            <h2>Your PDF is ready</h2>
+          </div>
+
+          <div class="success-icon">✓</div>
+        </div>
+
+        <div class="result-file">
+          <div class="result-file-icon">PDF</div>
+
+          <div class="result-file-info">
+            <strong id="resultFilename"> document.pdf </strong>
+
+            <span id="resultSize"> 0 KB </span>
+          </div>
+        </div>
+
+        <div class="result-actions">
+          <!-- IMPORTANT:
+                 Preview does NOT download.
+                 JavaScript opens the preview modal.
+            -->
+
+          <button
+            type="button"
+            id="previewResultBtn"
+            class="result-btn preview-btn">
+            <span>👁</span>
+            Preview
+          </button>
+
+          <!-- IMPORTANT:
+                 This is the ONLY download button.
+            -->
+
+          <a href="#" id="downloadResultBtn" class="result-btn download-btn">
+            <span>↓</span>
+            Download PDF
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <!-- ========================================================
+     PREVIEW MODAL
+========================================================= -->
+
+    <div id="previewModal" class="preview-modal" aria-hidden="true">
+      <div class="preview-modal-overlay"></div>
+
+      <div class="preview-modal-content">
+        <div class="preview-modal-header">
+          <div>
+            <div class="preview-modal-label">PDF PREVIEW</div>
+
+            <h3 id="previewModalTitle">Document Preview</h3>
+          </div>
+
+          <button
+            type="button"
+            id="closePreview"
+            class="preview-close"
+            aria-label="Close preview">
+            ×
+          </button>
+        </div>
+
+        <div class="preview-frame-wrap">
+          <iframe id="previewFrame" title="Processed PDF preview"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+     TOAST
+========================================================= -->
+
+    <div id="toast" class="toast hidden">
+      <span class="toast-icon"> ✓ </span>
+
+      <span id="toastMessage"> PDF processed successfully. </span>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // ======================================================
+        // ELEMENTS
+        // ======================================================
+
+        const dropZone = document.getElementById("dropZone");
+
+        const fileInput = document.getElementById("fileInput");
+
+        const selectedFile = document.getElementById("selectedFile");
+
+        const selectedPreview = document.getElementById("selectedPreview");
+
+        const selectedPdfFrame = document.getElementById("selectedPdfFrame");
+
+        const fileName = document.getElementById("fileName");
+
+        const fileSize = document.getElementById("fileSize");
+
+        const pageCount = document.getElementById("pageCount");
+
+        const removeFile = document.getElementById("removeFile");
+
+        const protectMode = document.getElementById("protectMode");
+
+        const unlockMode = document.getElementById("unlockMode");
+
+        const protectOptions = document.getElementById("protectOptions");
+
+        const unlockOptions = document.getElementById("unlockOptions");
+
+        const password = document.getElementById("password");
+
+        const confirmPassword = document.getElementById("confirmPassword");
+
+        const unlockPassword = document.getElementById("unlockPassword");
+
+        const strengthBar = document.getElementById("strengthBar");
+
+        const strengthText = document.getElementById("strengthText");
+
+        const processBtn = document.getElementById("processBtn");
+
+        const processIcon = document.getElementById("processIcon");
+
+        const processText = document.getElementById("processText");
+
+        const progressArea = document.getElementById("progressArea");
+
+        const progressBar = document.getElementById("progressBar");
+
+        const progressPercent = document.getElementById("progressPercent");
+
+        const progressLabel = document.getElementById("progressLabel");
+
+        const errorBox = document.getElementById("errorBox");
+
+        const errorMessage = document.getElementById("errorMessage");
+
+        const resultSection = document.getElementById("resultSection");
+
+        const resultFilename = document.getElementById("resultFilename");
+
+        const resultSize = document.getElementById("resultSize");
+
+        const previewResultBtn = document.getElementById("previewResultBtn");
+
+        const downloadResultBtn = document.getElementById("downloadResultBtn");
+
+        const previewModal = document.getElementById("previewModal");
+
+        const previewFrame = document.getElementById("previewFrame");
+
+        const closePreview = document.getElementById("closePreview");
+
+        const previewModalTitle = document.getElementById("previewModalTitle");
+
+        const toast = document.getElementById("toast");
+
+        const toastMessage = document.getElementById("toastMessage");
+
+        // ======================================================
+        // STATE
+        // ======================================================
+
+        let currentFile = null;
+
+        let currentMode = "protect";
+
+        let currentPreviewUrl = null;
+
+        let toastTimer = null;
+
+        // ======================================================
+        // HELPERS
+        // ======================================================
+
+        function formatBytes(bytes) {
+          if (!bytes) {
+            return "0 KB";
+          }
+
+          const units = ["B", "KB", "MB", "GB"];
+
+          let index = 0;
+          let value = bytes;
+
+          while (value >= 1024 && index < units.length - 1) {
+            value /= 1024;
+            index++;
+          }
+
+          return value.toFixed(index === 0 ? 0 : 2) + " " + units[index];
+        }
+
+        function showError(message) {
+          errorMessage.textContent = message;
+
+          errorBox.classList.remove("hidden");
+        }
+
+        function hideError() {
+          errorBox.classList.add("hidden");
+        }
+
+        function showToast(message) {
+          toastMessage.textContent = message;
+
+          toast.classList.remove("hidden");
+
+          clearTimeout(toastTimer);
+
+          toastTimer = setTimeout(() => {
+            toast.classList.add("hidden");
+          }, 4000);
+        }
+
+        function setProgress(percent, label) {
+          progressBar.style.width = `${percent}%`;
+
+          progressPercent.textContent = `${percent}%`;
+
+          progressLabel.textContent = label;
+        }
+
+        // ======================================================
+        // MODE SWITCHING
+        // ======================================================
+
+        function setMode(mode) {
+          currentMode = mode;
+
+          hideError();
+
+          if (mode === "protect") {
+            protectMode.classList.add("active");
+
+            unlockMode.classList.remove("active");
+
+            protectOptions.classList.remove("hidden");
+
+            unlockOptions.classList.add("hidden");
+
+            processIcon.textContent = "🔒";
+
+            processText.textContent = "Protect PDF";
+          } else {
+            unlockMode.classList.add("active");
+
+            protectMode.classList.remove("active");
+
+            unlockOptions.classList.remove("hidden");
+
+            protectOptions.classList.add("hidden");
+
+            processIcon.textContent = "🔓";
+
+            processText.textContent = "Unlock PDF";
+          }
+        }
+
+        protectMode.addEventListener("click", () => setMode("protect"));
+
+        unlockMode.addEventListener("click", () => setMode("unlock"));
+
+        // ======================================================
+        // FILE SELECTION
+        // ======================================================
+
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        fileInput.addEventListener("change", () => {
+          if (fileInput.files && fileInput.files.length) {
+            handleFile(fileInput.files[0]);
+          }
+        });
+
+        // ======================================================
+        // DRAG & DROP
+        // ======================================================
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+          dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+
+            dropZone.classList.add("dragging");
+          });
+        });
+
+        ["dragleave", "drop"].forEach((eventName) => {
+          dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+
+            dropZone.classList.remove("dragging");
+          });
+        });
+
+        dropZone.addEventListener("drop", (event) => {
+          const files = event.dataTransfer.files;
+
+          if (files && files.length) {
+            handleFile(files[0]);
+          }
+        });
+
+        // ======================================================
+        // HANDLE FILE
+        // ======================================================
+
+        function handleFile(file) {
+          hideError();
+
+          const extension = file.name.split(".").pop().toLowerCase();
+
+          if (extension !== "pdf" && file.type !== "application/pdf") {
+            showError("Please select a valid PDF file.");
+
+            return;
+          }
+
+          if (file.size > 150 * 1024 * 1024) {
+            showError("File size cannot exceed 150 MB.");
+
+            return;
+          }
+
+          if (file.size <= 0) {
+            showError("The selected file is empty.");
+
+            return;
+          }
+
+          currentFile = file;
+
+          fileName.textContent = file.name;
+
+          fileSize.textContent = formatBytes(file.size);
+
+          selectedFile.classList.remove("hidden");
+
+          // --------------------------------------------------
+          // Preview selected PDF
+          // --------------------------------------------------
+
+          if (selectedPdfFrame.src) {
+            URL.revokeObjectURL(selectedPdfFrame.dataset.blobUrl || "");
+          }
+
+          const blobUrl = URL.createObjectURL(file);
+
+          selectedPdfFrame.src = blobUrl;
+
+          selectedPdfFrame.dataset.blobUrl = blobUrl;
+
+          selectedPreview.classList.remove("hidden");
+
+          // Browser PDF viewer generally doesn't expose
+          // page count directly. Keep a useful label.
+          pageCount.textContent = "PDF selected";
+
+          // --------------------------------------------------
+          // Hide upload area after selection
+          // --------------------------------------------------
+
+          dropZone.classList.add("has-file");
+        }
+
+        // ======================================================
+        // REMOVE FILE
+        // ======================================================
+
+        removeFile.addEventListener("click", (event) => {
+          event.stopPropagation();
+
+          currentFile = null;
+
+          fileInput.value = "";
+
+          selectedFile.classList.add("hidden");
+
+          selectedPreview.classList.add("hidden");
+
+          if (selectedPdfFrame.dataset.blobUrl) {
+            URL.revokeObjectURL(selectedPdfFrame.dataset.blobUrl);
+
+            selectedPdfFrame.dataset.blobUrl = "";
+          }
+
+          selectedPdfFrame.src = "";
+
+          dropZone.classList.remove("has-file");
+
+          hideError();
+        });
+
+        // ======================================================
+        // PASSWORD SHOW / HIDE
+        // ======================================================
+
+        document.querySelectorAll(".password-toggle").forEach((button) => {
+          button.addEventListener("click", () => {
+            const targetId = button.dataset.target;
+
+            const input = document.getElementById(targetId);
+
+            if (input.type === "password") {
+              input.type = "text";
+
+              button.textContent = "Hide";
+            } else {
+              input.type = "password";
+
+              button.textContent = "Show";
+            }
+          });
+        });
+
+        // ======================================================
+        // PASSWORD STRENGTH
+        // ======================================================
+
+        password.addEventListener("input", updatePasswordStrength);
+
+        function updatePasswordStrength() {
+          const value = password.value;
+
+          if (!value) {
+            strengthBar.style.width = "0%";
+
+            strengthText.textContent = "Enter a password";
+
+            return;
+          }
+
+          let score = 0;
+
+          if (value.length >= 4) {
+            score++;
+          }
+
+          if (value.length >= 8) {
+            score++;
+          }
+
+          if (/[A-Z]/.test(value)) {
+            score++;
+          }
+
+          if (/[0-9]/.test(value)) {
+            score++;
+          }
+
+          if (/[^A-Za-z0-9]/.test(value)) {
+            score++;
+          }
+
+          const percent = Math.min(100, score * 20);
+
+          strengthBar.style.width = `${percent}%`;
+
+          if (score <= 1) {
+            strengthText.textContent = "Weak";
+          } else if (score <= 3) {
+            strengthText.textContent = "Medium";
+          } else {
+            strengthText.textContent = "Strong";
+          }
+        }
+
+        // ======================================================
+        // PROCESS
+        // ======================================================
+
+        processBtn.addEventListener("click", processPdf);
+
+        async function processPdf() {
+          hideError();
+
+          // --------------------------------------------------
+          // File
+          // --------------------------------------------------
+
+          if (!currentFile) {
+            showError("Please select a PDF file first.");
+
+            return;
+          }
+
+          // --------------------------------------------------
+          // Protect validation
+          // --------------------------------------------------
+
+          if (currentMode === "protect") {
+            if (!password.value) {
+              showError("Please enter a password.");
+
+              password.focus();
+
+              return;
+            }
+
+            if (password.value.length < 4) {
+              showError("Password must contain at least 4 characters.");
+
+              password.focus();
+
+              return;
+            }
+
+            if (password.value !== confirmPassword.value) {
+              showError("Passwords do not match.");
+
+              confirmPassword.focus();
+
+              return;
+            }
+          }
+
+          // --------------------------------------------------
+          // Unlock validation
+          // --------------------------------------------------
+
+          if (currentMode === "unlock") {
+            if (!unlockPassword.value) {
+              showError("Please enter the PDF password.");
+
+              unlockPassword.focus();
+
+              return;
+            }
+          }
+
+          // --------------------------------------------------
+          // Form data
+          // --------------------------------------------------
+
+          const formData = new FormData();
+
+          formData.append("file", currentFile);
+
+          formData.append("mode", currentMode);
+
+          if (currentMode === "protect") {
+            formData.append("password", password.value);
+
+            formData.append("confirm_password", confirmPassword.value);
+          } else {
+            formData.append("unlock_password", unlockPassword.value);
+          }
+
+          // --------------------------------------------------
+          // UI loading
+          // --------------------------------------------------
+
+          processBtn.disabled = true;
+
+          processBtn.classList.add("processing");
+
+          progressArea.classList.remove("hidden");
+
+          resultSection.classList.add("hidden");
+
+          setProgress(15, "Uploading PDF...");
+
+          try {
+            // Small visual delay so progress feels natural
+            await new Promise((resolve) => setTimeout(resolve, 250));
+
+            setProgress(
+              45,
+              currentMode === "protect"
+                ? "Encrypting PDF..."
+                : "Unlocking PDF...",
+            );
+
+            const response = await fetch("/api/protect-unlock-pdf/process", {
+              method: "POST",
+              body: formData,
+            });
+
+            setProgress(80, "Finalizing PDF...");
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+              throw new Error(data.error || "Unable to process PDF.");
+            }
+
+            setProgress(100, "PDF ready!");
+
+            // ------------------------------------------------
+            // RESULT
+            // ------------------------------------------------
+
+            resultFilename.textContent = data.filename || "processed.pdf";
+
+            resultSize.textContent = formatBytes(data.size || 0);
+
+            // ------------------------------------------------
+            // IMPORTANT:
+            // Preview URL is separate from Download URL.
+            // ------------------------------------------------
+
+            currentPreviewUrl = data.preview_url;
+
+            previewResultBtn.dataset.url = data.preview_url;
+
+            downloadResultBtn.href = data.download_url;
+
+            // ------------------------------------------------
+            // Show result
+            // ------------------------------------------------
+
+            resultSection.classList.remove("hidden");
+
+            showToast(
+              currentMode === "protect"
+                ? "PDF protected successfully."
+                : "PDF unlocked successfully.",
+            );
+
+            // Scroll to result
+            setTimeout(() => {
+              resultSection.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+            }, 100);
+          } catch (error) {
+            console.error("PROCESS ERROR:", error);
+
+            showError(error.message || "Unable to process PDF.");
+          } finally {
+            setTimeout(() => {
+              processBtn.disabled = false;
+
+              processBtn.classList.remove("processing");
+
+              progressArea.classList.add("hidden");
+            }, 500);
+          }
+        }
+
+        // ======================================================
+        // PREVIEW RESULT
+        // ======================================================
+
+        previewResultBtn.addEventListener("click", (event) => {
+          event.preventDefault();
+
+          const url = previewResultBtn.dataset.url;
+
+          if (!url) {
+            showError("Preview is not available.");
+
+            return;
+          }
+
+          // IMPORTANT:
+          // Do NOT set window.location.
+          // Do NOT use an <a> download.
+          // Open inside iframe instead.
+
+          previewModalTitle.textContent =
+            resultFilename.textContent || "Document Preview";
+
+          previewFrame.src = url;
+
+          previewModal.classList.add("show");
+
+          previewModal.setAttribute("aria-hidden", "false");
+
+          document.body.classList.add("modal-open");
+        });
+
+        // ======================================================
+        // CLOSE PREVIEW
+        // ======================================================
+
+        function closePdfPreview() {
+          previewModal.classList.remove("show");
+
+          previewModal.setAttribute("aria-hidden", "true");
+
+          // Clear iframe after closing
+          // to release browser resources.
+
+          setTimeout(() => {
+            previewFrame.src = "";
+          }, 200);
+
+          document.body.classList.remove("modal-open");
+        }
+
+        closePreview.addEventListener("click", closePdfPreview);
+
+        document
+          .querySelector(".preview-modal-overlay")
+          .addEventListener("click", closePdfPreview);
+
+        document.addEventListener("keydown", (event) => {
+          if (
+            event.key === "Escape" &&
+            previewModal.classList.contains("show")
+          ) {
+            closePdfPreview();
+          }
+        });
+
+        // ======================================================
+        // DOWNLOAD
+        // ======================================================
+
+        downloadResultBtn.addEventListener("click", (event) => {
+          if (!downloadResultBtn.href || downloadResultBtn.href.endsWith("#")) {
+            event.preventDefault();
+
+            showError("Download is not available.");
+          }
+
+          // DO NOT preventDefault when valid.
+          // Browser follows the download URL.
+        });
+
+        // ======================================================
+        // INITIAL MODE
+        // ======================================================
+
+        setMode("protect");
+      });
+    </script>
+  </body>
+</html>

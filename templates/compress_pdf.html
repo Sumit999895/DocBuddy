@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en" data-theme="diazo">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compress PDF — shrink the file, keep the page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='compress_pdf.css') }}" />
+  </head>
+  <body>
+    <!-- Blueprint grid backdrop -->
+    <div class="grid-backdrop" aria-hidden="true"></div>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <div class="header-left">
+          <a class="wordmark" href="#top" aria-label="Compress PDF home">
+            <span class="wordmark-mark">▚</span>
+            Compress<span class="wordmark-slash">/</span>PDF
+          </a>
+          <a class="dashboard-link" href="/dashboard" aria-label="Return to dashboard">
+            <span class="dashboard-link-icon">←</span>
+            <span>Dashboard</span>
+          </a>
+        </div>
+        <div class="header-actions">
+          <span
+            class="engine-badge"
+            id="engineBadge"
+            title="Compression engine detected on the server">
+            <span class="engine-dot" id="engineDot"></span>
+            <span id="engineLabel">checking engine…</span>
+          </span>
+          <button
+            class="theme-toggle"
+            id="themeToggle"
+            type="button"
+            aria-pressed="false">
+            <span class="theme-toggle-track"
+              ><span class="theme-toggle-thumb"></span
+            ></span>
+            <span class="theme-toggle-text" id="themeToggleText"
+              >Diazo print</span
+            >
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ============================= HERO ============================= -->
+      <section class="hero wrap">
+        <div class="hero-copy">
+          <p class="hero-eyebrow">Batch PDF compression</p>
+          <h1 class="hero-title">Shrink the file.<br />Keep the page.</h1>
+          <p class="hero-sub">
+            Drop in as many PDFs as you like. Pick a print quality, and the
+            press does the rest — re-encoding images, stripping dead weight, and
+            rebuilding each document lighter than it left.
+          </p>
+          <ul class="hero-facts">
+            <li><strong>Up to 20</strong> files per batch</li>
+            <li><strong>150 MB</strong> per file</li>
+            <li><strong>4</strong> quality presets, or set your own</li>
+          </ul>
+        </div>
+
+        <div class="hero-dial" aria-hidden="true">
+          <svg viewBox="0 0 320 320" class="dial-svg">
+            <circle cx="160" cy="160" r="140" class="dial-ring-bg" />
+            <circle
+              cx="160"
+              cy="160"
+              r="140"
+              class="dial-ring-fg"
+              id="dialRing"
+              stroke-dasharray="879.6"
+              stroke-dashoffset="879.6" />
+            <text
+              x="160"
+              y="148"
+              text-anchor="middle"
+              class="dial-num"
+              id="dialPercent">
+              0%
+            </text>
+            <text x="160" y="176" text-anchor="middle" class="dial-caption">
+              smaller
+            </text>
+          </svg>
+          <div class="dial-legend">
+            <div class="dial-legend-row">
+              <span class="swatch swatch-before"></span>Original
+              <b id="dialBefore">—</b>
+            </div>
+            <div class="dial-legend-row">
+              <span class="swatch swatch-after"></span>Compressed
+              <b id="dialAfter">—</b>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================= DROPZONE ============================= -->
+      <section class="wrap">
+        <div
+          class="dropzone"
+          id="dropzone"
+          tabindex="0"
+          role="button"
+          aria-label="Upload PDF files. Click, or drag and drop.">
+          <input
+            type="file"
+            id="fileInput"
+            accept="application/pdf,.pdf"
+            multiple
+            hidden />
+          <div class="dropzone-icon">
+            <svg viewBox="0 0 48 48" width="40" height="40" fill="none">
+              <path
+                d="M24 6v24M24 6l-9 9M24 6l9 9"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path
+                d="M8 32v6a4 4 0 0 0 4 4h24a4 4 0 0 0 4-4v-6"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round" />
+            </svg>
+          </div>
+          <p class="dropzone-title">Drag PDFs onto the table</p>
+          <p class="dropzone-sub">
+            or click to browse — multiple files welcome
+          </p>
+        </div>
+      </section>
+
+      <!-- ============================= LEVEL PICKER ============================= -->
+      <section class="wrap section">
+        <div class="section-head">
+          <h2>Print quality</h2>
+          <p>
+            Lower quality means smaller files. Choose per batch — you can change
+            it any time before compressing.
+          </p>
+        </div>
+
+        <div
+          class="level-grid"
+          role="radiogroup"
+          aria-label="Compression quality">
+          <label class="level-card">
+            <input type="radio" name="level" value="low" />
+            <span class="level-card-inner">
+              <span class="level-swatch level-swatch-low"></span>
+              <span class="level-name">Low</span>
+              <span class="level-desc"
+                >Screen-view only. Maximum shrink, ~72dpi images.</span
+              >
+              <span class="level-tag">smallest file</span>
+            </span>
+          </label>
+
+          <label class="level-card">
+            <input type="radio" name="level" value="medium" checked />
+            <span class="level-card-inner">
+              <span class="level-swatch level-swatch-medium"></span>
+              <span class="level-name">Medium</span>
+              <span class="level-desc"
+                >Good for email and web. ~150dpi, balanced quality.</span
+              >
+              <span class="level-tag level-tag-default">recommended</span>
+            </span>
+          </label>
+
+          <label class="level-card">
+            <input type="radio" name="level" value="high" />
+            <span class="level-card-inner">
+              <span class="level-swatch level-swatch-high"></span>
+              <span class="level-name">High</span>
+              <span class="level-desc"
+                >Print-ready. ~300dpi, sharper images, larger file.</span
+              >
+              <span class="level-tag">print quality</span>
+            </span>
+          </label>
+
+          <label class="level-card">
+            <input type="radio" name="level" value="best_quality" />
+            <span class="level-card-inner">
+              <span class="level-swatch level-swatch-best"></span>
+              <span class="level-name">Best quality</span>
+              <span class="level-desc"
+                >Near-lossless. Only trims genuine waste.</span
+              >
+              <span class="level-tag">prepress</span>
+            </span>
+          </label>
+
+          <label class="level-card level-card-custom">
+            <input type="radio" name="level" value="custom" />
+            <span class="level-card-inner">
+              <span class="level-swatch level-swatch-custom"></span>
+              <span class="level-name">Custom</span>
+              <span class="level-desc"
+                >Set your own image resolution and JPEG quality.</span
+              >
+              <span class="level-tag">manual</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="custom-panel" id="customPanel" hidden>
+          <div class="custom-row">
+            <label for="dpiRange"
+              >Image resolution — <span id="dpiVal">150</span> dpi</label
+            >
+            <input
+              type="range"
+              id="dpiRange"
+              min="36"
+              max="600"
+              step="6"
+              value="150" />
+          </div>
+          <div class="custom-row">
+            <label for="qualityRange"
+              >JPEG quality — <span id="qualityVal">70</span>%</label
+            >
+            <input
+              type="range"
+              id="qualityRange"
+              min="10"
+              max="100"
+              step="5"
+              value="70" />
+          </div>
+        </div>
+
+        <details class="advanced-panel">
+          <summary>Advanced options</summary>
+          <div class="advanced-grid">
+            <label class="check-row">
+              <input type="checkbox" id="optMetadata" />
+              <span
+                >Strip metadata
+                <small>(title, author, producer, timestamps)</small></span
+              >
+            </label>
+            <label class="check-row">
+              <input type="checkbox" id="optLinearize" />
+              <span
+                >Fast web view
+                <small>(linearize for progressive loading)</small></span
+              >
+            </label>
+            <label class="check-row">
+              <input type="checkbox" id="optGrayscale" />
+              <span
+                >Convert images to grayscale
+                <small>(extra savings, loses color)</small></span
+              >
+            </label>
+            <label class="check-row check-row-password">
+              <input type="checkbox" id="optHasPassword" />
+              <span>This PDF is password protected</span>
+              <input
+                type="password"
+                id="optPassword"
+                placeholder="Current password"
+                hidden
+                autocomplete="off" />
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <!-- ============================= QUEUE ============================= -->
+      <section class="wrap section" id="queueSection" hidden>
+        <div class="section-head section-head-row">
+          <div>
+            <h2>On the press</h2>
+            <p id="queueSubtitle">0 files queued</p>
+          </div>
+          <div class="queue-actions">
+            <button class="btn btn-ghost" id="clearQueueBtn" type="button">
+              Clear all
+            </button>
+            <button class="btn btn-primary" id="compressBtn" type="button">
+              Compress files
+            </button>
+          </div>
+        </div>
+
+        <ul class="queue-list" id="queueList"></ul>
+      </section>
+
+      <!-- ============================= RESULTS ============================= -->
+      <section class="results-section" id="summaryBar" hidden>
+        <div class="wrap">
+          <div class="results-head">
+            <div>
+              <span class="results-kicker">OUTPUT / READY</span>
+              <h2>Compressed PDFs</h2>
+              <p>Each compressed PDF is ready to preview or download.</p>
+            </div>
+            <div class="results-total">
+              <span class="results-total-label">TOTAL SAVED</span>
+              <strong id="sumSaved">0%</strong>
+            </div>
+          </div>
+
+          <div class="summary-stats">
+            <div class="summary-stat">
+              <span class="summary-label">ORIGINAL</span>
+              <strong class="summary-value" id="sumOriginal">0 KB</strong>
+            </div>
+            <div class="summary-arrow" aria-hidden="true">→</div>
+            <div class="summary-stat">
+              <span class="summary-label">COMPRESSED</span>
+              <strong class="summary-value" id="sumCompressed">0 KB</strong>
+            </div>
+            <div class="summary-stat summary-stat-highlight">
+              <span class="summary-label">REDUCTION</span>
+              <strong class="summary-value" id="sumReduction">0%</strong>
+            </div>
+          </div>
+
+          <div class="result-list" id="resultList"></div>
+        </div>
+      </section>
+
+      <!-- ============================= PDF PREVIEW ============================= -->
+      <div class="pdf-preview-modal" id="pdfPreviewModal" hidden>
+        <div class="pdf-preview-backdrop" data-preview-close></div>
+        <div class="pdf-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="pdfPreviewTitle">
+          <div class="pdf-preview-header">
+            <div>
+              <span class="preview-kicker">DOCUMENT PREVIEW</span>
+              <h2 id="pdfPreviewTitle">PDF Preview</h2>
+              <p id="pdfPreviewMeta">Compressed PDF</p>
+            </div>
+            <button class="pdf-preview-close" type="button" data-preview-close aria-label="Close preview">×</button>
+          </div>
+          <div class="pdf-preview-body">
+            <iframe id="pdfPreviewFrame" title="PDF preview"></iframe>
+          </div>
+          <div class="pdf-preview-footer">
+            <button class="btn btn-ghost" type="button" data-preview-close>Close</button>
+            <a class="btn btn-primary" id="pdfPreviewDownload" href="#">Download PDF</a>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          Files are processed on the server and removed automatically after each
+          session. Nothing is stored longer than it takes to compress it.
+        </p>
+      </div>
+    </footer>
+
+    {% raw %}
+    <script>
+      (() => {
+        "use strict";
+
+        const API_BASE = "/api/compress-pdf";
+        const MAX_FILES = 20;
+        const MAX_FILE_SIZE = 150 * 1024 * 1024;
+        const POLL_INTERVAL_MS = 800;
+
+        let queue = [];
+        let activeJobId = null;
+        let pollTimer = null;
+        let polling = false;
+
+        const $ = (selector) => document.querySelector(selector);
+        const dropzone = $("#dropzone");
+        const fileInput = $("#fileInput");
+        const queueSection = $("#queueSection");
+        const queueList = $("#queueList");
+        const queueSubtitle = $("#queueSubtitle");
+        const compressBtn = $("#compressBtn");
+        const clearQueueBtn = $("#clearQueueBtn");
+        const summaryBar = $("#summaryBar");
+        const resultList = $("#resultList");
+        const pdfPreviewModal = $("#pdfPreviewModal");
+        const pdfPreviewFrame = $("#pdfPreviewFrame");
+        const pdfPreviewTitle = $("#pdfPreviewTitle");
+        const pdfPreviewMeta = $("#pdfPreviewMeta");
+        const pdfPreviewDownload = $("#pdfPreviewDownload");
+        const customPanel = $("#customPanel");
+        const toastStack = $("#toastStack");
+        const themeToggle = $("#themeToggle");
+        const themeToggleText = $("#themeToggleText");
+        const dpiRange = $("#dpiRange");
+        const qualityRange = $("#qualityRange");
+        const passwordCheck = $("#optHasPassword");
+        const passwordInput = $("#optPassword");
+
+        function formatBytes(bytes) {
+          if (bytes === null || bytes === undefined || Number.isNaN(Number(bytes))) return "—";
+          const value = Number(bytes);
+          if (value <= 0) return "0 KB";
+          const units = ["B", "KB", "MB", "GB"];
+          let size = value;
+          let index = 0;
+          while (size >= 1024 && index < units.length - 1) {
+            size /= 1024;
+            index += 1;
+          }
+          return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+        }
+
+        function escapeHtml(value) {
+          return String(value ?? "").replace(/[&<>'"]/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "'": "&#39;",
+            '"': "&quot;",
+          }[char]));
+        }
+
+        function uid() {
+          if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+          return `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        }
+
+        function toast(message, kind = "info") {
+          const el = document.createElement("div");
+          el.className = `toast toast-${kind}`;
+          el.textContent = message;
+          toastStack.appendChild(el);
+          requestAnimationFrame(() => el.classList.add("toast-show"));
+          window.setTimeout(() => {
+            el.classList.remove("toast-show");
+            window.setTimeout(() => el.remove(), 300);
+          }, 4200);
+        }
+
+        function selectedLevel() {
+          const radio = document.querySelector('input[name="level"]:checked');
+          return radio ? radio.value : "medium";
+        }
+
+        function setDial(percent, before, after) {
+          const ring = $("#dialRing");
+          if (!ring) return;
+          const circumference = 2 * Math.PI * 140;
+          const safePercent = Math.min(100, Math.max(0, Number(percent) || 0));
+          ring.style.strokeDashoffset = String(circumference - (safePercent / 100) * circumference);
+          $("#dialPercent").textContent = `${Math.round(safePercent)}%`;
+          $("#dialBefore").textContent = formatBytes(before);
+          $("#dialAfter").textContent = formatBytes(after);
+        }
+
+        function resetDial() {
+          setDial(0, null, null);
+        }
+
+        async function loadCapabilities() {
+          const dot = $("#engineDot");
+          const label = $("#engineLabel");
+          try {
+            const response = await fetch(`${API_BASE}/capabilities`, { cache: "no-store" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) throw new Error(data.error || "Unavailable");
+            if (data.recommended_engine) {
+              dot.classList.add("engine-dot-ok");
+              label.textContent = `engine: ${data.recommended_engine}`;
+            } else {
+              dot.classList.add("engine-dot-warn");
+              label.textContent = "no compression engine found";
+            }
+          } catch (_error) {
+            dot.classList.add("engine-dot-warn");
+            label.textContent = "server unreachable";
+          }
+        }
+
+        function applyTheme(theme) {
+          const value = theme === "ferro" ? "ferro" : "diazo";
+          document.documentElement.dataset.theme = value;
+          themeToggle.setAttribute("aria-pressed", String(value === "ferro"));
+          themeToggleText.textContent = value === "diazo" ? "Diazo print" : "Ferro print";
+          try { localStorage.setItem("compressPdfTheme", value); } catch (_error) {}
+        }
+
+        themeToggle.addEventListener("click", () => {
+          const current = document.documentElement.dataset.theme || "diazo";
+          applyTheme(current === "diazo" ? "ferro" : "diazo");
+        });
+
+        try {
+          const savedTheme = localStorage.getItem("compressPdfTheme");
+          if (savedTheme) applyTheme(savedTheme);
+        } catch (_error) {}
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+          dropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dropzone.classList.add("dropzone-active");
+          });
+        });
+
+        ["dragleave", "drop"].forEach((eventName) => {
+          dropzone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dropzone.classList.remove("dropzone-active");
+          });
+        });
+
+        dropzone.addEventListener("drop", (event) => addFiles(event.dataTransfer.files));
+        dropzone.addEventListener("click", () => fileInput.click());
+        dropzone.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            fileInput.click();
+          }
+        });
+        fileInput.addEventListener("change", (event) => addFiles(event.target.files));
+
+        function addFiles(fileList) {
+          const files = Array.from(fileList || []);
+          if (!files.length) return;
+
+          let added = 0;
+          for (const file of files) {
+            if (queue.length >= MAX_FILES) {
+              toast(`Maximum ${MAX_FILES} files per batch.`, "warn");
+              break;
+            }
+
+            const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+            if (!isPdf) {
+              toast(`"${file.name}" is not a PDF and was skipped.`, "warn");
+              continue;
+            }
+
+            if (file.size > MAX_FILE_SIZE) {
+              toast(`"${file.name}" is larger than 150 MB and was skipped.`, "warn");
+              continue;
+            }
+
+            const duplicate = queue.some(
+              (item) => item.file.name === file.name && item.file.size === file.size && item.file.lastModified === file.lastModified,
+            );
+            if (duplicate) {
+              toast(`"${file.name}" is already in the queue.`, "warn");
+              continue;
+            }
+
+            queue.push({
+              id: uid(),
+              file,
+              status: "pending",
+              message: "Ready to compress",
+              progress: 0,
+              originalSize: file.size,
+              compressedSize: null,
+              resultId: null,
+            });
+            added += 1;
+          }
+
+          fileInput.value = "";
+          renderQueue();
+          if (added) toast(`${added} PDF${added === 1 ? "" : "s"} added to the press.`, "success");
+        }
+
+        async function removeFile(id) {
+          const item = queue.find((entry) => entry.id === id);
+          if (!item) return;
+          if (["processing", "uploading"].includes(item.status)) {
+            toast("This file is already being processed.", "warn");
+            return;
+          }
+          queue = queue.filter((entry) => entry.id !== id);
+          renderQueue();
+        }
+
+        async function clearQueue() {
+          clearTimeout(pollTimer);
+          polling = false;
+          if (activeJobId) {
+            try {
+              await fetch(`${API_BASE}/job/${encodeURIComponent(activeJobId)}`, { method: "DELETE" });
+            } catch (_error) {}
+          }
+          activeJobId = null;
+          queue = [];
+          renderQueue();
+          summaryBar.hidden = true;
+          resetDial();
+          compressBtn.disabled = false;
+          compressBtn.textContent = "Compress files";
+        }
+        clearQueueBtn.addEventListener("click", clearQueue);
+
+        function statusLabel(item) {
+          if (item.status === "done") return item.message || "Done";
+          if (item.status === "error") return item.message || "Compression failed";
+          if (item.status === "needs_password") return "Password required";
+          return item.message || "Waiting…";
+        }
+
+        function renderQueue() {
+          queueSection.hidden = queue.length === 0;
+          queueSubtitle.textContent = `${queue.length} file${queue.length === 1 ? "" : "s"} queued`;
+          queueList.innerHTML = "";
+
+          queue.forEach((item) => {
+            const row = document.createElement("li");
+            row.className = `queue-row queue-row-${item.status}`;
+            row.dataset.id = item.id;
+
+            const reduction = item.compressedSize != null && item.originalSize > 0
+              ? Math.max(0, Math.round((1 - item.compressedSize / item.originalSize) * 100))
+              : null;
+
+            const safeName = escapeHtml(item.file.name);
+            const meta = item.compressedSize != null
+              ? `${formatBytes(item.originalSize)} → ${formatBytes(item.compressedSize)} <b class="queue-reduction">-${reduction}%</b>`
+              : formatBytes(item.originalSize);
+
+            let action = "";
+            if (["pending", "error", "needs_password"].includes(item.status)) {
+              action = `<button class="queue-remove" data-action="remove" type="button" aria-label="Remove ${safeName}">×</button>`;
+            } else if (item.status === "done") {
+              action = `
+                <div class="queue-done-actions">
+                  <button class="btn btn-small btn-preview" data-action="preview" type="button">Preview</button>
+                  <button class="btn btn-small btn-download-pdf" data-action="download" type="button">Download PDF</button>
+                </div>`;
+            }
+
+            const passwordBlock = item.status === "needs_password"
+              ? `<div class="queue-password-row">
+                   <input type="password" class="queue-password-input" placeholder="Enter password for this file" data-action="pw-input" autocomplete="off">
+                   <button class="btn btn-small" data-action="retry-password" type="button">Retry</button>
+                 </div>`
+              : "";
+
+            row.innerHTML = `
+              <div class="queue-row-main">
+                <span class="queue-file-icon">PDF</span>
+                <div class="queue-row-text">
+                  <span class="queue-file-name" title="${safeName}">${safeName}</span>
+                  <span class="queue-file-meta">${meta}</span>
+                </div>
+                <div class="queue-row-status">
+                  <span class="queue-status-text">${escapeHtml(statusLabel(item))}</span>
+                  ${action}
+                </div>
+              </div>
+              <div class="queue-progress-track" aria-label="${Math.round(item.progress)}% complete">
+                <div class="queue-progress-fill" style="width:${Math.min(100, Math.max(0, item.progress))}%"></div>
+              </div>
+              ${passwordBlock}
+            `;
+            queueList.appendChild(row);
+          });
+        }
+
+        queueList.addEventListener("click", (event) => {
+          const button = event.target.closest("button[data-action]");
+          if (!button) return;
+          const row = button.closest(".queue-row");
+          if (!row) return;
+          const id = row.dataset.id;
+          const action = button.dataset.action;
+          if (action === "remove") removeFile(id);
+          if (action === "download") downloadOne(id);
+          if (action === "preview") previewOne(id);
+          if (action === "retry-password") {
+            const input = row.querySelector('[data-action="pw-input"]');
+            retryWithPassword(id, input ? input.value.trim() : "");
+          }
+        });
+
+        document.querySelectorAll('input[name="level"]').forEach((radio) => {
+          radio.addEventListener("change", () => {
+            customPanel.hidden = selectedLevel() !== "custom";
+          });
+        });
+
+        dpiRange.addEventListener("input", () => { $("#dpiVal").textContent = dpiRange.value; });
+        qualityRange.addEventListener("input", () => { $("#qualityVal").textContent = qualityRange.value; });
+        passwordCheck.addEventListener("change", () => { passwordInput.hidden = !passwordCheck.checked; });
+
+        compressBtn.addEventListener("click", startCompression);
+
+        function buildForm(items) {
+          const form = new FormData();
+          items.forEach((item) => form.append("files", item.file, item.file.name));
+          const level = selectedLevel();
+          form.append("level", level);
+          form.append("remove_metadata", $("#optMetadata").checked ? "true" : "false");
+          form.append("linearize", $("#optLinearize").checked ? "true" : "false");
+          form.append("grayscale", $("#optGrayscale").checked ? "true" : "false");
+          if (level === "custom") {
+            form.append("custom_dpi", dpiRange.value);
+            form.append("custom_jpeg_quality", qualityRange.value);
+          }
+          if (passwordCheck.checked && passwordInput.value) form.append("password", passwordInput.value);
+          return form;
+        }
+
+        async function startCompression() {
+          if (activeJobId && polling) {
+            toast("A compression job is already running.", "warn");
+            return;
+          }
+
+          const pending = queue.filter((item) => ["pending", "needs_password", "error"].includes(item.status));
+          if (!pending.length) {
+            toast("Add at least one PDF first.", "warn");
+            return;
+          }
+
+          const form = buildForm(pending);
+          pending.forEach((item) => {
+            item.status = "uploading";
+            item.message = "Uploading…";
+            item.progress = 3;
+          });
+          renderQueue();
+          compressBtn.disabled = true;
+          compressBtn.textContent = "Uploading…";
+
+          try {
+            const response = await fetch(`${API_BASE}/upload`, {
+              method: "POST",
+              body: form,
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) throw new Error(data.error || `Upload failed (${response.status}).`);
+
+            activeJobId = data.job_id;
+            pending.forEach((item) => {
+              item.status = "processing";
+              item.message = "Queued on server…";
+              item.progress = 5;
+            });
+            renderQueue();
+            compressBtn.textContent = "Compressing…";
+            polling = true;
+            await pollJob(activeJobId);
+          } catch (error) {
+            pending.forEach((item) => {
+              item.status = "error";
+              item.message = error.message || "Upload failed.";
+              item.progress = 0;
+            });
+            renderQueue();
+            compressBtn.disabled = false;
+            compressBtn.textContent = "Compress files";
+            toast(error.message || "Upload failed.", "error");
+          }
+        }
+
+        async function pollJob(jobId) {
+          clearTimeout(pollTimer);
+          if (!polling || jobId !== activeJobId) return;
+
+          try {
+            const response = await fetch(`${API_BASE}/status/${encodeURIComponent(jobId)}`, { cache: "no-store" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.success) throw new Error(data.error || "Status check failed.");
+
+            applyJobUpdate(data);
+
+            if (data.status === "queued" || data.status === "processing") {
+              pollTimer = window.setTimeout(() => pollJob(jobId), POLL_INTERVAL_MS);
+              return;
+            }
+
+            polling = false;
+            compressBtn.disabled = false;
+            compressBtn.textContent = "Compress files";
+
+            if (data.status === "completed") {
+              toast("Compression complete.", "success");
+              // A completed job is kept in memory for download. A later compression
+              // can still start because activeJobId is only replaced on new upload.
+            } else if (data.status === "failed") {
+              handleJobFailure(data);
+            } else if (data.status === "cancelled") {
+              toast("Compression cancelled.", "warn");
+            }
+          } catch (error) {
+            polling = false;
+            compressBtn.disabled = false;
+            compressBtn.textContent = "Compress files";
+            toast(error.message || "Status check failed.", "error");
+          }
+        }
+
+        function applyJobUpdate(data) {
+          const active = queue.filter((item) => item.status === "processing" || item.status === "uploading");
+          active.forEach((item) => {
+            item.progress = Number(data.progress) || 0;
+            item.message = data.message || "Processing…";
+          });
+
+          if (Array.isArray(data.results) && data.results.length) {
+            const usedQueueIds = new Set();
+            let totalOriginal = 0;
+            let totalCompressed = 0;
+
+            data.results.forEach((result) => {
+              totalOriginal += Number(result.original_size) || 0;
+              totalCompressed += Number(result.compressed_size) || 0;
+
+              let match = queue.find((item) =>
+                !usedQueueIds.has(item.id) &&
+                item.file.name === result.input_filename &&
+                ["processing", "uploading", "done"].includes(item.status),
+              );
+
+              // secure_filename() on the server can normalize spaces or special
+              // characters. If the names differ, fall back to the next active
+              // queue item in the same result order so the result card is never
+              // lost merely because the server sanitized a filename.
+              if (!match) {
+                match = queue.find((item) =>
+                  !usedQueueIds.has(item.id) &&
+                  ["processing", "uploading"].includes(item.status),
+                );
+              }
+              if (!match) return;
+
+              usedQueueIds.add(match.id);
+              match.status = "done";
+              match.progress = 100;
+              match.compressedSize = Number(result.compressed_size) || 0;
+              match.resultId = result.job_id;
+              match.outputFilename = result.output_filename || `compressed_${result.input_filename}`;
+              match.message = Number(result.percent_reduction) > 0
+                ? `-${Number(result.percent_reduction).toFixed(2).replace(/\.00$/, "")}% saved`
+                : "Optimized";
+            });
+
+            updateSummary(totalOriginal, totalCompressed);
+          }
+
+          renderQueue();
+        }
+
+        function handleJobFailure(data) {
+          const message = data.error || "Compression failed.";
+          const passwordProblem = message.toLowerCase().includes("password");
+          queue.forEach((item) => {
+            if (item.status === "processing" || item.status === "uploading") {
+              item.status = passwordProblem ? "needs_password" : "error";
+              item.message = message;
+              item.progress = 0;
+            }
+          });
+          renderQueue();
+          toast(message, "error");
+        }
+
+        function retryWithPassword(itemId, password) {
+          const item = queue.find((entry) => entry.id === itemId);
+          if (!item) return;
+          if (!password) {
+            toast("Enter the PDF password first.", "warn");
+            return;
+          }
+          passwordCheck.checked = true;
+          passwordInput.hidden = false;
+          passwordInput.value = password;
+          item.status = "pending";
+          item.message = "Ready to retry";
+          item.progress = 0;
+          renderQueue();
+          toast(`Password saved for "${item.file.name}". Click Compress files.`, "info");
+        }
+
+        function updateSummary(totalOriginal, totalCompressed) {
+          summaryBar.hidden = false;
+          $("#sumOriginal").textContent = formatBytes(totalOriginal);
+          $("#sumCompressed").textContent = formatBytes(totalCompressed);
+          const saved = totalOriginal > 0
+            ? Math.max(0, Math.round((1 - totalCompressed / totalOriginal) * 100))
+            : 0;
+          $("#sumSaved").textContent = `${saved}%`;
+          $("#sumReduction").textContent = `${saved}%`;
+          setDial(saved, totalOriginal, totalCompressed);
+          renderResults();
+        }
+
+        function renderResults() {
+          if (!resultList) return;
+          resultList.innerHTML = "";
+          const completed = queue.filter((item) => item.status === "done" && item.resultId);
+          completed.forEach((item) => {
+            const card = document.createElement("article");
+            card.className = "result-card";
+            const reduction = item.originalSize > 0 && item.compressedSize != null
+              ? Math.max(0, Math.round((1 - item.compressedSize / item.originalSize) * 100))
+              : 0;
+            const safeName = escapeHtml(item.file.name);
+            card.innerHTML = `
+              <div class="result-card-top">
+                <div class="result-file-icon">PDF</div>
+                <div class="result-file-info">
+                  <strong title="${safeName}">${safeName}</strong>
+                  <span>${formatBytes(item.originalSize)} <b>→</b> ${formatBytes(item.compressedSize)}</span>
+                  <small>${reduction}% smaller</small>
+                </div>
+                <div class="result-ready">READY</div>
+              </div>
+              <div class="result-card-divider"></div>
+              <div class="result-card-bottom">
+                <div class="result-size-line">
+                  <span>COMPRESSED FILE</span>
+                  <b>${formatBytes(item.compressedSize)}</b>
+                </div>
+                <div class="result-card-actions">
+                  <button class="btn btn-preview" type="button" data-result-action="preview" data-id="${item.id}">◉&nbsp; Preview</button>
+                  <button class="btn btn-primary btn-download-result" type="button" data-result-action="download" data-id="${item.id}">↓&nbsp; Download PDF</button>
+                </div>
+              </div>`;
+            resultList.appendChild(card);
+          });
+        }
+
+        resultList.addEventListener("click", (event) => {
+          const button = event.target.closest("button[data-result-action]");
+          if (!button) return;
+          const itemId = button.dataset.id;
+          if (button.dataset.resultAction === "preview") previewOne(itemId);
+          if (button.dataset.resultAction === "download") downloadOne(itemId);
+        });
+
+        function resultUrl(item, mode) {
+          if (!item || !activeJobId || !item.resultId) return null;
+          return `${API_BASE}/${mode}/${encodeURIComponent(activeJobId)}/${encodeURIComponent(item.resultId)}`;
+        }
+
+        function downloadOne(itemId) {
+          const item = queue.find((entry) => entry.id === itemId);
+          const url = resultUrl(item, "download");
+          if (!url) {
+            toast("The compressed PDF is not available yet.", "warn");
+            return;
+          }
+          window.location.href = url;
+        }
+
+        function previewOne(itemId) {
+          const item = queue.find((entry) => entry.id === itemId);
+          const url = resultUrl(item, "preview");
+          if (!url) {
+            toast("The compressed PDF is not available yet.", "warn");
+            return;
+          }
+          pdfPreviewTitle.textContent = item.file.name;
+          pdfPreviewMeta.textContent = `${formatBytes(item.originalSize)} → ${formatBytes(item.compressedSize)} • compressed PDF`;
+          pdfPreviewFrame.src = `${url}#toolbar=1&navpanes=0&view=FitH`;
+          pdfPreviewDownload.href = resultUrl(item, "download");
+          pdfPreviewModal.hidden = false;
+          pdfPreviewModal.classList.add("visible");
+          document.body.classList.add("pdf-preview-open");
+        }
+
+        function closePreview() {
+          pdfPreviewModal.classList.remove("visible");
+          pdfPreviewModal.hidden = true;
+          pdfPreviewFrame.src = "about:blank";
+          document.body.classList.remove("pdf-preview-open");
+        }
+
+        pdfPreviewModal.addEventListener("click", (event) => {
+          if (event.target.closest("[data-preview-close]")) closePreview();
+        });
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && !pdfPreviewModal.hidden) closePreview();
+        });
+
+        loadCapabilities();
+        resetDial();
+        renderQueue();
+      })();
+    </script>
+    {% endraw %}
+  </body>
+</html>

@@ -1,0 +1,1360 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Scan Document | DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for(
+            'scan.static',
+            filename='scan.css'
+        ) }}" />
+  </head>
+
+  <body>
+    <!-- ========================================================
+     TOP BAR
+========================================================= -->
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">DB</div>
+
+        <div>
+          <div class="brand-name">DocBuddy</div>
+
+          <div class="brand-subtitle">DOCUMENT SCANNER</div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="secure-status">
+          <span class="status-dot"></span>
+
+          SECURE OCR
+        </div>
+
+        <a href="{{ url_for('dashboard') }}" class="dashboard-link">
+          ← Dashboard
+        </a>
+      </div>
+    </header>
+
+    <!-- ========================================================
+     MAIN
+========================================================= -->
+
+    <main class="page">
+      <!-- ====================================================
+         HERO
+    ===================================================== -->
+
+      <section class="hero">
+        <div class="hero-content">
+          <div class="eyebrow">
+            <span class="eyebrow-mark"> SCAN </span>
+
+            INTELLIGENT DOCUMENT PROCESSING
+          </div>
+
+          <h1>
+            Turn documents into
+            <span>usable data.</span>
+          </h1>
+
+          <p>
+            Scan PDFs and images with high-quality OCR, enhance the document
+            automatically, and let AI understand what is inside.
+          </p>
+        </div>
+
+        <div class="hero-metrics">
+          <div class="metric">
+            <strong> OCR </strong>
+
+            <span> Text extraction </span>
+          </div>
+
+          <div class="metric">
+            <strong> AI </strong>
+
+            <span> Smart analysis </span>
+          </div>
+
+          <div class="metric">
+            <strong> PDF </strong>
+
+            <span> Searchable output </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================
+         WORKSPACE
+    ===================================================== -->
+
+      <section class="workspace">
+        <!-- LEFT -->
+        <div class="scanner-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-kicker">INPUT</div>
+
+              <h2>Scan a document</h2>
+            </div>
+
+            <div class="panel-status">READY</div>
+          </div>
+
+          <!-- DROPZONE -->
+
+          <div id="dropZone" class="drop-zone">
+            <input
+              type="file"
+              id="fileInput"
+              hidden
+              accept="
+                        .pdf,
+                        .jpg,
+                        .jpeg,
+                        .png,
+                        .webp,
+                        .bmp,
+                        .tif,
+                        .tiff,
+                        application/pdf,
+                        image/*
+                    " />
+
+            <div class="scanner-light"></div>
+
+            <div class="upload-symbol">↑</div>
+
+            <h3>Drop your document here</h3>
+
+            <p>or click to browse files</p>
+
+            <div class="supported">PDF · JPG · PNG · WEBP · TIFF</div>
+
+            <button type="button" id="cameraButton" class="camera-btn">
+              <span>◉</span>
+              Use Camera
+            </button>
+          </div>
+
+          <!-- FILE -->
+
+          <div id="fileCard" class="file-card hidden">
+            <div class="file-icon">DOC</div>
+
+            <div class="file-details">
+              <strong id="fileName"> document.pdf </strong>
+
+              <span id="fileMeta"> 0 KB </span>
+            </div>
+
+            <button type="button" id="removeFile" class="remove-btn">×</button>
+          </div>
+
+          <!-- OPTIONS -->
+
+          <div class="scan-options">
+            <div class="option-title">Scan settings</div>
+
+            <div class="option-grid">
+              <div class="option">
+                <label for="language"> OCR Language </label>
+
+                <select id="language">
+                  <option value="eng">English</option>
+
+                  <option value="hin">Hindi</option>
+
+                  <option value="eng+hin">English + Hindi</option>
+                </select>
+              </div>
+
+              <div class="option">
+                <label> Enhancement </label>
+
+                <div class="feature-toggle active">
+                  <span class="toggle-dot"></span>
+
+                  Auto Enhance
+                </div>
+              </div>
+
+              <div class="option">
+                <label> AI Analysis </label>
+
+                <div class="feature-toggle active">
+                  <span class="toggle-dot"></span>
+
+                  Smart Analysis
+                </div>
+              </div>
+
+              <div class="option">
+                <label> Output </label>
+
+                <div class="output-badges">
+                  <span> PDF </span>
+
+                  <span> TXT </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROGRESS -->
+
+          <div id="progressBox" class="progress-box hidden">
+            <div class="progress-top">
+              <span id="progressLabel"> Preparing scanner... </span>
+
+              <strong id="progressPercent"> 0% </strong>
+            </div>
+
+            <div class="progress-track">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+
+            <div class="scan-steps">
+              <span id="stepUpload"> Upload </span>
+
+              <span id="stepOcr"> OCR </span>
+
+              <span id="stepAi"> AI </span>
+
+              <span id="stepReady"> Ready </span>
+            </div>
+          </div>
+
+          <!-- ERROR -->
+
+          <div id="errorBox" class="error-box hidden">
+            <span class="error-icon"> ! </span>
+
+            <span id="errorText"> Something went wrong. </span>
+          </div>
+
+          <!-- BUTTON -->
+
+          <button type="button" id="scanButton" class="scan-button">
+            <span class="scan-button-icon"> ◎ </span>
+
+            <span id="scanButtonText"> Scan Document </span>
+
+            <span class="scan-arrow"> → </span>
+          </button>
+
+          <div class="privacy-note">
+            <span> ✓ </span>
+
+            Your uploaded file is processed temporarily and is not added to your
+            permanent history.
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+
+        <aside class="intelligence-panel">
+          <div class="ai-header">
+            <div class="ai-orb">✦</div>
+
+            <div>
+              <div class="panel-kicker">INTELLIGENCE</div>
+
+              <h2>AI Document Brain</h2>
+            </div>
+          </div>
+
+          <p class="ai-intro">
+            After scanning, AI identifies the document type, summarizes the
+            content and extracts useful information.
+          </p>
+
+          <div class="ai-features">
+            <div class="ai-feature">
+              <span> 01 </span>
+
+              <div>
+                <strong> Document type </strong>
+
+                <small> Invoice, receipt, CV, agreement and more </small>
+              </div>
+            </div>
+
+            <div class="ai-feature">
+              <span> 02 </span>
+
+              <div>
+                <strong> Smart summary </strong>
+
+                <small> Quickly understand the document </small>
+              </div>
+            </div>
+
+            <div class="ai-feature">
+              <span> 03 </span>
+
+              <div>
+                <strong> Key information </strong>
+
+                <small> Dates, contacts, amounts and entities </small>
+              </div>
+            </div>
+
+            <div class="ai-feature">
+              <span> 04 </span>
+
+              <div>
+                <strong> Action items </strong>
+
+                <small> Finds tasks and requests inside documents </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="ai-engine">
+            <span class="engine-dot"></span>
+
+            <span> AI ENGINE READY </span>
+
+            <small> OCR + semantic analysis </small>
+          </div>
+        </aside>
+      </section>
+
+      <!-- ====================================================
+         RESULT
+    ===================================================== -->
+
+      <section id="resultSection" class="results hidden">
+        <div class="results-header">
+          <div>
+            <div class="panel-kicker">SCAN COMPLETE</div>
+
+            <h2>Document intelligence</h2>
+          </div>
+
+          <div class="result-check">✓</div>
+        </div>
+
+        <!-- STATS -->
+
+        <div class="stats">
+          <div class="stat">
+            <span> Pages </span>
+
+            <strong id="statPages"> 0 </strong>
+          </div>
+
+          <div class="stat">
+            <span> Words </span>
+
+            <strong id="statWords"> 0 </strong>
+          </div>
+
+          <div class="stat">
+            <span> Characters </span>
+
+            <strong id="statCharacters"> 0 </strong>
+          </div>
+
+          <div class="stat">
+            <span> AI </span>
+
+            <strong id="statAI"> READY </strong>
+          </div>
+        </div>
+
+        <!-- RESULT GRID -->
+
+        <div class="result-grid">
+          <!-- OCR TEXT -->
+
+          <div class="text-card">
+            <div class="card-heading">
+              <div>
+                <span> OCR OUTPUT </span>
+
+                <strong> Extracted text </strong>
+              </div>
+
+              <button type="button" id="copyText" class="small-action">
+                Copy
+              </button>
+            </div>
+
+            <textarea id="ocrText" spellcheck="false" readonly></textarea>
+
+            <div class="text-actions">
+              <button type="button" id="previewPdf" class="action secondary">
+                <span>◉</span>
+                Preview PDF
+              </button>
+
+              <a id="downloadPdf" class="action primary" href="#">
+                <span>↓</span>
+                Download PDF
+              </a>
+
+              <a id="downloadTxt" class="action secondary" href="#">
+                <span>↓</span>
+                TXT
+              </a>
+            </div>
+          </div>
+
+          <!-- AI -->
+
+          <div class="ai-result-card">
+            <div class="card-heading">
+              <div>
+                <span> AI ANALYSIS </span>
+
+                <strong> What this document means </strong>
+              </div>
+
+              <div id="aiProvider" class="ai-provider">LOCAL AI</div>
+            </div>
+
+            <div class="document-type">
+              <div class="type-icon">✦</div>
+
+              <div>
+                <small> DOCUMENT TYPE </small>
+
+                <strong id="documentType"> General Document </strong>
+
+                <span id="confidence"> Confidence: medium </span>
+              </div>
+            </div>
+
+            <div class="summary">
+              <small> SUMMARY </small>
+
+              <p id="summaryText">No summary available.</p>
+            </div>
+
+            <div class="ai-columns">
+              <div>
+                <small> KEY INFORMATION </small>
+
+                <div id="keyInformation" class="chips"></div>
+              </div>
+
+              <div>
+                <small> KEYWORDS </small>
+
+                <div id="keywords" class="chips"></div>
+              </div>
+            </div>
+
+            <div class="action-items">
+              <small> ACTION ITEMS </small>
+
+              <ul id="actionItems"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ========================================================
+         CAMERA SCANNER
+    ========================================================= -->
+    <div id="cameraModal" class="camera-modal" aria-hidden="true">
+      <div class="camera-overlay" id="cameraOverlay"></div>
+
+      <div class="camera-window">
+        <div class="camera-header">
+          <div>
+            <small>LIVE CAMERA</small>
+            <strong>Scan with Camera</strong>
+          </div>
+
+          <div class="camera-header-actions">
+            <button type="button" id="switchCamera" class="camera-header-btn">
+              ↻ Switch
+            </button>
+            <button type="button" id="closeCamera" class="close-camera">
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div class="camera-stage">
+          <video id="cameraVideo" autoplay playsinline muted></video>
+          <div class="camera-frame">
+            <span class="corner tl"></span>
+            <span class="corner tr"></span>
+            <span class="corner bl"></span>
+            <span class="corner br"></span>
+            <div class="camera-scan-line"></div>
+          </div>
+          <div id="cameraHint" class="camera-hint">
+            Position the document inside the frame
+          </div>
+        </div>
+
+        <div class="camera-preview hidden" id="cameraPreview">
+          <img id="capturedImage" alt="Captured document preview" />
+        </div>
+
+        <div class="camera-controls">
+          <button
+            type="button"
+            id="retakePhoto"
+            class="camera-control secondary hidden">
+            Retake
+          </button>
+
+          <button
+            type="button"
+            id="capturePhoto"
+            class="capture-button"
+            aria-label="Capture document">
+            <span></span>
+          </button>
+
+          <button
+            type="button"
+            id="usePhoto"
+            class="camera-control primary hidden">
+            Use Photo →
+          </button>
+        </div>
+
+        <div class="camera-footer">
+          <span class="camera-live-dot"></span>
+          <span id="cameraStatus">Camera ready</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================
+     PREVIEW MODAL
+========================================================= -->
+
+    <div id="previewModal" class="preview-modal" aria-hidden="true">
+      <div class="preview-overlay" id="previewOverlay"></div>
+
+      <div class="preview-window">
+        <div class="preview-header">
+          <div>
+            <small> SEARCHABLE PDF </small>
+
+            <strong> Document Preview </strong>
+          </div>
+
+          <button type="button" id="closePreview" class="close-preview">
+            ×
+          </button>
+        </div>
+
+        <iframe id="previewFrame" title="Scanned PDF preview"></iframe>
+      </div>
+    </div>
+
+    <!-- ========================================================
+     TOAST
+========================================================= -->
+
+    <div id="toast" class="toast hidden">
+      <span> ✓ </span>
+
+      <strong id="toastText"> Done </strong>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // ======================================================
+        // ELEMENTS
+        // ======================================================
+
+        const dropZone = document.getElementById("dropZone");
+
+        const fileInput = document.getElementById("fileInput");
+
+        const cameraButton = document.getElementById("cameraButton");
+        const cameraModal = document.getElementById("cameraModal");
+        const cameraOverlay = document.getElementById("cameraOverlay");
+        const cameraVideo = document.getElementById("cameraVideo");
+        const capturedImage = document.getElementById("capturedImage");
+        const cameraPreview = document.getElementById("cameraPreview");
+        const capturePhoto = document.getElementById("capturePhoto");
+        const retakePhoto = document.getElementById("retakePhoto");
+        const usePhoto = document.getElementById("usePhoto");
+        const closeCamera = document.getElementById("closeCamera");
+        const switchCamera = document.getElementById("switchCamera");
+        const cameraStatus = document.getElementById("cameraStatus");
+
+        const fileCard = document.getElementById("fileCard");
+
+        const fileName = document.getElementById("fileName");
+
+        const fileMeta = document.getElementById("fileMeta");
+
+        const removeFile = document.getElementById("removeFile");
+
+        const language = document.getElementById("language");
+
+        const scanButton = document.getElementById("scanButton");
+
+        const scanButtonText = document.getElementById("scanButtonText");
+
+        const progressBox = document.getElementById("progressBox");
+
+        const progressBar = document.getElementById("progressBar");
+
+        const progressPercent = document.getElementById("progressPercent");
+
+        const progressLabel = document.getElementById("progressLabel");
+
+        const errorBox = document.getElementById("errorBox");
+
+        const errorText = document.getElementById("errorText");
+
+        const resultSection = document.getElementById("resultSection");
+
+        const ocrText = document.getElementById("ocrText");
+
+        const previewPdf = document.getElementById("previewPdf");
+
+        const downloadPdf = document.getElementById("downloadPdf");
+
+        const downloadTxt = document.getElementById("downloadTxt");
+
+        const copyText = document.getElementById("copyText");
+
+        const previewModal = document.getElementById("previewModal");
+
+        const previewOverlay = document.getElementById("previewOverlay");
+
+        const previewFrame = document.getElementById("previewFrame");
+
+        const closePreview = document.getElementById("closePreview");
+
+        const toast = document.getElementById("toast");
+
+        const toastText = document.getElementById("toastText");
+
+        // ======================================================
+        // STATE
+        // ======================================================
+
+        let selectedFile = null;
+
+        let selectedObjectUrl = null;
+
+        let previewUrl = null;
+
+        let toastTimer = null;
+
+        let cameraStream = null;
+        let cameraFacingMode = "environment";
+        let capturedBlob = null;
+
+        // ======================================================
+        // HELPERS
+        // ======================================================
+
+        function formatBytes(bytes) {
+          if (!bytes) {
+            return "0 KB";
+          }
+
+          const units = ["B", "KB", "MB", "GB"];
+
+          let value = bytes;
+
+          let index = 0;
+
+          while (value >= 1024 && index < units.length - 1) {
+            value /= 1024;
+
+            index++;
+          }
+
+          return value.toFixed(index === 0 ? 0 : 2) + " " + units[index];
+        }
+
+        function showError(message) {
+          errorText.textContent = message;
+
+          errorBox.classList.remove("hidden");
+        }
+
+        function hideError() {
+          errorBox.classList.add("hidden");
+        }
+
+        function showToast(message) {
+          toastText.textContent = message;
+
+          toast.classList.remove("hidden");
+
+          clearTimeout(toastTimer);
+
+          toastTimer = setTimeout(() => {
+            toast.classList.add("hidden");
+          }, 4000);
+        }
+
+        function setProgress(percent, label) {
+          progressBar.style.width = `${percent}%`;
+
+          progressPercent.textContent = `${percent}%`;
+
+          progressLabel.textContent = label;
+        }
+
+        // ======================================================
+        // FILE SELECTION
+        // ======================================================
+
+        dropZone.addEventListener("click", (event) => {
+          if (event.target.closest("#cameraButton")) {
+            return;
+          }
+
+          fileInput.click();
+        });
+
+        fileInput.addEventListener("change", () => {
+          if (fileInput.files && fileInput.files.length) {
+            selectFile(fileInput.files[0]);
+          }
+        });
+
+        // ======================================================
+        // DRAG DROP
+        // ======================================================
+
+        ["dragenter", "dragover"].forEach((eventName) => {
+          dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+
+            dropZone.classList.add("dragging");
+          });
+        });
+
+        ["dragleave", "drop"].forEach((eventName) => {
+          dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+
+            dropZone.classList.remove("dragging");
+          });
+        });
+
+        dropZone.addEventListener("drop", (event) => {
+          const files = event.dataTransfer.files;
+
+          if (files && files.length) {
+            selectFile(files[0]);
+          }
+        });
+
+        // ======================================================
+        // CAMERA
+        // ======================================================
+
+        cameraButton.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          await openCamera();
+        });
+
+        async function openCamera() {
+          hideError();
+
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showError(
+              "Camera access is not supported by this browser. Use HTTPS or localhost, or upload an image instead.",
+            );
+            return;
+          }
+
+          cameraModal.classList.add("show");
+          cameraModal.setAttribute("aria-hidden", "false");
+          document.body.classList.add("modal-open");
+
+          resetCameraCapture();
+
+          try {
+            await startCamera();
+          } catch (error) {
+            console.error("CAMERA ERROR:", error);
+            closeCameraModal();
+
+            if (
+              error.name === "NotAllowedError" ||
+              error.name === "PermissionDeniedError"
+            ) {
+              showError(
+                "Camera permission was denied. Allow camera access in your browser and try again.",
+              );
+            } else if (error.name === "NotFoundError") {
+              showError("No camera was found on this device.");
+            } else if (error.name === "NotReadableError") {
+              showError(
+                "The camera is already being used by another application.",
+              );
+            } else {
+              showError(
+                "Unable to access the camera. Please check your browser permissions.",
+              );
+            }
+          }
+        }
+
+        async function startCamera() {
+          stopCamera();
+
+          cameraStatus.textContent = "Starting camera...";
+
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: cameraFacingMode },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+            audio: false,
+          });
+
+          cameraVideo.srcObject = cameraStream;
+          await cameraVideo.play();
+
+          cameraStatus.textContent =
+            cameraFacingMode === "environment"
+              ? "Rear camera • Ready"
+              : "Front camera • Ready";
+        }
+
+        function stopCamera() {
+          if (cameraStream) {
+            cameraStream.getTracks().forEach((track) => track.stop());
+            cameraStream = null;
+          }
+
+          cameraVideo.srcObject = null;
+        }
+
+        function resetCameraCapture() {
+          capturedBlob = null;
+          capturedImage.removeAttribute("src");
+          cameraPreview.classList.add("hidden");
+          cameraVideo.classList.remove("hidden");
+          capturePhoto.classList.remove("hidden");
+          retakePhoto.classList.add("hidden");
+          usePhoto.classList.add("hidden");
+          switchCamera.classList.remove("hidden");
+          cameraHintVisible(true);
+          cameraStatus.textContent = "Camera ready";
+        }
+
+        function cameraHintVisible(show) {
+          const hint = document.getElementById("cameraHint");
+          if (hint) {
+            hint.classList.toggle("hidden", !show);
+          }
+        }
+
+        capturePhoto.addEventListener("click", captureCameraPhoto);
+
+        async function captureCameraPhoto() {
+          if (!cameraStream || !cameraVideo.videoWidth) {
+            showError("Camera is not ready yet.");
+            return;
+          }
+
+          const canvas = document.createElement("canvas");
+          const maxWidth = 2400;
+          const scale = Math.min(1, maxWidth / cameraVideo.videoWidth);
+
+          canvas.width = Math.round(cameraVideo.videoWidth * scale);
+          canvas.height = Math.round(cameraVideo.videoHeight * scale);
+
+          const context = canvas.getContext("2d", { alpha: false });
+          context.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+
+          capturedBlob = await new Promise((resolve) => {
+            canvas.toBlob(resolve, "image/jpeg", 0.94);
+          });
+
+          if (!capturedBlob) {
+            showError("Unable to capture the camera image.");
+            return;
+          }
+
+          capturedImage.src = URL.createObjectURL(capturedBlob);
+          cameraPreview.classList.remove("hidden");
+          cameraVideo.classList.add("hidden");
+          capturePhoto.classList.add("hidden");
+          retakePhoto.classList.remove("hidden");
+          usePhoto.classList.remove("hidden");
+          switchCamera.classList.add("hidden");
+          cameraHintVisible(false);
+
+          cameraStatus.textContent = "Photo captured • Review before scanning";
+        }
+
+        retakePhoto.addEventListener("click", async () => {
+          resetCameraCapture();
+
+          try {
+            await startCamera();
+          } catch (error) {
+            console.error(error);
+            closeCameraModal();
+            showError("Unable to restart the camera.");
+          }
+        });
+
+        usePhoto.addEventListener("click", () => {
+          if (!capturedBlob) {
+            showError("Capture a photo first.");
+            return;
+          }
+
+          const file = new File(
+            [capturedBlob],
+            `camera_scan_${new Date().toISOString().replace(/[:.]/g, "-")}.jpg`,
+            { type: "image/jpeg" },
+          );
+
+          selectFile(file);
+          closeCameraModal();
+          showToast("Camera photo added to the scanner.");
+        });
+
+        switchCamera.addEventListener("click", async () => {
+          cameraFacingMode =
+            cameraFacingMode === "environment" ? "user" : "environment";
+
+          try {
+            await startCamera();
+          } catch (error) {
+            console.error(error);
+            cameraFacingMode =
+              cameraFacingMode === "environment" ? "user" : "environment";
+
+            try {
+              await startCamera();
+            } catch (fallbackError) {
+              console.error(fallbackError);
+              showError("The other camera is not available on this device.");
+            }
+          }
+        });
+
+        function closeCameraModal() {
+          stopCamera();
+
+          cameraModal.classList.remove("show");
+          cameraModal.setAttribute("aria-hidden", "true");
+          document.body.classList.remove("modal-open");
+
+          if (capturedImage.src && capturedImage.src.startsWith("blob:")) {
+            URL.revokeObjectURL(capturedImage.src);
+          }
+
+          capturedImage.removeAttribute("src");
+          capturedBlob = null;
+        }
+
+        closeCamera.addEventListener("click", closeCameraModal);
+        cameraOverlay.addEventListener("click", closeCameraModal);
+
+        // ======================================================
+        // SELECT FILE
+        // ======================================================
+
+        function selectFile(file) {
+          hideError();
+
+          const allowed = [
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/bmp",
+            "image/tiff",
+          ];
+
+          const extension = file.name.split(".").pop().toLowerCase();
+
+          const allowedExtensions = [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png",
+            "webp",
+            "bmp",
+            "tif",
+            "tiff",
+          ];
+
+          if (
+            !allowed.includes(file.type) &&
+            !allowedExtensions.includes(extension)
+          ) {
+            showError("Please select a supported document.");
+
+            return;
+          }
+
+          if (file.size > 150 * 1024 * 1024) {
+            showError("Maximum file size is 150 MB.");
+
+            return;
+          }
+
+          if (file.size <= 0) {
+            showError("The selected file is empty.");
+
+            return;
+          }
+
+          selectedFile = file;
+
+          fileName.textContent = file.name;
+
+          fileMeta.textContent = formatBytes(file.size);
+
+          fileCard.classList.remove("hidden");
+
+          dropZone.classList.add("selected");
+
+          showToast("Document selected.");
+        }
+
+        // ======================================================
+        // REMOVE FILE
+        // ======================================================
+
+        removeFile.addEventListener("click", (event) => {
+          event.stopPropagation();
+
+          selectedFile = null;
+
+          fileInput.value = "";
+
+          fileCard.classList.add("hidden");
+
+          dropZone.classList.remove("selected");
+
+          hideError();
+        });
+
+        // ======================================================
+        // SCAN
+        // ======================================================
+
+        scanButton.addEventListener("click", scanDocument);
+
+        async function scanDocument() {
+          hideError();
+
+          if (!selectedFile) {
+            showError("Please select a document first.");
+
+            return;
+          }
+
+          scanButton.disabled = true;
+
+          scanButton.classList.add("processing");
+
+          progressBox.classList.remove("hidden");
+
+          resultSection.classList.add("hidden");
+
+          setProgress(10, "Uploading document...");
+
+          const formData = new FormData();
+
+          formData.append("file", selectedFile);
+
+          formData.append("language", language.value);
+
+          try {
+            await wait(250);
+
+            setProgress(25, "Preparing document...");
+
+            await wait(250);
+
+            setProgress(45, "Running OCR...");
+
+            const response = await fetch("/api/scan-document", {
+              method: "POST",
+              body: formData,
+            });
+
+            setProgress(75, "Analyzing document...");
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+              throw new Error(data.error || "Scanning failed.");
+            }
+
+            setProgress(90, "Preparing searchable PDF...");
+
+            await wait(250);
+
+            populateResult(data);
+
+            setProgress(100, "Scan complete.");
+
+            showToast("Document scanned successfully.");
+
+            setTimeout(() => {
+              resultSection.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }, 150);
+          } catch (error) {
+            console.error(error);
+
+            showError(error.message || "Unable to scan document.");
+          } finally {
+            setTimeout(() => {
+              scanButton.disabled = false;
+
+              scanButton.classList.remove("processing");
+
+              progressBox.classList.add("hidden");
+            }, 700);
+          }
+        }
+
+        function wait(milliseconds) {
+          return new Promise((resolve) => setTimeout(resolve, milliseconds));
+        }
+
+        // ======================================================
+        // POPULATE RESULT
+        // ======================================================
+
+        function populateResult(data) {
+          resultSection.classList.remove("hidden");
+
+          // Stats
+          document.getElementById("statPages").textContent =
+            data.page_count || 0;
+
+          document.getElementById("statWords").textContent =
+            data.word_count || 0;
+
+          document.getElementById("statCharacters").textContent =
+            data.character_count || 0;
+
+          const ai = data.ai || {};
+
+          document.getElementById("statAI").textContent =
+            ai.provider === "openai" ? "GPT" : "LOCAL";
+
+          // OCR
+          ocrText.value = data.text || "";
+
+          // URLs
+          previewUrl = data.pdf_url;
+
+          previewPdf.dataset.url = data.pdf_url;
+
+          downloadPdf.href = data.pdf_download_url;
+
+          downloadTxt.href = data.txt_download_url;
+
+          // AI
+          populateAI(ai);
+        }
+
+        // ======================================================
+        // AI
+        // ======================================================
+
+        function populateAI(ai) {
+          const provider = document.getElementById("aiProvider");
+
+          provider.textContent =
+            ai.provider === "openai" ? "OPENAI AI" : "LOCAL AI";
+
+          document.getElementById("documentType").textContent =
+            ai.document_type || "General Document";
+
+          document.getElementById("confidence").textContent =
+            "Confidence: " + (ai.confidence || "medium");
+
+          document.getElementById("summaryText").textContent =
+            ai.summary || "No summary available.";
+
+          // Key information
+          const keyInformation = document.getElementById("keyInformation");
+
+          keyInformation.innerHTML = "";
+
+          const information = ai.key_information || {};
+
+          const informationGroups = [
+            "dates",
+            "emails",
+            "phone_numbers",
+            "amounts",
+            "people",
+            "organizations",
+          ];
+
+          informationGroups.forEach((group) => {
+            const values = information[group] || [];
+
+            values.slice(0, 8).forEach((value) => {
+              addChip(keyInformation, value);
+            });
+          });
+
+          if (!keyInformation.children.length) {
+            addChip(keyInformation, "No key information found");
+          }
+
+          // Keywords
+          const keywords = document.getElementById("keywords");
+
+          keywords.innerHTML = "";
+
+          (ai.keywords || []).slice(0, 10).forEach((keyword) => {
+            addChip(keywords, keyword);
+          });
+
+          if (!keywords.children.length) {
+            addChip(keywords, "No keywords");
+          }
+
+          // Action items
+          const actionItems = document.getElementById("actionItems");
+
+          actionItems.innerHTML = "";
+
+          (ai.action_items || []).slice(0, 8).forEach((item) => {
+            const li = document.createElement("li");
+
+            li.textContent = item;
+
+            actionItems.appendChild(li);
+          });
+
+          if (!actionItems.children.length) {
+            const li = document.createElement("li");
+
+            li.textContent = "No explicit action items detected.";
+
+            li.classList.add("empty-action");
+
+            actionItems.appendChild(li);
+          }
+        }
+
+        function addChip(container, value) {
+          const chip = document.createElement("span");
+
+          chip.className = "chip";
+
+          chip.textContent = value;
+
+          container.appendChild(chip);
+        }
+
+        // ======================================================
+        // COPY
+        // ======================================================
+
+        copyText.addEventListener("click", async () => {
+          const text = ocrText.value;
+
+          if (!text) {
+            showToast("There is no OCR text to copy.");
+
+            return;
+          }
+
+          try {
+            await navigator.clipboard.writeText(text);
+
+            showToast("OCR text copied.");
+          } catch {
+            ocrText.select();
+
+            document.execCommand("copy");
+
+            showToast("OCR text copied.");
+          }
+        });
+
+        // ======================================================
+        // PREVIEW
+        // ======================================================
+
+        previewPdf.addEventListener("click", (event) => {
+          event.preventDefault();
+
+          const url = previewPdf.dataset.url;
+
+          if (!url) {
+            showError("PDF preview is not available.");
+
+            return;
+          }
+
+          previewFrame.src = url;
+
+          previewModal.classList.add("show");
+
+          previewModal.setAttribute("aria-hidden", "false");
+
+          document.body.classList.add("modal-open");
+        });
+
+        function closePdfPreview() {
+          previewModal.classList.remove("show");
+
+          previewModal.setAttribute("aria-hidden", "true");
+
+          setTimeout(() => {
+            previewFrame.src = "";
+          }, 200);
+
+          document.body.classList.remove("modal-open");
+        }
+
+        closePreview.addEventListener("click", closePdfPreview);
+
+        previewOverlay.addEventListener("click", closePdfPreview);
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key !== "Escape") {
+            return;
+          }
+
+          if (cameraModal.classList.contains("show")) {
+            closeCameraModal();
+            return;
+          }
+
+          if (previewModal.classList.contains("show")) {
+            closePdfPreview();
+          }
+        });
+
+        window.addEventListener("beforeunload", stopCamera);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1457 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resize — Image Resizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='resize.css') }}" />
+  </head>
+  <body>
+    <div class="resize-wrap">
+      <header class="resize-header">
+        <a href="{{ url_for('dashboard') }}" class="back-link">
+          <h3><- Back to Dashboard</h3>
+        </a>
+
+        <div class="resize-eyebrow-row">
+          <span class="resize-mark" aria-hidden="true"></span>
+          <span class="resize-brand">image / resize</span>
+        </div>
+        <h1>Resize an image</h1>
+        <p>
+          Add one or multiple photos, choose the dimensions, unit and format you need, preview them on screen, and resize them without leaving this page.
+        </p>
+      </header>
+
+      <form id="resizeForm">
+        <!-- Dropzone -->
+        <div class="dropzone" id="dropzone">
+          <input
+            type="file"
+            id="fileInput"
+            accept="image/png, image/jpeg, image/webp, image/gif, image/bmp"
+            multiple />
+
+          <div id="dropzoneEmpty">
+            <div class="dropzone-empty-icon">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+            </div>
+            <div class="dropzone-title">
+              Drag an image here, or
+              <button type="button" id="browseBtn">browse</button>
+            </div>
+            <div class="dropzone-sub">
+              JPG · PNG · WEBP · GIF · BMP, up to 25 MB
+            </div>
+          </div>
+
+          <div id="dropzoneFile" class="file-selection-area" style="display: none">
+            <div class="selection-toolbar">
+              <div>
+                <strong id="selectedCount">0 images selected</strong>
+                <span>Preview or remove individual images below.</span>
+              </div>
+
+              <button type="button" class="add-images-btn" id="addImagesBtn">
+                + Add more images
+              </button>
+            </div>
+
+            <div class="selected-files-list" id="selectedFilesList"></div>
+
+            <div class="selection-hint">
+              You can select multiple images at once or keep adding more.
+              All images will use the same resize settings.
+            </div>
+          </div>
+        </div>
+
+        <!-- Presets -->
+        <div class="presets" id="presets">
+          <button type="button" class="preset-chip" data-w="1080" data-h="1080">
+            Instagram post
+          </button>
+          <button type="button" class="preset-chip" data-w="1080" data-h="1920">
+            Instagram story
+          </button>
+          <button type="button" class="preset-chip" data-w="1500" data-h="500">
+            X header
+          </button>
+          <button type="button" class="preset-chip" data-w="820" data-h="312">
+            Facebook cover
+          </button>
+          <button type="button" class="preset-chip" data-w="1584" data-h="396">
+            LinkedIn banner
+          </button>
+          <button type="button" class="preset-chip" data-w="600" data-h="600">
+            Passport photo
+          </button>
+        </div>
+
+        <!-- Settings -->
+        <section class="settings">
+          <h2>Choose new size and format</h2>
+
+          <div class="dims-row">
+            <div class="dims-fields">
+              <div class="dim-field">
+                <label for="widthInput">Width</label>
+                <input
+                  class="dim-input"
+                  type="number"
+                  id="widthInput"
+                  min="0.01"
+                  step="any"
+                  value="70"
+                  inputmode="decimal" />
+              </div>
+              <div class="dim-field">
+                <label for="heightInput">Height</label>
+                <input
+                  class="dim-input"
+                  type="number"
+                  id="heightInput"
+                  min="0.01"
+                  step="any"
+                  value="70"
+                  inputmode="decimal" />
+              </div>
+            </div>
+            <button
+              type="button"
+              class="lock-toggle locked"
+              id="aspectLock"
+              title="Keep aspect ratio"
+              aria-pressed="true">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.4"
+                stroke-linecap="round"
+                stroke-linejoin="round">
+                <rect x="5" y="11" width="14" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+            </button>
+            <select class="unit-select" id="unitSelect" aria-label="Size unit">
+              <option value="percent" selected>Percent</option>
+              <option value="pixels">Pixels</option>
+              <option value="cm">Centimeters</option>
+              <option value="inches">Inches</option>
+            </select>
+          </div>
+
+          <div class="settings-grid">
+            <div class="field">
+              <label class="field-label" for="dpiInput">Resolution</label>
+              <input type="number" id="dpiInput" value="72" min="1" />
+            </div>
+            <div class="field">
+              <label class="field-label" for="formatSelect">Format</label>
+              <select id="formatSelect">
+                <option value="jpeg" selected>JPG</option>
+                <option value="png">PNG</option>
+                <option value="webp">WEBP</option>
+              </select>
+            </div>
+            <div class="field quality-field">
+              <label class="field-label" for="qualityInput">Quality</label>
+              <input
+                type="number"
+                id="qualityInput"
+                value="90"
+                min="1"
+                max="100" />
+              <span class="quality-suffix">%</span>
+            </div>
+          </div>
+
+          <div
+            class="settings-grid"
+            style="grid-template-columns: 1fr; margin-top: 16px">
+            <div class="field" id="bgField">
+              <label class="field-label"
+                >Background
+                <span style="color: var(--text-faint)"
+                  >(used when flattening transparency)</span
+                ></label
+              >
+              <div class="bg-swatches">
+                <button
+                  type="button"
+                  class="bg-swatch selected"
+                  data-bg="transparent"
+                  title="Transparent"
+                  aria-label="Transparent background"></button>
+                <button
+                  type="button"
+                  class="bg-swatch"
+                  data-bg="white"
+                  title="White"
+                  aria-label="White background"></button>
+                <button
+                  type="button"
+                  class="bg-swatch"
+                  data-bg="black"
+                  title="Black"
+                  aria-label="Black background"></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <button type="submit" class="resize-submit" id="submitBtn" disabled>
+          <span class="submit-label">Resize image</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+
+        <div class="error-banner" id="errorBanner"></div>
+      </form>
+
+      <!-- Results: stays on this page -->
+      <div class="result-panel" id="resultPanel">
+        <div class="result-head">
+          <span class="result-dot" aria-hidden="true"></span>
+          <span>Resize complete</span>
+          <span class="result-count" id="resultCount"></span>
+        </div>
+
+        <div class="result-list" id="resultList"></div>
+      </div>
+
+      <!-- On-screen preview modal. It never redirects or downloads the image. -->
+      <div class="preview-modal" id="previewModal" aria-hidden="true">
+        <div class="preview-backdrop" id="previewBackdrop"></div>
+
+        <section
+          class="preview-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="previewTitle"
+        >
+          <button
+            type="button"
+            class="preview-close"
+            id="previewClose"
+            aria-label="Close preview"
+          >
+            ✕
+          </button>
+
+          <div class="preview-dialog-header">
+            <div>
+              <span class="preview-kicker">IMAGE PREVIEW</span>
+              <h2 id="previewTitle">Preview</h2>
+              <p id="previewMeta">—</p>
+            </div>
+          </div>
+
+          <div class="preview-canvas">
+            <img id="previewImage" alt="Image preview" />
+          </div>
+        </section>
+      </div>
+
+
+
+      <!-- Crop editor: stays on this page -->
+      <div class="crop-modal" id="cropModal" aria-hidden="true">
+        <div class="crop-backdrop" id="cropBackdrop"></div>
+        <section class="crop-dialog" role="dialog" aria-modal="true" aria-labelledby="cropTitle">
+          <header class="crop-header">
+            <div>
+              <span class="crop-kicker">IMAGE CROP</span>
+              <h2 id="cropTitle">Crop image</h2>
+              <p id="cropMeta">Drag the crop area or use the handles.</p>
+            </div>
+            <button type="button" class="crop-close" id="cropClose" aria-label="Close crop editor">✕</button>
+          </header>
+
+          <div class="crop-toolbar">
+            <div class="crop-presets" id="cropPresets">
+              <button type="button" class="crop-preset active" data-ratio="free">Free</button>
+              <button type="button" class="crop-preset" data-ratio="1">1:1</button>
+              <button type="button" class="crop-preset" data-ratio="1.333333">4:3</button>
+              <button type="button" class="crop-preset" data-ratio="0.75">3:4</button>
+              <button type="button" class="crop-preset" data-ratio="1.777778">16:9</button>
+              <button type="button" class="crop-preset" data-ratio="0.5625">9:16</button>
+            </div>
+            <button type="button" class="crop-reset" id="cropReset">Reset</button>
+          </div>
+
+          <div class="crop-workspace" id="cropWorkspace">
+            <canvas id="cropCanvas"></canvas>
+          </div>
+
+          <div class="crop-footer">
+            <div class="crop-info">
+              <span>Selected area</span>
+              <strong id="cropDimensions">—</strong>
+            </div>
+            <div class="crop-actions">
+              <button type="button" class="crop-cancel" id="cropCancel">Cancel</button>
+              <button type="button" class="crop-apply" id="cropApply">Apply crop</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        const dropzone = document.getElementById("dropzone");
+        const fileInput = document.getElementById("fileInput");
+        const browseBtn = document.getElementById("browseBtn");
+        const addImagesBtn = document.getElementById("addImagesBtn");
+        const dropzoneEmpty = document.getElementById("dropzoneEmpty");
+        const dropzoneFile = document.getElementById("dropzoneFile");
+        const selectedFilesList = document.getElementById("selectedFilesList");
+        const selectedCount = document.getElementById("selectedCount");
+
+        const widthInput = document.getElementById("widthInput");
+        const heightInput = document.getElementById("heightInput");
+        const aspectLock = document.getElementById("aspectLock");
+        const unitSelect = document.getElementById("unitSelect");
+        const dpiInput = document.getElementById("dpiInput");
+        const formatSelect = document.getElementById("formatSelect");
+        const qualityInput = document.getElementById("qualityInput");
+        const bgField = document.getElementById("bgField");
+        const bgSwatches = document.querySelectorAll(".bg-swatch");
+        const presets = document.querySelectorAll(".preset-chip");
+
+        const submitBtn = document.getElementById("submitBtn");
+        const resizeForm = document.getElementById("resizeForm");
+        const errorBanner = document.getElementById("errorBanner");
+        const resultPanel = document.getElementById("resultPanel");
+        const resultList = document.getElementById("resultList");
+        const resultCount = document.getElementById("resultCount");
+
+        const previewModal = document.getElementById("previewModal");
+        const previewBackdrop = document.getElementById("previewBackdrop");
+        const previewClose = document.getElementById("previewClose");
+        const previewImage = document.getElementById("previewImage");
+        const previewTitle = document.getElementById("previewTitle");
+        const previewMeta = document.getElementById("previewMeta");
+
+        /* Crop editor */
+        const cropModal = document.getElementById("cropModal");
+        const cropBackdrop = document.getElementById("cropBackdrop");
+        const cropClose = document.getElementById("cropClose");
+        const cropCancel = document.getElementById("cropCancel");
+        const cropApply = document.getElementById("cropApply");
+        const cropReset = document.getElementById("cropReset");
+        const cropCanvas = document.getElementById("cropCanvas");
+        const cropWorkspace = document.getElementById("cropWorkspace");
+        const cropTitle = document.getElementById("cropTitle");
+        const cropMeta = document.getElementById("cropMeta");
+        const cropDimensions = document.getElementById("cropDimensions");
+        const cropPresets = document.querySelectorAll(".crop-preset");
+
+        let currentFiles = [];
+        let naturalW = 0;
+        let naturalH = 0;
+        let aspectRatio = 1;
+
+        // The unit used by the values currently displayed in the fields.
+        // This must be remembered because a <select> already contains the
+        // NEW value when its change event runs.
+        let lastUnit = unitSelect.value;
+
+        let selectedBg = "transparent";
+        let previewObjectUrl = null;
+        let cropObjectUrl = null;
+        let cropImage = null;
+        let cropFileIndex = -1;
+        let cropState = null;
+        let cropRatio = null;
+        let interaction = null;
+        const cropMap = new Map();
+        const resultObjectUrls = [];
+
+        const MAX_FILES = 20;
+        const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
+        function fmtBytes(bytes) {
+          if (bytes < 1024) return bytes + " B";
+          if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+          return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+        }
+
+        function fileKey(file) {
+          return [file.name, file.size, file.lastModified, file.type].join("::");
+        }
+
+        function updateFormatUI() {
+          const isJpeg = formatSelect.value === "jpeg";
+          bgField.style.opacity = isJpeg ? "1" : "0.4";
+          bgField.style.pointerEvents = isJpeg ? "auto" : "none";
+          qualityInput.disabled = formatSelect.value === "png";
+          qualityInput.parentElement.style.opacity = formatSelect.value === "png" ? "0.4" : "1";
+        }
+
+        function setSubmitState() {
+          submitBtn.disabled = currentFiles.length === 0;
+        }
+
+        function setFirstImageDimensions(file) {
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+
+          img.onload = function () {
+            naturalW = img.naturalWidth;
+            naturalH = img.naturalHeight;
+            aspectRatio = naturalW / naturalH;
+            lastUnit = unitSelect.value;
+
+            if (unitSelect.value === "percent") {
+              widthInput.value = "70";
+              heightInput.value = "70";
+            } else if (unitSelect.value === "pixels") {
+              widthInput.value = String(naturalW);
+              heightInput.value = String(naturalH);
+            } else if (unitSelect.value === "cm") {
+              widthInput.value = formatDimension(
+                fromPixels(naturalW, naturalW, "cm"),
+                "cm"
+              );
+              heightInput.value = formatDimension(
+                fromPixels(naturalH, naturalH, "cm"),
+                "cm"
+              );
+            } else if (unitSelect.value === "inches") {
+              widthInput.value = formatDimension(
+                fromPixels(naturalW, naturalW, "inches"),
+                "inches"
+              );
+              heightInput.value = formatDimension(
+                fromPixels(naturalH, naturalH, "inches"),
+                "inches"
+              );
+            }
+
+            URL.revokeObjectURL(url);
+          };
+
+          img.onerror = function () {
+            URL.revokeObjectURL(url);
+          };
+
+          img.src = url;
+        }
+
+        function renderSelectedFiles() {
+          selectedFilesList.innerHTML = "";
+
+          currentFiles.forEach((file, index) => {
+            const card = document.createElement("div");
+            card.className = "selected-file-card";
+
+            const thumbWrap = document.createElement("div");
+            thumbWrap.className = "selected-thumb-wrap";
+
+            const thumb = document.createElement("img");
+            thumb.className = "file-thumb";
+            thumb.alt = file.name;
+            const thumbUrl = URL.createObjectURL(file);
+            thumb.src = thumbUrl;
+            thumb.onload = () => URL.revokeObjectURL(thumbUrl);
+            thumbWrap.appendChild(thumb);
+
+            const meta = document.createElement("div");
+            meta.className = "file-meta";
+
+            const name = document.createElement("div");
+            name.className = "file-name";
+            name.textContent = file.name;
+
+            const stats = document.createElement("div");
+            stats.className = "file-stats";
+            stats.textContent = "Loading dimensions…";
+
+            const image = new Image();
+            const dimUrl = URL.createObjectURL(file);
+            image.onload = function () {
+              stats.textContent = `${image.naturalWidth} × ${image.naturalHeight} · ${fmtBytes(file.size)}`;
+              if (index === 0) setFirstImageDimensions(file);
+              URL.revokeObjectURL(dimUrl);
+            };
+            image.onerror = () => URL.revokeObjectURL(dimUrl);
+            image.src = dimUrl;
+
+            meta.appendChild(name);
+            meta.appendChild(stats);
+
+            const actions = document.createElement("div");
+            actions.className = "file-actions";
+
+            const previewBtn = document.createElement("button");
+            previewBtn.type = "button";
+            previewBtn.className = "file-preview-btn";
+            previewBtn.textContent = "Preview";
+            previewBtn.addEventListener("click", function (event) {
+              event.stopPropagation();
+              openPreview(file);
+            });
+
+            const cropBtn = document.createElement("button");
+            cropBtn.type = "button";
+            cropBtn.className = "file-crop-btn";
+            cropBtn.textContent = cropMap.has(fileKey(file)) ? "Edit crop" : "Crop";
+            cropBtn.addEventListener("click", function (event) {
+              event.stopPropagation();
+              openCrop(index);
+            });
+
+            const removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.className = "file-remove";
+            removeBtn.textContent = "✕";
+            removeBtn.title = "Remove image";
+            removeBtn.setAttribute("aria-label", `Remove ${file.name}`);
+            removeBtn.addEventListener("click", function (event) {
+              event.stopPropagation();
+              removeFile(index);
+            });
+
+            actions.appendChild(previewBtn);
+            actions.appendChild(cropBtn);
+            actions.appendChild(removeBtn);
+
+            card.appendChild(thumbWrap);
+            card.appendChild(meta);
+            card.appendChild(actions);
+            selectedFilesList.appendChild(card);
+          });
+
+          selectedCount.textContent = `${currentFiles.length} image${currentFiles.length === 1 ? "" : "s"} selected`;
+          dropzoneEmpty.style.display = currentFiles.length ? "none" : "block";
+          dropzoneFile.style.display = currentFiles.length ? "block" : "none";
+          dropzone.classList.toggle("has-file", currentFiles.length > 0);
+          setSubmitState();
+        }
+
+        function addFiles(fileList) {
+          const incoming = Array.from(fileList || []);
+          if (!incoming.length) return;
+          hideError();
+
+          const validFiles = [];
+          for (const file of incoming) {
+            if (!file.type.startsWith("image/")) {
+              showError(`"${file.name}" is not a supported image.`);
+              continue;
+            }
+            if (file.size > MAX_FILE_BYTES) {
+              showError(`"${file.name}" is larger than 25 MB.`);
+              continue;
+            }
+            if (!currentFiles.some(existing => fileKey(existing) === fileKey(file))) {
+              validFiles.push(file);
+            }
+          }
+
+          if (currentFiles.length + validFiles.length > MAX_FILES) {
+            showError(`You can resize up to ${MAX_FILES} images at once.`);
+            validFiles.splice(MAX_FILES - currentFiles.length);
+          }
+
+          currentFiles = currentFiles.concat(validFiles);
+          fileInput.value = "";
+          renderSelectedFiles();
+        }
+
+        function removeFile(index) {
+          if (index < 0 || index >= currentFiles.length) return;
+          const key = fileKey(currentFiles[index]);
+          cropMap.delete(key);
+          currentFiles.splice(index, 1);
+
+          if (!currentFiles.length) {
+            naturalW = 0;
+            naturalH = 0;
+            aspectRatio = 1;
+            resultPanel.classList.remove("visible");
+            resultList.innerHTML = "";
+          } else if (index === 0) {
+            setFirstImageDimensions(currentFiles[0]);
+          }
+          renderSelectedFiles();
+        }
+
+        function openPreview(file, title = null, meta = null) {
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+          previewObjectUrl = URL.createObjectURL(file);
+          previewImage.src = previewObjectUrl;
+          previewTitle.textContent = title || file.name;
+          previewMeta.textContent = meta || `${file.type || "image"} · ${fmtBytes(file.size)}`;
+          previewModal.classList.add("visible");
+          previewModal.setAttribute("aria-hidden", "false");
+          document.body.classList.add("preview-open");
+          previewClose.focus();
+        }
+
+        function openResultPreview(url, title, meta) {
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+          previewObjectUrl = null;
+          previewImage.src = url;
+          previewTitle.textContent = title;
+          previewMeta.textContent = meta;
+          previewModal.classList.add("visible");
+          previewModal.setAttribute("aria-hidden", "false");
+          document.body.classList.add("preview-open");
+          previewClose.focus();
+        }
+
+        function closePreview() {
+          previewModal.classList.remove("visible");
+          previewModal.setAttribute("aria-hidden", "true");
+          document.body.classList.remove("preview-open");
+          previewImage.removeAttribute("src");
+          if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+          }
+        }
+
+        function showError(msg) {
+          errorBanner.textContent = msg;
+          errorBanner.classList.add("visible");
+        }
+
+        function hideError() {
+          errorBanner.classList.remove("visible");
+          errorBanner.textContent = "";
+        }
+
+        /* ---------------- CROP EDITOR ---------------- */
+        function clamp(value, min, max) {
+          return Math.min(max, Math.max(min, value));
+        }
+
+        function initialCrop() {
+          const marginX = naturalW * 0.05;
+          const marginY = naturalH * 0.05;
+          return {
+            x: marginX,
+            y: marginY,
+            w: naturalW - marginX * 2,
+            h: naturalH - marginY * 2
+          };
+        }
+
+        function cropForRatio(ratio) {
+          if (!ratio) return initialCrop();
+          let w = naturalW * 0.85;
+          let h = w / ratio;
+          if (h > naturalH * 0.85) {
+            h = naturalH * 0.85;
+            w = h * ratio;
+          }
+          return {
+            x: (naturalW - w) / 2,
+            y: (naturalH - h) / 2,
+            w,
+            h
+          };
+        }
+
+        function fitCropToRatio() {
+          if (!cropRatio || !cropState) return;
+          const centerX = cropState.x + cropState.w / 2;
+          const centerY = cropState.y + cropState.h / 2;
+          let w = cropState.w;
+          let h = w / cropRatio;
+
+          if (h > naturalH) {
+            h = naturalH;
+            w = h * cropRatio;
+          }
+          if (w > naturalW) {
+            w = naturalW;
+            h = w / cropRatio;
+          }
+
+          cropState.w = w;
+          cropState.h = h;
+          cropState.x = clamp(centerX - w / 2, 0, naturalW - w);
+          cropState.y = clamp(centerY - h / 2, 0, naturalH - h);
+        }
+
+        function getCanvasScale() {
+          if (!cropImage) return 1;
+          return cropCanvas.width / cropImage.naturalWidth;
+        }
+
+        function pointerToImage(event) {
+          const rect = cropCanvas.getBoundingClientRect();
+          const scaleX = cropCanvas.width / rect.width;
+          const scaleY = cropCanvas.height / rect.height;
+          return {
+            x: clamp((event.clientX - rect.left) * scaleX, 0, cropCanvas.width),
+            y: clamp((event.clientY - rect.top) * scaleY, 0, cropCanvas.height)
+          };
+        }
+
+        function drawCrop() {
+          if (!cropImage || !cropState) return;
+          const ctx = cropCanvas.getContext("2d");
+          const cw = cropCanvas.width;
+          const ch = cropCanvas.height;
+          const scale = getCanvasScale();
+
+          ctx.clearRect(0, 0, cw, ch);
+          ctx.drawImage(cropImage, 0, 0, cw, ch);
+
+          const x = cropState.x * scale;
+          const y = cropState.y * scale;
+          const w = cropState.w * scale;
+          const h = cropState.h * scale;
+
+          ctx.save();
+          ctx.fillStyle = "rgba(0,0,0,.58)";
+          ctx.fillRect(0, 0, cw, ch);
+          ctx.clearRect(x, y, w, h);
+          ctx.drawImage(cropImage, cropState.x, cropState.y, cropState.w, cropState.h, x, y, w, h);
+
+          ctx.strokeStyle = "#ff5a36";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, w, h);
+
+          ctx.strokeStyle = "rgba(255,255,255,.55)";
+          ctx.lineWidth = 1;
+          for (let i = 1; i < 3; i++) {
+            ctx.beginPath();
+            ctx.moveTo(x + (w * i / 3), y);
+            ctx.lineTo(x + (w * i / 3), y + h);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y + (h * i / 3));
+            ctx.lineTo(x + w, y + (h * i / 3));
+            ctx.stroke();
+          }
+
+          const handles = [
+            [x, y], [x + w / 2, y], [x + w, y],
+            [x + w, y + h / 2], [x + w, y + h],
+            [x + w / 2, y + h], [x, y + h], [x, y + h / 2]
+          ];
+          ctx.fillStyle = "#fff";
+          handles.forEach(([hx, hy]) => {
+            ctx.beginPath();
+            ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ff5a36";
+            ctx.stroke();
+          });
+          ctx.restore();
+
+          cropDimensions.textContent = `${Math.round(cropState.w)} × ${Math.round(cropState.h)} px`;
+        }
+
+        function resizeCropCanvas() {
+          if (!cropImage) return;
+          const maxW = Math.max(300, Math.min(900, cropWorkspace.clientWidth - 28));
+          const maxH = Math.max(260, Math.min(560, window.innerHeight * 0.58));
+          const imageRatio = cropImage.naturalWidth / cropImage.naturalHeight;
+          let w = maxW;
+          let h = w / imageRatio;
+          if (h > maxH) {
+            h = maxH;
+            w = h * imageRatio;
+          }
+          cropCanvas.width = Math.round(w);
+          cropCanvas.height = Math.round(h);
+          cropCanvas.style.aspectRatio = `${cropImage.naturalWidth} / ${cropImage.naturalHeight}`;
+          drawCrop();
+        }
+
+        function hitHandle(point) {
+          if (!cropState) return null;
+          const scale = getCanvasScale();
+          const x = cropState.x * scale;
+          const y = cropState.y * scale;
+          const w = cropState.w * scale;
+          const h = cropState.h * scale;
+          const handles = {
+            nw: [x, y], n: [x+w/2,y], ne: [x+w,y],
+            e: [x+w,y+h/2], se: [x+w,y+h], s: [x+w/2,y+h],
+            sw: [x,y+h], w: [x,y+h/2]
+          };
+          for (const [name, [hx, hy]] of Object.entries(handles)) {
+            if (Math.hypot(point.x - hx, point.y - hy) <= 15) return name;
+          }
+          if (point.x >= x && point.x <= x+w && point.y >= y && point.y <= y+h) return "move";
+          return null;
+        }
+
+        function applyCropPoint(point) {
+          if (!interaction || !cropState) return;
+          const scale = getCanvasScale();
+          const dx = (point.x - interaction.startX) / scale;
+          const dy = (point.y - interaction.startY) / scale;
+          const s = interaction.start;
+          const handle = interaction.handle;
+          const minSize = 10;
+
+          if (handle === "move") {
+            cropState.x = clamp(s.x + dx, 0, naturalW - s.w);
+            cropState.y = clamp(s.y + dy, 0, naturalH - s.h);
+            drawCrop();
+            return;
+          }
+
+          let left = s.x;
+          let top = s.y;
+          let right = s.x + s.w;
+          let bottom = s.y + s.h;
+
+          if (handle.includes("w")) left = clamp(s.x + dx, 0, right - minSize);
+          if (handle.includes("e")) right = clamp(s.x + s.w + dx, left + minSize, naturalW);
+          if (handle.includes("n")) top = clamp(s.y + dy, 0, bottom - minSize);
+          if (handle.includes("s")) bottom = clamp(s.y + s.h + dy, top + minSize, naturalH);
+
+          if (cropRatio) {
+            let w = right - left;
+            let h = bottom - top;
+            if (handle === "e" || handle === "w") h = w / cropRatio;
+            else if (handle === "n" || handle === "s") w = h * cropRatio;
+            else {
+              if (Math.abs(dx) >= Math.abs(dy)) h = w / cropRatio;
+              else w = h * cropRatio;
+            }
+
+            if (handle.includes("w")) left = right - w;
+            else right = left + w;
+            if (handle.includes("n")) top = bottom - h;
+            else bottom = top + h;
+
+            if (left < 0) { left = 0; right = left + w; }
+            if (top < 0) { top = 0; bottom = top + h; }
+            if (right > naturalW) { right = naturalW; left = right - w; }
+            if (bottom > naturalH) { bottom = naturalH; top = bottom - h; }
+          }
+
+          if (right - left >= minSize && bottom - top >= minSize) {
+            cropState.x = left;
+            cropState.y = top;
+            cropState.w = right - left;
+            cropState.h = bottom - top;
+          }
+          drawCrop();
+        }
+
+        function openCrop(index) {
+          const file = currentFiles[index];
+          if (!file) return;
+          cropFileIndex = index;
+          cropTitle.textContent = `Crop ${file.name}`;
+          cropMeta.textContent = "Drag inside the box to move it. Drag any white handle to resize it.";
+          cropRatio = null;
+          cropPresets.forEach(p => p.classList.toggle("active", p.dataset.ratio === "free"));
+
+          if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
+          cropObjectUrl = URL.createObjectURL(file);
+          cropImage = new Image();
+          cropImage.onload = function () {
+            const saved = cropMap.get(fileKey(file));
+            naturalW = cropImage.naturalWidth;
+            naturalH = cropImage.naturalHeight;
+            cropState = saved ? { ...saved } : initialCrop();
+            cropModal.classList.add("visible");
+            cropModal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("crop-open");
+            requestAnimationFrame(resizeCropCanvas);
+            cropClose.focus();
+          };
+          cropImage.onerror = function () {
+            showError("This image could not be opened in the crop editor.");
+          };
+          cropImage.src = cropObjectUrl;
+        }
+
+        function closeCrop() {
+          cropModal.classList.remove("visible");
+          cropModal.setAttribute("aria-hidden", "true");
+          document.body.classList.remove("crop-open");
+          interaction = null;
+          cropFileIndex = -1;
+          if (cropObjectUrl) {
+            URL.revokeObjectURL(cropObjectUrl);
+            cropObjectUrl = null;
+          }
+          cropImage = null;
+        }
+
+        function resetCropEditor() {
+          if (!cropImage) return;
+          cropState = cropRatio ? cropForRatio(cropRatio) : initialCrop();
+          drawCrop();
+        }
+
+        cropCanvas.addEventListener("pointerdown", function (event) {
+          if (!cropState) return;
+          event.preventDefault();
+          const point = pointerToImage(event);
+          const handle = hitHandle(point);
+          if (!handle) return;
+          cropCanvas.setPointerCapture(event.pointerId);
+          interaction = {
+            handle,
+            startX: point.x,
+            startY: point.y,
+            start: { ...cropState }
+          };
+        });
+
+        cropCanvas.addEventListener("pointermove", function (event) {
+          if (!interaction) return;
+          event.preventDefault();
+          applyCropPoint(pointerToImage(event));
+        });
+
+        function endCropInteraction() { interaction = null; }
+        cropCanvas.addEventListener("pointerup", endCropInteraction);
+        cropCanvas.addEventListener("pointercancel", endCropInteraction);
+        cropCanvas.addEventListener("pointerleave", function () {});
+
+        cropPresets.forEach(function (preset) {
+          preset.addEventListener("click", function () {
+            cropPresets.forEach(p => p.classList.remove("active"));
+            preset.classList.add("active");
+            cropRatio = preset.dataset.ratio === "free" ? null : Number(preset.dataset.ratio);
+            if (cropRatio) cropState = cropForRatio(cropRatio);
+            else cropState = initialCrop();
+            drawCrop();
+          });
+        });
+
+        cropReset.addEventListener("click", resetCropEditor);
+        cropApply.addEventListener("click", function () {
+          if (cropFileIndex < 0 || !cropState) return;
+          const file = currentFiles[cropFileIndex];
+          if (file) {
+            cropMap.set(fileKey(file), {
+              x: Math.round(cropState.x),
+              y: Math.round(cropState.y),
+              w: Math.round(cropState.w),
+              h: Math.round(cropState.h)
+            });
+          }
+          closeCrop();
+          renderSelectedFiles();
+        });
+
+        [cropClose, cropCancel, cropBackdrop].forEach(function (el) {
+          el.addEventListener("click", closeCrop);
+        });
+
+        window.addEventListener("resize", function () {
+          if (cropModal.classList.contains("visible")) resizeCropCanvas();
+        });
+
+        /* ---------------- STANDARD UI ---------------- */
+        updateFormatUI();
+        setSubmitState();
+
+        formatSelect.addEventListener("change", updateFormatUI);
+
+        browseBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          fileInput.click();
+        });
+
+        addImagesBtn.addEventListener("click", function (event) {
+          event.stopPropagation();
+          fileInput.click();
+        });
+
+        dropzone.addEventListener("click", function (event) {
+          if (event.target.closest("button") || event.target.closest(".selected-file-card")) return;
+          fileInput.click();
+        });
+
+        ["dragenter", "dragover"].forEach(function (evt) {
+          dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add("drag-over");
+          });
+        });
+
+        ["dragleave", "drop"].forEach(function (evt) {
+          dropzone.addEventListener(evt, function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove("drag-over");
+          });
+        });
+
+        dropzone.addEventListener("drop", function (e) { addFiles(e.dataTransfer.files); });
+        fileInput.addEventListener("change", function (e) { addFiles(e.target.files); });
+
+        /*
+         * DIMENSION CONVERSION
+         * --------------------
+         * Pixel dimensions are the internal source of truth.
+         *
+         * Percent     = percentage of the original image size
+         * Pixels      = exact output pixels
+         * Centimeters = physical size at the selected DPI
+         * Inches      = physical size at the selected DPI
+         *
+         * Changing the unit changes the numbers in the fields while
+         * keeping the same target size. This prevents accidental resizing
+         * simply because the user changed the unit dropdown.
+         */
+        function currentUnit() {
+          return unitSelect.value;
+        }
+
+        function toPixels(value, originalPixels, unit) {
+          const number = Number(value);
+          const dpi = Math.max(1, Number(dpiInput.value) || 72);
+
+          if (!Number.isFinite(number) || number <= 0) {
+            return 1;
+          }
+
+          if (unit === "percent") {
+            return originalPixels * number / 100;
+          }
+
+          if (unit === "pixels") {
+            return number;
+          }
+
+          if (unit === "cm") {
+            return (number / 2.54) * dpi;
+          }
+
+          if (unit === "inches") {
+            return number * dpi;
+          }
+
+          return number;
+        }
+
+        function fromPixels(pixels, originalPixels, unit) {
+          const dpi = Math.max(1, Number(dpiInput.value) || 72);
+
+          if (unit === "percent") {
+            return (pixels / originalPixels) * 100;
+          }
+
+          if (unit === "pixels") {
+            return pixels;
+          }
+
+          if (unit === "cm") {
+            return (pixels / dpi) * 2.54;
+          }
+
+          if (unit === "inches") {
+            return pixels / dpi;
+          }
+
+          return pixels;
+        }
+
+        function formatDimension(value, unit) {
+          if (!Number.isFinite(value)) {
+            return unit === "pixels" ? "1" : "0.01";
+          }
+
+          if (unit === "pixels") {
+            return String(Math.max(1, Math.round(value)));
+          }
+
+          const rounded = Math.round(value * 100) / 100;
+          return String(Math.max(0.01, rounded));
+        }
+
+        function getTargetPixels() {
+          if (!naturalW || !naturalH) {
+            return {
+              width: Math.max(1, Number(widthInput.value) || 1),
+              height: Math.max(1, Number(heightInput.value) || 1)
+            };
+          }
+
+          const unit = currentUnit();
+
+          return {
+            width: Math.max(1, toPixels(widthInput.value, naturalW, unit)),
+            height: Math.max(1, toPixels(heightInput.value, naturalH, unit))
+          };
+        }
+
+        function setFieldsFromPixels(pixelWidth, pixelHeight, unit) {
+          if (!naturalW || !naturalH) return;
+
+          widthInput.value = formatDimension(
+            fromPixels(pixelWidth, naturalW, unit),
+            unit
+          );
+
+          heightInput.value = formatDimension(
+            fromPixels(pixelHeight, naturalH, unit),
+            unit
+          );
+        }
+
+        function keepWidthAndChangeHeight() {
+          if (
+            !aspectLock.classList.contains("locked") ||
+            !naturalW ||
+            !naturalH
+          ) {
+            return;
+          }
+
+          const unit = currentUnit();
+          const pixelWidth = Math.max(
+            1,
+            toPixels(widthInput.value, naturalW, unit)
+          );
+
+          const pixelHeight = pixelWidth / aspectRatio;
+
+          heightInput.value = formatDimension(
+            fromPixels(pixelHeight, naturalH, unit),
+            unit
+          );
+        }
+
+        function keepHeightAndChangeWidth() {
+          if (
+            !aspectLock.classList.contains("locked") ||
+            !naturalW ||
+            !naturalH
+          ) {
+            return;
+          }
+
+          const unit = currentUnit();
+          const pixelHeight = Math.max(
+            1,
+            toPixels(heightInput.value, naturalH, unit)
+          );
+
+          const pixelWidth = pixelHeight * aspectRatio;
+
+          widthInput.value = formatDimension(
+            fromPixels(pixelWidth, naturalW, unit),
+            unit
+          );
+        }
+
+        aspectLock.addEventListener("click", function () {
+          const locked = aspectLock.classList.toggle("locked");
+          aspectLock.setAttribute("aria-pressed", locked ? "true" : "false");
+
+          if (locked && naturalW && naturalH) {
+            keepWidthAndChangeHeight();
+          }
+        });
+
+        widthInput.addEventListener("input", function () {
+          if (aspectLock.classList.contains("locked")) {
+            keepWidthAndChangeHeight();
+          }
+        });
+
+        heightInput.addEventListener("input", function () {
+          if (aspectLock.classList.contains("locked")) {
+            keepHeightAndChangeWidth();
+          }
+        });
+
+        /*
+         * UNIT SWITCH
+         * -----------
+         * Convert the current displayed values to pixels first, then
+         * convert those pixels into the newly selected unit.
+         *
+         * Example:
+         * 50% -> 1000 px -> 26.46 cm -> 10.42 in
+         *
+         * The actual target dimensions remain the same.
+         */
+        unitSelect.addEventListener("change", function () {
+          const oldUnit = lastUnit;
+          const newUnit = unitSelect.value;
+
+          // If no image has been loaded yet, simply remember the selection.
+          if (!naturalW || !naturalH) {
+            lastUnit = newUnit;
+            return;
+          }
+
+          /*
+           * IMPORTANT: the select already contains the NEW unit here.
+           * Therefore the current numbers MUST first be interpreted using
+           * lastUnit (the OLD unit), then converted to the NEW unit.
+           */
+          const pixelWidth = Math.max(
+            1,
+            toPixels(widthInput.value, naturalW, oldUnit)
+          );
+
+          const pixelHeight = Math.max(
+            1,
+            toPixels(heightInput.value, naturalH, oldUnit)
+          );
+
+          widthInput.value = formatDimension(
+            fromPixels(pixelWidth, naturalW, newUnit),
+            newUnit
+          );
+
+          heightInput.value = formatDimension(
+            fromPixels(pixelHeight, naturalH, newUnit),
+            newUnit
+          );
+
+          // The fields now contain values in the new unit.
+          lastUnit = newUnit;
+
+          // Keep the locked aspect ratio exact after conversion/rounding.
+          if (aspectLock.classList.contains("locked")) {
+            const correctedPixelHeight = pixelWidth / aspectRatio;
+            heightInput.value = formatDimension(
+              fromPixels(correctedPixelHeight, naturalH, newUnit),
+              newUnit
+            );
+          }
+        });
+
+        /*
+         * DPI affects physical units only.
+         *
+         * If the user selects 2 inches at 72 DPI and then changes DPI
+         * to 300, the field remains 2 inches. The server will correctly
+         * create 600 pixels for that dimension at 300 DPI.
+         */
+        dpiInput.addEventListener("input", function () {
+          const unit = currentUnit();
+
+          if (!naturalW || !naturalH) return;
+
+          if (unit === "cm" || unit === "inches") {
+            const width = Number(widthInput.value);
+            const height = Number(heightInput.value);
+
+            if (Number.isFinite(width) && width > 0) {
+              widthInput.value = formatDimension(width, unit);
+            }
+
+            if (Number.isFinite(height) && height > 0) {
+              heightInput.value = formatDimension(height, unit);
+            }
+
+            if (aspectLock.classList.contains("locked")) {
+              keepWidthAndChangeHeight();
+            }
+          }
+        });
+
+        presets.forEach(function (chip) {
+          chip.addEventListener("click", function () {
+            presets.forEach(c => c.classList.remove("active"));
+            chip.classList.add("active");
+            unitSelect.value = "pixels";
+            lastUnit = "pixels";
+            widthInput.value = chip.dataset.w;
+            heightInput.value = chip.dataset.h;
+            aspectLock.classList.remove("locked");
+            aspectLock.setAttribute("aria-pressed", "false");
+          });
+        });
+
+        bgSwatches.forEach(function (sw) {
+          sw.addEventListener("click", function () {
+            bgSwatches.forEach(s => s.classList.remove("selected"));
+            sw.classList.add("selected");
+            selectedBg = sw.dataset.bg;
+          });
+        });
+
+        previewClose.addEventListener("click", closePreview);
+        previewBackdrop.addEventListener("click", closePreview);
+
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape") {
+            if (cropModal.classList.contains("visible")) closeCrop();
+            else if (previewModal.classList.contains("visible")) closePreview();
+          }
+        });
+
+        /* Resize every selected image. Crop coordinates are sent with each file. */
+        resizeForm.addEventListener("submit", async function (e) {
+          e.preventDefault();
+          if (!currentFiles.length) {
+            showError("Please select at least one image.");
+            return;
+          }
+
+          hideError();
+          resultPanel.classList.remove("visible");
+          resultList.innerHTML = "";
+          resultObjectUrls.forEach(url => URL.revokeObjectURL(url));
+          resultObjectUrls.length = 0;
+
+          submitBtn.disabled = true;
+          submitBtn.classList.add("loading");
+          const originalLabel = submitBtn.querySelector(".submit-label");
+          originalLabel.textContent = "Resizing images…";
+
+          const filesToProcess = currentFiles.slice();
+          let completed = 0;
+          let failed = 0;
+
+          for (const file of filesToProcess) {
+            try {
+              const fd = new FormData();
+              fd.append("image", file);
+              fd.append("width", widthInput.value);
+              fd.append("height", heightInput.value);
+              const serverUnit =
+                unitSelect.value === "pixels"
+                  ? "px"
+                  : unitSelect.value === "inches"
+                    ? "in"
+                    : unitSelect.value;
+
+              fd.append("unit", serverUnit);
+              fd.append("dpi", dpiInput.value);
+              fd.append("format", formatSelect.value);
+              fd.append("quality", qualityInput.value);
+              fd.append("background", selectedBg);
+              fd.append("fit", "stretch");
+
+              const crop = cropMap.get(fileKey(file));
+              if (crop) {
+                fd.append("crop_x", crop.x);
+                fd.append("crop_y", crop.y);
+                fd.append("crop_width", crop.w);
+                fd.append("crop_height", crop.h);
+              }
+
+              const res = await fetch("/resize/process", { method: "POST", body: fd });
+              if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || `Couldn't resize ${file.name}.`);
+              }
+
+              const blob = await res.blob();
+              const newW = res.headers.get("X-New-Width") || "—";
+              const newH = res.headers.get("X-New-Height") || "—";
+              const newSize = parseInt(res.headers.get("X-New-Size"), 10) || blob.size;
+              const cropped = res.headers.get("X-Cropped") === "1";
+              const ext = formatSelect.value === "jpeg" ? "jpg" : formatSelect.value;
+              const outputUrl = URL.createObjectURL(blob);
+              resultObjectUrls.push(outputUrl);
+              const outputName = file.name.replace(/\.[^/.]+$/, "") + `-resized.${ext}`;
+
+              const resultCard = document.createElement("article");
+              resultCard.className = "result-item";
+
+              const resultPreview = document.createElement("img");
+              resultPreview.className = "result-thumb";
+              resultPreview.src = outputUrl;
+              resultPreview.alt = `Resized ${file.name}`;
+
+              const resultInfo = document.createElement("div");
+              resultInfo.className = "result-info";
+              const resultName = document.createElement("strong");
+              resultName.textContent = outputName;
+              const resultStats = document.createElement("span");
+              resultStats.textContent = `${newW} × ${newH}px · ${fmtBytes(newSize)}${cropped ? " · cropped" : ""}`;
+              resultInfo.appendChild(resultName);
+              resultInfo.appendChild(resultStats);
+
+              const resultActions = document.createElement("div");
+              resultActions.className = "result-item-actions";
+
+              const viewBtn = document.createElement("button");
+              viewBtn.type = "button";
+              viewBtn.className = "result-preview-btn";
+              viewBtn.textContent = "Preview";
+              viewBtn.addEventListener("click", function () {
+                openResultPreview(outputUrl, outputName, `${newW} × ${newH}px · ${fmtBytes(newSize)}`);
+              });
+
+              const download = document.createElement("a");
+              download.className = "btn-download";
+              download.href = outputUrl;
+              download.download = outputName;
+              download.textContent = "Download";
+
+              resultActions.appendChild(viewBtn);
+              resultActions.appendChild(download);
+              resultCard.appendChild(resultPreview);
+              resultCard.appendChild(resultInfo);
+              resultCard.appendChild(resultActions);
+              resultList.appendChild(resultCard);
+              completed += 1;
+            } catch (err) {
+              failed += 1;
+              const failedCard = document.createElement("article");
+              failedCard.className = "result-item result-failed";
+              const icon = document.createElement("div");
+              icon.className = "result-failed-icon";
+              icon.textContent = "!";
+              const info = document.createElement("div");
+              info.className = "result-info";
+              const name = document.createElement("strong");
+              name.textContent = file.name;
+              const error = document.createElement("span");
+              error.textContent = err.message || "Resize failed.";
+              info.appendChild(name);
+              info.appendChild(error);
+              failedCard.appendChild(icon);
+              failedCard.appendChild(info);
+              resultList.appendChild(failedCard);
+            }
+            originalLabel.textContent = `Resizing ${completed + failed}/${filesToProcess.length}…`;
+          }
+
+          resultCount.textContent = `${completed} completed${failed ? ` · ${failed} failed` : ""}`;
+          resultPanel.classList.add("visible");
+          resultPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          submitBtn.disabled = false;
+          submitBtn.classList.remove("loading");
+          originalLabel.textContent = "Resize images";
+        });
+
+        window.addEventListener("beforeunload", function () {
+          if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+          if (cropObjectUrl) URL.revokeObjectURL(cropObjectUrl);
+          resultObjectUrls.forEach(url => URL.revokeObjectURL(url));
+        });
+      })();
+    </script>
+  </body>
+</html>

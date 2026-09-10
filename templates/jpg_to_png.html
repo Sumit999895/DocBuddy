@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>JPG to PNG - DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for(
+      'static',
+      filename='jpg_to_png.css'
+    ) }}" />
+  </head>
+
+  <body>
+    <div class="converter-page">
+      <!-- ==================================================
+       HEADER
+  =================================================== -->
+
+      <header class="converter-header">
+        <a href="/dashboard" class="back-button"> ← Dashboard </a>
+
+        <div class="header-title">
+          <div class="header-icon">🖼️</div>
+
+          <div>
+            <h1>JPG to PNG</h1>
+
+            <p>Convert your JPG images into PNG files</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- ==================================================
+       MAIN
+  =================================================== -->
+
+      <main class="converter-container">
+        <!-- ==================================================
+         CONVERTER CARD
+    =================================================== -->
+
+        <section class="converter-card">
+          <div class="card-heading">
+            <h2>Convert JPG to PNG</h2>
+
+            <p>
+              Select a JPG, JPEG or PNG image and convert it into a PNG file.
+            </p>
+          </div>
+
+          <!-- ==================================================
+           FLASH MESSAGES
+      =================================================== -->
+
+          {% with messages = get_flashed_messages( with_categories=true ) %} {%
+          if messages %}
+
+          <div class="flash-messages">
+            {% for category, message in messages %}
+
+            <div class="flash-message {{ category }}">{{ message }}</div>
+
+            {% endfor %}
+          </div>
+
+          {% endif %} {% endwith %}
+
+          <!-- ==================================================
+           UPLOAD FORM
+      =================================================== -->
+
+          <form
+            action="{{ url_for(
+          'jpg_to_png.convert'
+        ) }}"
+            method="POST"
+            enctype="multipart/form-data"
+            id="jpgToPngForm">
+            <!-- CHOOSE FILE -->
+
+            <label for="imageFile" class="choose-file-box" id="dropZone">
+              <div class="upload-icon">🖼️</div>
+
+              <div class="choose-title">Choose JPG Image</div>
+
+              <div class="choose-subtitle">JPG, JPEG or PNG</div>
+
+              <input
+                type="file"
+                name="file"
+                id="imageFile"
+                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                required />
+            </label>
+
+            <!-- ==================================================
+             SELECTED FILE
+        =================================================== -->
+
+            <div
+              class="selected-files"
+              id="selectedFiles"
+              style="display: none">
+              <div class="selected-header">
+                <h3>Selected Image</h3>
+
+                <span id="fileName"> No file </span>
+              </div>
+
+              <div class="file-list" id="fileList"></div>
+            </div>
+
+            <!-- ==================================================
+             CONVERT BUTTON
+        =================================================== -->
+
+            <button type="submit" class="convert-button">
+              <span> Convert to PNG </span>
+
+              <span class="button-arrow"> → </span>
+            </button>
+          </form>
+        </section>
+
+        <!-- ==================================================
+         INFORMATION
+    =================================================== -->
+
+        <section class="info-section">
+          <div class="info-card">
+            <div class="info-icon">🖼️</div>
+
+            <div>
+              <h3>PNG Format</h3>
+
+              <p>Convert your images into high-quality PNG files.</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">🔒</div>
+
+            <div>
+              <h3>Secure Processing</h3>
+
+              <p>Your files are processed by your DoBuddy application.</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">⚡</div>
+
+            <div>
+              <h3>Fast Conversion</h3>
+
+              <p>Convert your image into PNG quickly and easily.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================================================
+         TEMPORARY HISTORY
+    =================================================== -->
+
+        <section class="history-section">
+          <div class="history-heading">
+            <div>
+              <p class="history-label">TEMPORARY HISTORY</p>
+
+              <h2>JPG to PNG History</h2>
+            </div>
+          </div>
+
+          {% if history %}
+
+          <div class="history-list">
+            {% for item in history %}
+
+            <article class="history-item" id="history-{{ item.id }}">
+              <!-- ==================================================
+                   FILE ICON
+              =================================================== -->
+
+              <div class="history-file-icon">🖼️</div>
+
+              <!-- ==================================================
+                   INFORMATION
+              =================================================== -->
+
+              <div class="history-information">
+                <strong title="{{ item.output_filename }}">
+                  {{ item.output_filename }}
+                </strong>
+
+                <span title="{{ item.original_filename }}">
+                  {{ item.original_filename }}
+                </span>
+
+                <small> PNG Conversion </small>
+              </div>
+
+              <!-- ==================================================
+                   ACTIONS
+              =================================================== -->
+
+              <div class="history-actions">
+                <!-- PREVIEW -->
+
+                <a
+                  href="{{ url_for(
+                    'jpg_to_png.preview',
+                    conversion_id=item.id
+                  ) }}"
+                  target="_blank"
+                  class="history-button preview">
+                  <span> 👁 </span>
+
+                  Preview
+                </a>
+
+                <!-- DOWNLOAD -->
+
+                <a
+                  href="{{ url_for(
+                    'jpg_to_png.download',
+                    conversion_id=item.id
+                  ) }}"
+                  class="history-button download">
+                  <span> ↓ </span>
+
+                  Download
+                </a>
+
+                <!-- DELETE -->
+
+                <form
+                  method="POST"
+                  action="{{ url_for(
+                    'jpg_to_png.delete',
+                    conversion_id=item.id
+                  ) }}"
+                  class="delete-form"
+                  onsubmit="return confirm('Delete this converted PNG?');">
+                  <button type="submit" class="history-button delete">
+                    <span> 🗑 </span>
+
+                    Delete
+                  </button>
+                </form>
+              </div>
+            </article>
+
+            {% endfor %}
+          </div>
+
+          {% else %}
+
+          <!-- ==================================================
+             EMPTY HISTORY
+        =================================================== -->
+
+          <div class="empty-history">
+            <div class="empty-icon">🗂️</div>
+
+            <strong> No JPG to PNG conversions yet </strong>
+
+            <span>
+              Your converted PNG files will appear here while you are using the
+              converter.
+            </span>
+          </div>
+
+          {% endif %}
+        </section>
+      </main>
+    </div>
+
+    <!-- ==================================================
+     JAVASCRIPT
+=================================================== -->
+
+    <script>
+      const imageFile = document.getElementById("imageFile");
+
+      const selectedFiles = document.getElementById("selectedFiles");
+
+      const fileList = document.getElementById("fileList");
+
+      const fileName = document.getElementById("fileName");
+
+      const dropZone = document.getElementById("dropZone");
+
+      /* ==================================================
+     FILE CHANGE
+  =================================================== */
+
+      imageFile.addEventListener("change", function () {
+        const file = this.files[0];
+
+        if (!file) {
+          selectedFiles.style.display = "none";
+
+          fileList.innerHTML = "";
+
+          fileName.textContent = "No file";
+
+          return;
+        }
+
+        selectedFiles.style.display = "block";
+
+        fileName.textContent = file.name;
+
+        fileList.innerHTML = "";
+
+        const item = document.createElement("div");
+
+        item.className = "file-item";
+
+        item.innerHTML = `
+
+        <div class="file-preview">
+          🖼️
+        </div>
+
+        <div class="file-details">
+
+          <div class="file-name">
+            ${escapeHtml(file.name)}
+          </div>
+
+          <div class="file-size">
+            ${formatFileSize(file.size)}
+          </div>
+
+        </div>
+
+      `;
+
+        fileList.appendChild(item);
+      });
+
+      /* ==================================================
+     FILE SIZE
+  =================================================== */
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) {
+          return "0 Bytes";
+        }
+
+        const units = ["Bytes", "KB", "MB", "GB"];
+
+        const index = Math.floor(Math.log(bytes) / Math.log(1024));
+
+        return (
+          parseFloat((bytes / Math.pow(1024, index)).toFixed(2)) +
+          " " +
+          units[index]
+        );
+      }
+
+      /* ==================================================
+     ESCAPE HTML
+  =================================================== */
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+
+        div.textContent = text;
+
+        return div.innerHTML;
+      }
+
+      /* ==================================================
+     DRAG OVER
+  =================================================== */
+
+      dropZone.addEventListener("dragover", function (event) {
+        event.preventDefault();
+
+        dropZone.classList.add("dragging");
+      });
+
+      /* ==================================================
+     DRAG LEAVE
+  =================================================== */
+
+      dropZone.addEventListener("dragleave", function () {
+        dropZone.classList.remove("dragging");
+      });
+
+      /* ==================================================
+     DROP
+  =================================================== */
+
+      dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+
+        dropZone.classList.remove("dragging");
+
+        const files = event.dataTransfer.files;
+
+        if (!files || files.length === 0) {
+          return;
+        }
+
+        imageFile.files = files;
+
+        imageFile.dispatchEvent(new Event("change"));
+      });
+    </script>
+  </body>
+</html>

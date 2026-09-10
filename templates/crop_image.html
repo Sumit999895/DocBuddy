@@ -1,0 +1,2430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Crop Images - DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='crop_image.css') }}" />
+  </head>
+
+  <body>
+    <div class="crop-page">
+      <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+      <header class="crop-header">
+        <div class="crop-brand">
+          <div class="crop-brand-icon">✂</div>
+
+          <div>
+            <h1>Crop Images</h1>
+
+            <p>Crop, resize, filter and frame your images</p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <a href="{{ url_for('dashboard') }}" class="back-btn">
+            ← Dashboard
+          </a>
+        </div>
+      </header>
+
+      <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+      <main class="crop-container">
+        <div class="crop-card">
+          <!-- =================================================
+                 UPLOAD
+            ================================================== -->
+
+          <section class="upload-section" id="uploadSection">
+            <div class="upload-box" id="uploadBox">
+              <div class="upload-icon">✂</div>
+
+              <h2>Crop your image</h2>
+
+              <p>
+                Upload an image, let auto-detect find the subject, then
+                fine-tune the crop, filters and frame yourself.
+              </p>
+
+              <div class="upload-actions">
+                <label for="imageInput" class="upload-button">
+                  📁 Choose Image
+                </label>
+
+                <button type="button" class="camera-button" id="cameraButton">
+                  📷 Camera
+                </button>
+              </div>
+
+              <input type="file" id="imageInput" accept="image/*" />
+
+              <div class="upload-formats">
+                JPG · JPEG · PNG · WEBP · BMP · GIF
+              </div>
+
+              <div class="upload-feature-strip">
+                <div class="upload-feature-chip">
+                  <span>✨</span> Smart auto-detect
+                </div>
+                <div class="upload-feature-chip">
+                  <span>🎨</span> Filters & effects
+                </div>
+                <div class="upload-feature-chip">
+                  <span>📐</span> Social-media presets
+                </div>
+                <div class="upload-feature-chip">
+                  <span>↩</span> Undo / redo
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- =================================================
+                 EDITOR
+            ================================================== -->
+
+          <section class="editor" id="editor">
+            <div class="editor-layout">
+              <!-- =========================================
+                         IMAGE AREA
+                    ========================================== -->
+
+              <div class="canvas-section">
+                <div class="canvas-topbar">
+                  <div class="image-name" id="imageName">Image</div>
+
+                  <div class="canvas-topbar-actions">
+                    <button
+                      type="button"
+                      class="icon-btn-sm"
+                      id="undoBtn"
+                      title="Undo"
+                      disabled>
+                      ↶
+                    </button>
+
+                    <button
+                      type="button"
+                      class="icon-btn-sm"
+                      id="redoBtn"
+                      title="Redo"
+                      disabled>
+                      ↷
+                    </button>
+
+                    <button
+                      type="button"
+                      class="control-btn"
+                      id="changeImageBtn">
+                      Change image
+                    </button>
+                  </div>
+                </div>
+
+                <div class="canvas-area" id="canvasArea">
+                  <span class="compare-badge" id="compareBadge">Original</span>
+
+                  <div class="crop-workspace" id="cropWorkspace">
+                    <img
+                      id="sourceImage"
+                      draggable="false"
+                      alt="Selected image" />
+
+                    <div class="crop-overlay" id="cropOverlay">
+                      <div class="crop-grid"></div>
+
+                      <div class="crop-handle nw" data-handle="nw"></div>
+
+                      <div class="crop-handle n" data-handle="n"></div>
+
+                      <div class="crop-handle ne" data-handle="ne"></div>
+
+                      <div class="crop-handle e" data-handle="e"></div>
+
+                      <div class="crop-handle se" data-handle="se"></div>
+
+                      <div class="crop-handle s" data-handle="s"></div>
+
+                      <div class="crop-handle sw" data-handle="sw"></div>
+
+                      <div class="crop-handle w" data-handle="w"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="editor-bottom">
+                  <div class="image-info" id="imageInfo">0 × 0 px</div>
+
+                  <div class="bottom-actions">
+                    <button
+                      type="button"
+                      class="compare-toggle-btn"
+                      id="compareBtn"
+                      title="Hold to compare with the original">
+                      👁 Compare
+                    </button>
+
+                    <button type="button" class="control-btn" id="resetBtn">
+                      Reset
+                    </button>
+                  </div>
+
+                  <div class="keyboard-hint">
+                    <kbd>←↑→↓</kbd> nudge · <kbd>R</kbd> rotate ·
+                    <kbd>Ctrl+Z</kbd> undo
+                  </div>
+                </div>
+              </div>
+
+              <!-- =========================================
+                         CONTROLS
+                    ========================================== -->
+
+              <aside class="controls-panel">
+                <!-- CROP -->
+
+                <div class="control-group">
+                  <div class="control-title">Crop</div>
+
+                  <div class="button-grid">
+                    <button
+                      type="button"
+                      class="control-btn auto"
+                      id="autoCropBtn">
+                      ✨ Auto detect
+                    </button>
+
+                    <button type="button" class="control-btn" id="fullImageBtn">
+                      ⛶ Full image
+                    </button>
+                  </div>
+                </div>
+
+                <!-- ASPECT / PRESETS -->
+
+                <div class="control-group">
+                  <div class="control-title">
+                    Aspect ratio
+                    <span class="control-title-hint">or pick a preset</span>
+                  </div>
+
+                  <div class="aspect-grid">
+                    <button
+                      type="button"
+                      class="aspect-btn active"
+                      data-ratio="free">
+                      Free
+                    </button>
+
+                    <button type="button" class="aspect-btn" data-ratio="1">
+                      1 : 1
+                    </button>
+
+                    <button
+                      type="button"
+                      class="aspect-btn"
+                      data-ratio="1.333333">
+                      4 : 3
+                    </button>
+
+                    <button
+                      type="button"
+                      class="aspect-btn"
+                      data-ratio="1.777778">
+                      16 : 9
+                    </button>
+
+                    <button type="button" class="aspect-btn" data-ratio="0.75">
+                      3 : 4
+                    </button>
+
+                    <button
+                      type="button"
+                      class="aspect-btn"
+                      data-ratio="0.5625">
+                      9 : 16
+                    </button>
+                  </div>
+
+                  <div class="preset-select-wrap">
+                    <select class="preset-select" id="presetSelect">
+                      <option value="">More presets…</option>
+                      <optgroup label="Social media">
+                        <option value="1">Instagram Post (1:1)</option>
+                        <option value="0.8">Instagram Portrait (4:5)</option>
+                        <option value="0.5625">
+                          Instagram / TikTok Story (9:16)
+                        </option>
+                        <option value="1.9">Facebook Cover (205:78)</option>
+                        <option value="3">Twitter / X Header (3:1)</option>
+                        <option value="1.777778">
+                          YouTube Thumbnail (16:9)
+                        </option>
+                        <option value="1">LinkedIn Profile (1:1)</option>
+                      </optgroup>
+                      <optgroup label="Print & documents">
+                        <option value="0.777778">Passport Photo (35:45)</option>
+                        <option value="0.707107">A4 Portrait</option>
+                        <option value="1.414214">A4 Landscape</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- ZOOM -->
+
+                <div class="control-group">
+                  <div class="control-title">Zoom</div>
+
+                  <div class="range-row">
+                    <label>
+                      <span> Zoom </span>
+
+                      <span id="zoomValue"> 100% </span>
+                    </label>
+
+                    <input
+                      type="range"
+                      id="zoomRange"
+                      min="50"
+                      max="200"
+                      value="100" />
+                  </div>
+                </div>
+
+                <!-- ROTATE / FLIP -->
+
+                <div class="control-group">
+                  <div class="control-title">Transform</div>
+
+                  <div class="button-grid">
+                    <button
+                      type="button"
+                      class="control-btn"
+                      id="rotateLeftBtn">
+                      ↶ Rotate
+                    </button>
+
+                    <button
+                      type="button"
+                      class="control-btn"
+                      id="rotateRightBtn">
+                      ↷ Rotate
+                    </button>
+
+                    <button
+                      type="button"
+                      class="control-btn"
+                      id="flipHorizontalBtn">
+                      ↔ Flip H
+                    </button>
+
+                    <button
+                      type="button"
+                      class="control-btn"
+                      id="flipVerticalBtn">
+                      ↕ Flip V
+                    </button>
+                  </div>
+                </div>
+
+                <!-- FILTERS -->
+
+                <div class="control-group">
+                  <div class="control-title">Filters</div>
+
+                  <div class="filter-grid" id="filterGrid">
+                    <button
+                      type="button"
+                      class="filter-chip active"
+                      data-filter="none">
+                      <span class="filter-chip-swatch f-none"></span>
+                      <span>Original</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="filter-chip"
+                      data-filter="grayscale">
+                      <span class="filter-chip-swatch f-grayscale"></span>
+                      <span>Grayscale</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="filter-chip"
+                      data-filter="sepia">
+                      <span class="filter-chip-swatch f-sepia"></span>
+                      <span>Sepia</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="filter-chip"
+                      data-filter="invert">
+                      <span class="filter-chip-swatch f-invert"></span>
+                      <span>Invert</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="filter-chip"
+                      data-filter="vivid">
+                      <span class="filter-chip-swatch f-vivid"></span>
+                      <span>Vivid</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="filter-chip"
+                      data-filter="soft">
+                      <span class="filter-chip-swatch f-soft"></span>
+                      <span>Soft</span>
+                    </button>
+                  </div>
+
+                  <div class="range-row">
+                    <label>
+                      <span> Brightness </span>
+                      <span id="brightnessValue">100%</span>
+                    </label>
+                    <input
+                      type="range"
+                      id="brightnessRange"
+                      min="20"
+                      max="200"
+                      value="100" />
+                  </div>
+
+                  <div class="range-row">
+                    <label>
+                      <span> Contrast </span>
+                      <span id="contrastValue">100%</span>
+                    </label>
+                    <input
+                      type="range"
+                      id="contrastRange"
+                      min="20"
+                      max="200"
+                      value="100" />
+                  </div>
+
+                  <div class="range-row">
+                    <label>
+                      <span> Saturation </span>
+                      <span id="saturationValue">100%</span>
+                    </label>
+                    <input
+                      type="range"
+                      id="saturationRange"
+                      min="0"
+                      max="200"
+                      value="100" />
+                  </div>
+
+                  <div class="range-row">
+                    <label>
+                      <span> Blur </span>
+                      <span id="blurValue">0px</span>
+                    </label>
+                    <input
+                      type="range"
+                      id="blurRange"
+                      min="0"
+                      max="10"
+                      value="0" />
+                  </div>
+                </div>
+
+                <!-- BORDER -->
+
+                <div class="control-group">
+                  <div class="control-title">
+                    Border
+                    <span class="control-title-hint"
+                      >applied around the final image</span
+                    >
+                  </div>
+
+                  <div class="range-row">
+                    <label>
+                      <span> Width </span>
+                      <span id="borderWidthValue">0px</span>
+                    </label>
+                    <input
+                      type="range"
+                      id="borderWidthRange"
+                      min="0"
+                      max="40"
+                      value="0" />
+                  </div>
+
+                  <div class="border-color-row" id="borderColorRow">
+                    <button
+                      type="button"
+                      class="border-swatch active"
+                      style="background: #ffffff"
+                      data-color="#ffffff"
+                      title="White"></button>
+                    <button
+                      type="button"
+                      class="border-swatch"
+                      style="background: #000000"
+                      data-color="#000000"
+                      title="Black"></button>
+                    <button
+                      type="button"
+                      class="border-swatch"
+                      style="background: #7c3aed"
+                      data-color="#7c3aed"
+                      title="Violet"></button>
+                    <button
+                      type="button"
+                      class="border-swatch"
+                      style="background: #f97316"
+                      data-color="#f97316"
+                      title="Orange"></button>
+                    <button
+                      type="button"
+                      class="border-swatch"
+                      style="background: #16a34a"
+                      data-color="#16a34a"
+                      title="Green"></button>
+                    <input
+                      type="color"
+                      id="borderColorCustom"
+                      class="border-color-custom"
+                      value="#ffffff"
+                      title="Custom color" />
+                  </div>
+                </div>
+
+                <!-- SIZE -->
+
+                <div class="control-group">
+                  <div class="control-title">Output size</div>
+
+                  <div class="dimension-grid">
+                    <div class="dimension-field">
+                      <label> Width </label>
+
+                      <input
+                        type="number"
+                        id="outputWidth"
+                        min="1"
+                        placeholder="Auto" />
+                    </div>
+
+                    <div class="dimension-field">
+                      <label> Height </label>
+
+                      <input
+                        type="number"
+                        id="outputHeight"
+                        min="1"
+                        placeholder="Auto" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- FORMAT -->
+
+                <div class="control-group">
+                  <div class="control-title">Format</div>
+
+                  <select class="format-select" id="outputFormat">
+                    <option value="jpg">JPG</option>
+
+                    <option value="png">PNG</option>
+
+                    <option value="webp">WebP</option>
+                  </select>
+                </div>
+
+                <!-- QUALITY -->
+
+                <div class="control-group">
+                  <div class="range-row">
+                    <label>
+                      <span> Quality </span>
+
+                      <span id="qualityValue"> 90% </span>
+                    </label>
+
+                    <input
+                      type="range"
+                      id="qualityRange"
+                      min="10"
+                      max="100"
+                      value="90" />
+                  </div>
+                </div>
+
+                <!-- DOWNLOAD -->
+
+                <div class="control-group download-section">
+                  <button
+                    type="button"
+                    class="download-main"
+                    id="cropDownloadBtn">
+                    ✂ Crop & Download
+                  </button>
+
+                  <div class="secondary-download">
+                    <button type="button" id="previewBtn">Preview</button>
+
+                    <button type="button" id="newImageBtn">New</button>
+
+                    <button type="button" id="deleteImageBtn">Clear</button>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- =========================================================
+     TOASTS
+========================================================== -->
+
+    <div class="cb-toast-stack" id="toastStack"></div>
+
+    <!-- =========================================================
+     CAMERA MODAL
+========================================================== -->
+
+    <div class="camera-modal" id="cameraModal">
+      <div class="camera-dialog">
+        <div class="camera-header">
+          <div>
+            <h2>Take a photo</h2>
+
+            <p>Position the image inside the frame</p>
+          </div>
+
+          <button type="button" class="camera-close" id="cameraCloseBtn">
+            ×
+          </button>
+        </div>
+
+        <div class="camera-error" id="cameraError"></div>
+
+        <div class="camera-preview">
+          <video id="cameraVideo" autoplay playsinline></video>
+
+          <div class="camera-frame">
+            <span></span>
+          </div>
+        </div>
+
+        <div class="camera-controls">
+          <button type="button" class="camera-cancel" id="cameraCancelBtn">
+            Cancel
+          </button>
+
+          <button type="button" class="capture-button" id="captureButton">
+            <span class="capture-circle"></span>
+
+            Capture
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+     PREVIEW MODAL
+========================================================== -->
+
+    <div class="camera-modal" id="previewModal">
+      <div class="camera-dialog">
+        <div class="camera-header">
+          <div>
+            <h2>Crop Preview</h2>
+
+            <p>Preview your final image</p>
+          </div>
+
+          <button type="button" class="camera-close" id="previewCloseBtn">
+            ×
+          </button>
+        </div>
+
+        <div class="camera-preview preview-result-area">
+          <img id="previewImage" alt="Crop preview" />
+        </div>
+
+        <div class="camera-controls">
+          <button
+            type="button"
+            class="camera-cancel"
+            id="previewCloseBottomBtn">
+            Close
+          </button>
+
+          <button type="button" class="capture-button" id="previewDownloadBtn">
+            Download
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ============================================================
+   DOCBUDDY CROP ENGINE
+   ============================================================ */
+
+      const imageInput = document.getElementById("imageInput");
+
+      const uploadBox = document.getElementById("uploadBox");
+
+      const uploadSection = document.getElementById("uploadSection");
+
+      const editor = document.getElementById("editor");
+
+      const sourceImage = document.getElementById("sourceImage");
+
+      const cropOverlay = document.getElementById("cropOverlay");
+
+      const cropWorkspace = document.getElementById("cropWorkspace");
+
+      const canvasArea = document.getElementById("canvasArea");
+
+      const imageName = document.getElementById("imageName");
+
+      const imageInfo = document.getElementById("imageInfo");
+
+      let fileId = null;
+
+      let naturalWidth = 0;
+
+      let naturalHeight = 0;
+
+      let displayedWidth = 0;
+
+      let displayedHeight = 0;
+
+      let crop = { x: 0, y: 0, width: 0, height: 0 };
+
+      let ratio = null;
+
+      let rotation = 0;
+
+      let flipHorizontal = false;
+
+      let flipVertical = false;
+
+      let zoom = 1;
+
+      let dragging = false;
+
+      let resizing = false;
+
+      let activeHandle = null;
+
+      let startPointer = null;
+
+      let startCrop = null;
+
+      // New: filters / adjustments / border state
+
+      let activeFilter = "none";
+
+      let brightness = 1;
+
+      let contrast = 1;
+
+      let saturation = 1;
+
+      let blurAmount = 0;
+
+      let borderWidth = 0;
+
+      let borderColor = "#ffffff";
+
+      /* ============================================================
+   TOASTS
+   ============================================================ */
+
+      function showToast(message, type) {
+        const stack = document.getElementById("toastStack");
+
+        const toast = document.createElement("div");
+
+        toast.className = "cb-toast" + (type ? " " + type : "");
+
+        toast.textContent = message;
+
+        stack.appendChild(toast);
+
+        setTimeout(function () {
+          toast.remove();
+        }, 2900);
+      }
+
+      /* ============================================================
+   UNDO / REDO HISTORY
+   ============================================================ */
+
+      let history = [];
+
+      let historyIndex = -1;
+
+      let restoringHistory = false;
+
+      function snapshotState() {
+        return JSON.stringify({
+          crop: crop,
+          ratio: ratio,
+          rotation: rotation,
+          flipHorizontal: flipHorizontal,
+          flipVertical: flipVertical,
+          activeFilter: activeFilter,
+          brightness: brightness,
+          contrast: contrast,
+          saturation: saturation,
+          blurAmount: blurAmount,
+          borderWidth: borderWidth,
+          borderColor: borderColor,
+        });
+      }
+
+      function pushHistory() {
+        if (restoringHistory) return;
+
+        const snapshot = snapshotState();
+
+        if (historyIndex >= 0 && history[historyIndex] === snapshot) return;
+
+        history = history.slice(0, historyIndex + 1);
+
+        history.push(snapshot);
+
+        historyIndex = history.length - 1;
+
+        updateHistoryButtons();
+      }
+
+      function updateHistoryButtons() {
+        document.getElementById("undoBtn").disabled = historyIndex <= 0;
+
+        document.getElementById("redoBtn").disabled =
+          historyIndex < 0 || historyIndex >= history.length - 1;
+      }
+
+      function applySnapshot(snapshot) {
+        const state = JSON.parse(snapshot);
+
+        restoringHistory = true;
+
+        crop = state.crop;
+
+        ratio = state.ratio;
+
+        rotation = state.rotation;
+
+        flipHorizontal = state.flipHorizontal;
+
+        flipVertical = state.flipVertical;
+
+        activeFilter = state.activeFilter;
+
+        brightness = state.brightness;
+
+        contrast = state.contrast;
+
+        saturation = state.saturation;
+
+        blurAmount = state.blurAmount;
+
+        borderWidth = state.borderWidth;
+
+        borderColor = state.borderColor;
+
+        syncControlsFromState();
+
+        updateImageTransform();
+
+        applyLiveFilters();
+
+        renderCrop();
+
+        updateInfo();
+
+        restoringHistory = false;
+      }
+
+      function undo() {
+        if (historyIndex <= 0) return;
+
+        historyIndex -= 1;
+
+        applySnapshot(history[historyIndex]);
+
+        updateHistoryButtons();
+      }
+
+      function redo() {
+        if (historyIndex >= history.length - 1) return;
+
+        historyIndex += 1;
+
+        applySnapshot(history[historyIndex]);
+
+        updateHistoryButtons();
+      }
+
+      document.getElementById("undoBtn").addEventListener("click", undo);
+
+      document.getElementById("redoBtn").addEventListener("click", redo);
+
+      function syncControlsFromState() {
+        document
+          .querySelectorAll(".aspect-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+
+        if (ratio === null) {
+          document.querySelector('[data-ratio="free"]').classList.add("active");
+        } else {
+          const match = document.querySelector(
+            `.aspect-btn[data-ratio="${ratio}"]`,
+          );
+          if (match) match.classList.add("active");
+        }
+
+        document
+          .querySelectorAll(".filter-chip")
+          .forEach((chip) =>
+            chip.classList.toggle(
+              "active",
+              chip.dataset.filter === activeFilter,
+            ),
+          );
+
+        document.getElementById("brightnessRange").value = Math.round(
+          brightness * 100,
+        );
+        document.getElementById("brightnessValue").textContent =
+          Math.round(brightness * 100) + "%";
+
+        document.getElementById("contrastRange").value = Math.round(
+          contrast * 100,
+        );
+        document.getElementById("contrastValue").textContent =
+          Math.round(contrast * 100) + "%";
+
+        document.getElementById("saturationRange").value = Math.round(
+          saturation * 100,
+        );
+        document.getElementById("saturationValue").textContent =
+          Math.round(saturation * 100) + "%";
+
+        document.getElementById("blurRange").value = blurAmount;
+        document.getElementById("blurValue").textContent = blurAmount + "px";
+
+        document.getElementById("borderWidthRange").value = borderWidth;
+        document.getElementById("borderWidthValue").textContent =
+          borderWidth + "px";
+
+        document
+          .querySelectorAll(".border-swatch")
+          .forEach((swatch) =>
+            swatch.classList.toggle(
+              "active",
+              swatch.dataset.color === borderColor,
+            ),
+          );
+
+        document.getElementById("borderColorCustom").value = borderColor;
+      }
+
+      /* ============================================================
+   UPLOAD
+   ============================================================ */
+
+      imageInput.addEventListener("change", function () {
+        const file = this.files[0];
+
+        if (!file) return;
+
+        uploadFile(file);
+      });
+
+      /* ============================================================
+   DRAG & DROP
+   ============================================================ */
+
+      uploadBox.addEventListener("dragover", function (event) {
+        event.preventDefault();
+
+        uploadBox.classList.add("dragging");
+      });
+
+      uploadBox.addEventListener("dragleave", function () {
+        uploadBox.classList.remove("dragging");
+      });
+
+      uploadBox.addEventListener("drop", function (event) {
+        event.preventDefault();
+
+        uploadBox.classList.remove("dragging");
+
+        const file = event.dataTransfer.files[0];
+
+        if (file && file.type.startsWith("image/")) {
+          uploadFile(file);
+        }
+      });
+
+      /* ============================================================
+   UPLOAD FUNCTION
+   ============================================================ */
+
+      async function uploadFile(file) {
+        const formData = new FormData();
+
+        formData.append("image", file);
+
+        try {
+          uploadBox.classList.add("loading");
+
+          const response = await fetch(
+            "{{ url_for('crop_image.upload_image') }}",
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
+
+          const result = await response.json();
+
+          if (!result.success) {
+            showToast(result.error || "Upload failed.", "error");
+
+            return;
+          }
+
+          fileId = result.file_id;
+
+          imageName.textContent = result.filename;
+
+          naturalWidth = result.width;
+
+          naturalHeight = result.height;
+
+          sourceImage.src = result.preview_url + "?t=" + Date.now();
+
+          sourceImage.onload = function () {
+            setupEditor();
+          };
+        } catch (error) {
+          showToast("Could not upload image.", "error");
+
+          console.error(error);
+        } finally {
+          uploadBox.classList.remove("loading");
+        }
+      }
+
+      /* ============================================================
+   SETUP EDITOR
+   ============================================================ */
+
+      function setupEditor() {
+        uploadSection.style.display = "none";
+
+        editor.classList.add("active");
+
+        rotation = 0;
+
+        flipHorizontal = false;
+
+        flipVertical = false;
+
+        zoom = 1;
+
+        document.getElementById("zoomRange").value = 100;
+
+        document.getElementById("zoomValue").textContent = "100%";
+
+        ratio = null;
+
+        activeFilter = "none";
+
+        brightness = 1;
+
+        contrast = 1;
+
+        saturation = 1;
+
+        blurAmount = 0;
+
+        borderWidth = 0;
+
+        borderColor = "#ffffff";
+
+        history = [];
+
+        historyIndex = -1;
+
+        syncControlsFromState();
+
+        fitImage();
+
+        fullCrop();
+
+        updateImageTransform();
+
+        applyLiveFilters();
+
+        updateInfo();
+
+        pushHistory();
+
+        // Auto-run smart detection on first load so the user starts
+        // from a sensible suggestion instead of the full image.
+        runAutoDetect(true);
+      }
+
+      /* ============================================================
+   FIT IMAGE
+   ============================================================ */
+
+      function fitImage() {
+        const maxWidth = canvasArea.clientWidth - 40;
+
+        const maxHeight = canvasArea.clientHeight - 40;
+
+        const imageRatio = naturalWidth / naturalHeight;
+
+        let width = maxWidth;
+
+        let height = width / imageRatio;
+
+        if (height > maxHeight) {
+          height = maxHeight;
+
+          width = height * imageRatio;
+        }
+
+        displayedWidth = Math.max(1, width);
+
+        displayedHeight = Math.max(1, height);
+
+        sourceImage.style.width = displayedWidth + "px";
+
+        sourceImage.style.height = displayedHeight + "px";
+
+        cropWorkspace.style.width = displayedWidth + "px";
+
+        cropWorkspace.style.height = displayedHeight + "px";
+      }
+
+      /* ============================================================
+   FULL CROP
+   ============================================================ */
+
+      function fullCrop() {
+        crop = {
+          x: 0,
+          y: 0,
+          width: displayedWidth,
+          height: displayedHeight,
+        };
+
+        renderCrop();
+      }
+
+      /* ============================================================
+   RENDER CROP BOX
+   ============================================================ */
+
+      function renderCrop() {
+        crop.x = Math.max(0, Math.min(crop.x, displayedWidth - crop.width));
+
+        crop.y = Math.max(0, Math.min(crop.y, displayedHeight - crop.height));
+
+        crop.width = Math.max(
+          20,
+          Math.min(crop.width, displayedWidth - crop.x),
+        );
+
+        crop.height = Math.max(
+          20,
+          Math.min(crop.height, displayedHeight - crop.y),
+        );
+
+        cropOverlay.style.left = crop.x + "px";
+
+        cropOverlay.style.top = crop.y + "px";
+
+        cropOverlay.style.width = crop.width + "px";
+
+        cropOverlay.style.height = crop.height + "px";
+
+        // Approximate live border preview as a ring around the crop box
+        if (borderWidth > 0) {
+          const scale = displayedWidth / naturalWidth;
+
+          const previewWidth = Math.max(2, borderWidth * scale);
+
+          cropOverlay.style.outline = previewWidth + "px solid " + borderColor;
+
+          cropOverlay.style.outlineOffset = "-" + previewWidth + "px";
+        } else {
+          cropOverlay.style.outline = "none";
+        }
+
+        updateInfo();
+      }
+
+      /* ============================================================
+   POINTER POSITION
+   ============================================================ */
+
+      function getPointer(event) {
+        const rect = cropWorkspace.getBoundingClientRect();
+
+        let clientX;
+        let clientY;
+
+        if (event.touches && event.touches.length) {
+          clientX = event.touches[0].clientX;
+
+          clientY = event.touches[0].clientY;
+        } else {
+          clientX = event.clientX;
+
+          clientY = event.clientY;
+        }
+
+        return {
+          x: clientX - rect.left,
+
+          y: clientY - rect.top,
+        };
+      }
+
+      /* ============================================================
+   START DRAG
+   ============================================================ */
+
+      cropOverlay.addEventListener("pointerdown", function (event) {
+        if (event.target.classList.contains("crop-handle")) {
+          resizing = true;
+
+          activeHandle = event.target.dataset.handle;
+        } else {
+          dragging = true;
+        }
+
+        startPointer = getPointer(event);
+
+        startCrop = { ...crop };
+
+        cropOverlay.setPointerCapture(event.pointerId);
+
+        event.preventDefault();
+      });
+
+      /* ============================================================
+   MOVE CROP
+   ============================================================ */
+
+      cropOverlay.addEventListener("pointermove", function (event) {
+        if (!dragging && !resizing) {
+          return;
+        }
+
+        const pointer = getPointer(event);
+
+        const dx = pointer.x - startPointer.x;
+
+        const dy = pointer.y - startPointer.y;
+
+        if (dragging) {
+          crop.x = startCrop.x + dx;
+
+          crop.y = startCrop.y + dy;
+
+          crop.x = Math.max(0, Math.min(crop.x, displayedWidth - crop.width));
+
+          crop.y = Math.max(0, Math.min(crop.y, displayedHeight - crop.height));
+
+          renderCrop();
+
+          return;
+        }
+
+        if (resizing) {
+          resizeCrop(dx, dy);
+        }
+      });
+
+      /* ============================================================
+   END DRAG
+   ============================================================ */
+
+      cropOverlay.addEventListener("pointerup", function () {
+        const wasActive = dragging || resizing;
+
+        dragging = false;
+
+        resizing = false;
+
+        activeHandle = null;
+
+        if (wasActive) pushHistory();
+      });
+
+      cropOverlay.addEventListener("pointercancel", function () {
+        dragging = false;
+
+        resizing = false;
+
+        activeHandle = null;
+      });
+
+      /* ============================================================
+   RESIZE CROP
+   ============================================================ */
+
+      function resizeCrop(dx, dy) {
+        let left = startCrop.x;
+
+        let top = startCrop.y;
+
+        let right = startCrop.x + startCrop.width;
+
+        let bottom = startCrop.y + startCrop.height;
+
+        if (activeHandle.includes("w")) {
+          left = Math.max(0, Math.min(right - 20, startCrop.x + dx));
+        }
+
+        if (activeHandle.includes("e")) {
+          right = Math.min(
+            displayedWidth,
+            Math.max(left + 20, startCrop.x + startCrop.width + dx),
+          );
+        }
+
+        if (activeHandle.includes("n")) {
+          top = Math.max(0, Math.min(bottom - 20, startCrop.y + dy));
+        }
+
+        if (activeHandle.includes("s")) {
+          bottom = Math.min(
+            displayedHeight,
+            Math.max(top + 20, startCrop.y + startCrop.height + dy),
+          );
+        }
+
+        if (ratio) {
+          const handle = activeHandle;
+
+          let width = right - left;
+
+          let height = bottom - top;
+
+          if (handle === "e" || handle === "w") {
+            height = width / ratio;
+          } else {
+            width = height * ratio;
+          }
+
+          if (handle.includes("w")) {
+            left = right - width;
+          } else if (handle.includes("e")) {
+            right = left + width;
+          }
+
+          if (handle.includes("n")) {
+            top = bottom - height;
+          } else {
+            bottom = top + height;
+          }
+
+          if (left < 0) {
+            left = 0;
+
+            right = width;
+          }
+
+          if (top < 0) {
+            top = 0;
+
+            bottom = height;
+          }
+
+          if (right > displayedWidth) {
+            right = displayedWidth;
+
+            left = right - width;
+          }
+
+          if (bottom > displayedHeight) {
+            bottom = displayedHeight;
+
+            top = bottom - height;
+          }
+        }
+
+        crop.x = left;
+
+        crop.y = top;
+
+        crop.width = Math.max(20, right - left);
+
+        crop.height = Math.max(20, bottom - top);
+
+        renderCrop();
+      }
+
+      /* ============================================================
+   ASPECT BUTTONS
+   ============================================================ */
+
+      document.querySelectorAll(".aspect-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+          document.querySelectorAll(".aspect-btn").forEach((item) => {
+            item.classList.remove("active");
+          });
+
+          this.classList.add("active");
+
+          document.getElementById("presetSelect").value = "";
+
+          const value = this.dataset.ratio;
+
+          if (value === "free") {
+            ratio = null;
+
+            pushHistory();
+
+            return;
+          }
+
+          ratio = parseFloat(value);
+
+          setAspectRatio();
+
+          pushHistory();
+        });
+      });
+
+      /* ============================================================
+   PRESET DROPDOWN (social / print)
+   ============================================================ */
+
+      document
+        .getElementById("presetSelect")
+        .addEventListener("change", function () {
+          if (!this.value) return;
+
+          document
+            .querySelectorAll(".aspect-btn")
+            .forEach((item) => item.classList.remove("active"));
+
+          ratio = parseFloat(this.value);
+
+          setAspectRatio();
+
+          pushHistory();
+        });
+
+      /* ============================================================
+   SET ASPECT RATIO
+   ============================================================ */
+
+      function setAspectRatio() {
+        if (!ratio) return;
+
+        let width = crop.width;
+
+        let height = width / ratio;
+
+        if (height > displayedHeight) {
+          height = displayedHeight;
+
+          width = height * ratio;
+        }
+
+        crop.width = width;
+
+        crop.height = height;
+
+        crop.x = Math.max(0, (displayedWidth - width) / 2);
+
+        crop.y = Math.max(0, (displayedHeight - height) / 2);
+
+        renderCrop();
+      }
+
+      /* ============================================================
+   FULL IMAGE
+   ============================================================ */
+
+      document
+        .getElementById("fullImageBtn")
+        .addEventListener("click", function () {
+          fullCrop();
+
+          pushHistory();
+        });
+
+      /* ============================================================
+   SMART AUTO-DETECT (server-side)
+   ============================================================ */
+
+      async function runAutoDetect(silent) {
+        if (!fileId) return;
+
+        const button = document.getElementById("autoCropBtn");
+
+        button.classList.add("working");
+
+        cropOverlay.classList.add("detecting");
+
+        try {
+          const response = await fetch(
+            "{{ url_for('crop_image.auto_detect') }}",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ file_id: fileId }),
+            },
+          );
+
+          const result = await response.json();
+
+          if (!result.success) {
+            if (!silent)
+              showToast(result.error || "Detection failed.", "error");
+
+            return;
+          }
+
+          if (!result.found) {
+            if (!silent) {
+              showToast("No distinct subject found — using the full image.");
+            }
+
+            return;
+          }
+
+          const scaleX = displayedWidth / naturalWidth;
+
+          const scaleY = displayedHeight / naturalHeight;
+
+          crop = {
+            x: result.x * scaleX,
+
+            y: result.y * scaleY,
+
+            width: result.width * scaleX,
+
+            height: result.height * scaleY,
+          };
+
+          document
+            .querySelectorAll(".aspect-btn")
+            .forEach((item) => item.classList.remove("active"));
+
+          document.querySelector('[data-ratio="free"]').classList.add("active");
+
+          ratio = null;
+
+          renderCrop();
+
+          pushHistory();
+
+          if (!silent) showToast("Detected the main subject.", "success");
+        } catch (error) {
+          console.error(error);
+
+          if (!silent) showToast("Could not run auto-detect.", "error");
+        } finally {
+          button.classList.remove("working");
+
+          cropOverlay.classList.remove("detecting");
+        }
+      }
+
+      document
+        .getElementById("autoCropBtn")
+        .addEventListener("click", function () {
+          runAutoDetect(false);
+        });
+
+      /* ============================================================
+   ZOOM
+   ============================================================ */
+
+      document
+        .getElementById("zoomRange")
+        .addEventListener("input", function () {
+          zoom = parseInt(this.value) / 100;
+
+          document.getElementById("zoomValue").textContent = this.value + "%";
+
+          updateImageTransform();
+        });
+
+      document
+        .getElementById("zoomRange")
+        .addEventListener("change", pushHistory);
+
+      /* ============================================================
+   IMAGE TRANSFORM
+   ============================================================ */
+
+      function updateImageTransform() {
+        sourceImage.style.transform = `
+        rotate(${rotation}deg)
+        scale(
+            ${flipHorizontal ? -zoom : zoom},
+            ${flipVertical ? -zoom : zoom}
+        )
+        `;
+      }
+
+      /* ============================================================
+   LIVE FILTER / ADJUSTMENT PREVIEW
+   (CSS approximation of what the backend will render for real)
+   ============================================================ */
+
+      function filterPresetCss(name) {
+        switch (name) {
+          case "grayscale":
+            return "grayscale(1)";
+          case "sepia":
+            return "sepia(0.75)";
+          case "invert":
+            return "invert(1)";
+          case "vivid":
+            return "saturate(1.5) contrast(1.15)";
+          case "soft":
+            return "blur(0.6px) brightness(1.05)";
+          default:
+            return "";
+        }
+      }
+
+      function applyLiveFilters() {
+        const parts = [];
+
+        const preset = filterPresetCss(activeFilter);
+
+        if (preset) parts.push(preset);
+
+        parts.push(`brightness(${brightness})`);
+
+        parts.push(`contrast(${contrast})`);
+
+        parts.push(`saturate(${saturation})`);
+
+        if (blurAmount > 0) parts.push(`blur(${blurAmount}px)`);
+
+        sourceImage.style.filter = parts.join(" ");
+      }
+
+      /* ============================================================
+   ROTATE
+   ============================================================ */
+
+      document
+        .getElementById("rotateLeftBtn")
+        .addEventListener("click", function () {
+          rotation = (rotation - 90 + 360) % 360;
+
+          updateImageTransform();
+
+          pushHistory();
+        });
+
+      document
+        .getElementById("rotateRightBtn")
+        .addEventListener("click", function () {
+          rotation = (rotation + 90) % 360;
+
+          updateImageTransform();
+
+          pushHistory();
+        });
+
+      /* ============================================================
+   FLIP
+   ============================================================ */
+
+      document
+        .getElementById("flipHorizontalBtn")
+        .addEventListener("click", function () {
+          flipHorizontal = !flipHorizontal;
+
+          updateImageTransform();
+
+          pushHistory();
+        });
+
+      document
+        .getElementById("flipVerticalBtn")
+        .addEventListener("click", function () {
+          flipVertical = !flipVertical;
+
+          updateImageTransform();
+
+          pushHistory();
+        });
+
+      /* ============================================================
+   FILTER CHIPS
+   ============================================================ */
+
+      document.querySelectorAll(".filter-chip").forEach((chip) => {
+        chip.addEventListener("click", function () {
+          document
+            .querySelectorAll(".filter-chip")
+            .forEach((item) => item.classList.remove("active"));
+
+          this.classList.add("active");
+
+          activeFilter = this.dataset.filter;
+
+          applyLiveFilters();
+
+          pushHistory();
+        });
+      });
+
+      /* ============================================================
+   BRIGHTNESS / CONTRAST / SATURATION / BLUR
+   ============================================================ */
+
+      document
+        .getElementById("brightnessRange")
+        .addEventListener("input", function () {
+          brightness = parseInt(this.value) / 100;
+
+          document.getElementById("brightnessValue").textContent =
+            this.value + "%";
+
+          applyLiveFilters();
+        });
+
+      document
+        .getElementById("contrastRange")
+        .addEventListener("input", function () {
+          contrast = parseInt(this.value) / 100;
+
+          document.getElementById("contrastValue").textContent =
+            this.value + "%";
+
+          applyLiveFilters();
+        });
+
+      document
+        .getElementById("saturationRange")
+        .addEventListener("input", function () {
+          saturation = parseInt(this.value) / 100;
+
+          document.getElementById("saturationValue").textContent =
+            this.value + "%";
+
+          applyLiveFilters();
+        });
+
+      document
+        .getElementById("blurRange")
+        .addEventListener("input", function () {
+          blurAmount = parseInt(this.value);
+
+          document.getElementById("blurValue").textContent = blurAmount + "px";
+
+          applyLiveFilters();
+        });
+
+      [
+        "brightnessRange",
+        "contrastRange",
+        "saturationRange",
+        "blurRange",
+      ].forEach((id) => {
+        document.getElementById(id).addEventListener("change", pushHistory);
+      });
+
+      /* ============================================================
+   BORDER
+   ============================================================ */
+
+      document
+        .getElementById("borderWidthRange")
+        .addEventListener("input", function () {
+          borderWidth = parseInt(this.value);
+
+          document.getElementById("borderWidthValue").textContent =
+            borderWidth + "px";
+
+          renderCrop();
+        });
+
+      document
+        .getElementById("borderWidthRange")
+        .addEventListener("change", pushHistory);
+
+      document.querySelectorAll(".border-swatch").forEach((swatch) => {
+        swatch.addEventListener("click", function () {
+          document
+            .querySelectorAll(".border-swatch")
+            .forEach((item) => item.classList.remove("active"));
+
+          this.classList.add("active");
+
+          borderColor = this.dataset.color;
+
+          document.getElementById("borderColorCustom").value = borderColor;
+
+          renderCrop();
+
+          pushHistory();
+        });
+      });
+
+      document
+        .getElementById("borderColorCustom")
+        .addEventListener("input", function () {
+          borderColor = this.value;
+
+          document
+            .querySelectorAll(".border-swatch")
+            .forEach((item) => item.classList.remove("active"));
+
+          renderCrop();
+        });
+
+      document
+        .getElementById("borderColorCustom")
+        .addEventListener("change", pushHistory);
+
+      /* ============================================================
+   QUALITY
+   ============================================================ */
+
+      document
+        .getElementById("qualityRange")
+        .addEventListener("input", function () {
+          document.getElementById("qualityValue").textContent =
+            this.value + "%";
+        });
+
+      /* ============================================================
+   INFO
+   ============================================================ */
+
+      function updateInfo() {
+        const width = Math.round((crop.width * naturalWidth) / displayedWidth);
+
+        const height = Math.round(
+          (crop.height * naturalHeight) / displayedHeight,
+        );
+
+        imageInfo.textContent = `${width} × ${height} px`;
+      }
+
+      /* ============================================================
+   BUILD PROCESS PAYLOAD
+   ============================================================ */
+
+      function buildPayload(overrides) {
+        const cropData = {
+          x: (crop.x * naturalWidth) / displayedWidth,
+
+          y: (crop.y * naturalHeight) / displayedHeight,
+
+          width: (crop.width * naturalWidth) / displayedWidth,
+
+          height: (crop.height * naturalHeight) / displayedHeight,
+        };
+
+        const outputWidth = document.getElementById("outputWidth").value;
+
+        const outputHeight = document.getElementById("outputHeight").value;
+
+        const payload = {
+          file_id: fileId,
+
+          crop: cropData,
+
+          rotation: rotation,
+
+          flip_horizontal: flipHorizontal,
+
+          flip_vertical: flipVertical,
+
+          width: outputWidth || null,
+
+          height: outputHeight || null,
+
+          keep_ratio: true,
+
+          format: document.getElementById("outputFormat").value,
+
+          quality: parseInt(document.getElementById("qualityRange").value),
+
+          filter: activeFilter,
+
+          brightness: brightness,
+
+          contrast: contrast,
+
+          saturation: saturation,
+
+          blur: blurAmount,
+
+          border_width: borderWidth,
+
+          border_color: borderColor,
+        };
+
+        return Object.assign(payload, overrides || {});
+      }
+
+      /* ============================================================
+   CROP DOWNLOAD
+   ============================================================ */
+
+      document
+        .getElementById("cropDownloadBtn")
+        .addEventListener("click", processImage);
+
+      /* ============================================================
+   PROCESS IMAGE
+   ============================================================ */
+
+      async function processImage() {
+        if (!fileId) {
+          showToast("Please upload an image first.", "error");
+
+          return;
+        }
+
+        const payload = buildPayload();
+
+        const button = document.getElementById("cropDownloadBtn");
+
+        button.disabled = true;
+
+        button.textContent = "Processing...";
+
+        try {
+          const response = await fetch("{{ url_for('crop_image.process') }}", {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify(payload),
+          });
+
+          const result = await response.json();
+
+          if (!result.success) {
+            showToast(result.error || "Processing failed.", "error");
+
+            return;
+          }
+
+          window.location.href = result.download_url;
+        } catch (error) {
+          console.error(error);
+
+          showToast("Unable to process image.", "error");
+        } finally {
+          button.disabled = false;
+
+          button.textContent = "✂ Crop & Download";
+        }
+      }
+
+      /* ============================================================
+   PREVIEW
+   ============================================================ */
+
+      document
+        .getElementById("previewBtn")
+        .addEventListener("click", async function () {
+          if (!fileId) return;
+
+          const payload = buildPayload({ format: "png", quality: 90 });
+
+          try {
+            const response = await fetch(
+              "{{ url_for('crop_image.process') }}",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type": "application/json",
+                },
+
+                body: JSON.stringify(payload),
+              },
+            );
+
+            const result = await response.json();
+
+            if (!result.success) {
+              showToast(result.error || "Preview failed.", "error");
+
+              return;
+            }
+
+            document.getElementById("previewImage").src =
+              result.download_url + "&preview=1";
+
+            document.getElementById("previewModal").classList.add("active");
+
+            document.getElementById("previewDownloadBtn").onclick =
+              function () {
+                window.location.href = result.download_url;
+              };
+          } catch (error) {
+            console.error(error);
+
+            showToast("Could not create preview.", "error");
+          }
+        });
+
+      /* ============================================================
+   COMPARE (before / after)
+   ============================================================ */
+
+      let compareActive = false;
+
+      let savedFilterForCompare = "";
+
+      let savedTransformForCompare = "";
+
+      function setCompare(active) {
+        compareActive = active;
+
+        const btn = document.getElementById("compareBtn");
+
+        btn.classList.toggle("active", active);
+
+        canvasArea.classList.toggle("compare-active", active);
+
+        if (active) {
+          savedFilterForCompare = sourceImage.style.filter;
+
+          savedTransformForCompare = sourceImage.style.transform;
+
+          sourceImage.style.filter = "none";
+
+          sourceImage.style.transform = `rotate(0deg) scale(1, 1)`;
+        } else {
+          sourceImage.style.filter = savedFilterForCompare;
+
+          sourceImage.style.transform = savedTransformForCompare;
+        }
+      }
+
+      document
+        .getElementById("compareBtn")
+        .addEventListener("click", function () {
+          setCompare(!compareActive);
+        });
+
+      /* ============================================================
+   RESET
+   ============================================================ */
+
+      document
+        .getElementById("resetBtn")
+        .addEventListener("click", function () {
+          rotation = 0;
+
+          flipHorizontal = false;
+
+          flipVertical = false;
+
+          zoom = 1;
+
+          activeFilter = "none";
+
+          brightness = 1;
+
+          contrast = 1;
+
+          saturation = 1;
+
+          blurAmount = 0;
+
+          borderWidth = 0;
+
+          borderColor = "#ffffff";
+
+          document.getElementById("zoomRange").value = 100;
+
+          document.getElementById("zoomValue").textContent = "100%";
+
+          ratio = null;
+
+          document.querySelectorAll(".aspect-btn").forEach((item) => {
+            item.classList.remove("active");
+          });
+
+          document.querySelector('[data-ratio="free"]').classList.add("active");
+
+          document.getElementById("presetSelect").value = "";
+
+          syncControlsFromState();
+
+          updateImageTransform();
+
+          applyLiveFilters();
+
+          fullCrop();
+
+          updateInfo();
+
+          pushHistory();
+
+          showToast("Reset to the original image.");
+        });
+
+      /* ============================================================
+   CHANGE IMAGE
+   ============================================================ */
+
+      document
+        .getElementById("changeImageBtn")
+        .addEventListener("click", function () {
+          imageInput.click();
+        });
+
+      /* ============================================================
+   NEW IMAGE
+   ============================================================ */
+
+      document
+        .getElementById("newImageBtn")
+        .addEventListener("click", function () {
+          imageInput.value = "";
+
+          editor.classList.remove("active");
+
+          uploadSection.style.display = "";
+
+          fileId = null;
+        });
+
+      /* ============================================================
+   DELETE TEMP FILE
+   ============================================================ */
+
+      document
+        .getElementById("deleteImageBtn")
+        .addEventListener("click", async function () {
+          if (!fileId) {
+            imageInput.value = "";
+
+            editor.classList.remove("active");
+
+            uploadSection.style.display = "";
+
+            return;
+          }
+
+          try {
+            await fetch(`/crop-image/delete/${fileId}`, {
+              method: "POST",
+            });
+          } catch (error) {
+            console.error(error);
+          }
+
+          fileId = null;
+
+          imageInput.value = "";
+
+          editor.classList.remove("active");
+
+          uploadSection.style.display = "";
+        });
+
+      /* ============================================================
+   KEYBOARD SHORTCUTS
+   ============================================================ */
+
+      document.addEventListener("keydown", function (event) {
+        if (!editor.classList.contains("active")) return;
+
+        const tag = (event.target.tagName || "").toLowerCase();
+
+        if (tag === "input" || tag === "select" || tag === "textarea") return;
+
+        const nudge = event.shiftKey ? 20 : 5;
+
+        switch (event.key) {
+          case "ArrowLeft":
+            crop.x -= nudge;
+            renderCrop();
+            event.preventDefault();
+            break;
+
+          case "ArrowRight":
+            crop.x += nudge;
+            renderCrop();
+            event.preventDefault();
+            break;
+
+          case "ArrowUp":
+            crop.y -= nudge;
+            renderCrop();
+            event.preventDefault();
+            break;
+
+          case "ArrowDown":
+            crop.y += nudge;
+            renderCrop();
+            event.preventDefault();
+            break;
+
+          case "r":
+          case "R":
+            rotation = (rotation + 90) % 360;
+            updateImageTransform();
+            pushHistory();
+            break;
+
+          case "h":
+          case "H":
+            flipHorizontal = !flipHorizontal;
+            updateImageTransform();
+            pushHistory();
+            break;
+
+          case "v":
+          case "V":
+            flipVertical = !flipVertical;
+            updateImageTransform();
+            pushHistory();
+            break;
+
+          case "+":
+          case "=":
+            zoom = Math.min(2, zoom + 0.1);
+            document.getElementById("zoomRange").value = Math.round(zoom * 100);
+            document.getElementById("zoomValue").textContent =
+              Math.round(zoom * 100) + "%";
+            updateImageTransform();
+            break;
+
+          case "-":
+            zoom = Math.max(0.5, zoom - 0.1);
+            document.getElementById("zoomRange").value = Math.round(zoom * 100);
+            document.getElementById("zoomValue").textContent =
+              Math.round(zoom * 100) + "%";
+            updateImageTransform();
+            break;
+
+          case "z":
+          case "Z":
+            if (event.ctrlKey || event.metaKey) {
+              event.preventDefault();
+
+              if (event.shiftKey) {
+                redo();
+              } else {
+                undo();
+              }
+            }
+            break;
+
+          case "y":
+          case "Y":
+            if (event.ctrlKey || event.metaKey) {
+              event.preventDefault();
+
+              redo();
+            }
+            break;
+
+          default:
+            break;
+        }
+      });
+
+      document.addEventListener("keyup", function (event) {
+        if (!editor.classList.contains("active")) return;
+
+        if (
+          ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+            event.key,
+          )
+        ) {
+          pushHistory();
+        }
+      });
+
+      /* ============================================================
+   CAMERA
+   ============================================================ */
+
+      const cameraModal = document.getElementById("cameraModal");
+
+      const cameraVideo = document.getElementById("cameraVideo");
+
+      let cameraStream = null;
+
+      document
+        .getElementById("cameraButton")
+        .addEventListener("click", openCamera);
+
+      async function openCamera() {
+        cameraModal.classList.add("active");
+
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+            },
+
+            audio: false,
+          });
+
+          cameraVideo.srcObject = cameraStream;
+        } catch (error) {
+          document.getElementById("cameraError").textContent =
+            "Camera access was blocked. Please allow camera permission.";
+
+          document.getElementById("cameraError").classList.add("active");
+        }
+      }
+
+      /* ============================================================
+   CLOSE CAMERA
+   ============================================================ */
+
+      function closeCamera() {
+        if (cameraStream) {
+          cameraStream.getTracks().forEach((track) => track.stop());
+
+          cameraStream = null;
+        }
+
+        cameraVideo.srcObject = null;
+
+        cameraModal.classList.remove("active");
+      }
+
+      document
+        .getElementById("cameraCloseBtn")
+        .addEventListener("click", closeCamera);
+
+      document
+        .getElementById("cameraCancelBtn")
+        .addEventListener("click", closeCamera);
+
+      /* ============================================================
+   CAPTURE CAMERA
+   ============================================================ */
+
+      document
+        .getElementById("captureButton")
+        .addEventListener("click", function () {
+          if (!cameraStream) {
+            showToast("Camera is not available.", "error");
+
+            return;
+          }
+
+          const canvas = document.createElement("canvas");
+
+          canvas.width = cameraVideo.videoWidth;
+
+          canvas.height = cameraVideo.videoHeight;
+
+          const context = canvas.getContext("2d");
+
+          context.drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob(
+            function (blob) {
+              const file = new File([blob], "camera-photo.jpg", {
+                type: "image/jpeg",
+              });
+
+              closeCamera();
+
+              uploadFile(file);
+            },
+            "image/jpeg",
+            0.95,
+          );
+        });
+
+      /* ============================================================
+   PREVIEW CLOSE
+   ============================================================ */
+
+      function closePreview() {
+        document.getElementById("previewModal").classList.remove("active");
+      }
+
+      document
+        .getElementById("previewCloseBtn")
+        .addEventListener("click", closePreview);
+
+      document
+        .getElementById("previewCloseBottomBtn")
+        .addEventListener("click", closePreview);
+
+      /* ============================================================
+   WINDOW RESIZE
+   ============================================================ */
+
+      window.addEventListener("resize", function () {
+        if (!editor.classList.contains("active")) {
+          return;
+        }
+
+        const oldWidth = displayedWidth;
+
+        const oldHeight = displayedHeight;
+
+        fitImage();
+
+        const scaleX = displayedWidth / oldWidth;
+
+        const scaleY = displayedHeight / oldHeight;
+
+        crop.x *= scaleX;
+
+        crop.y *= scaleY;
+
+        crop.width *= scaleX;
+
+        crop.height *= scaleY;
+
+        renderCrop();
+
+        updateInfo();
+      });
+    </script>
+  </body>
+</html>

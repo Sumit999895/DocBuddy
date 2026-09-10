@@ -1,0 +1,1099 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>PDF to JPG - DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='pdf_to_jpg.css') }}" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:wght@500;600;700&display=swap"
+      rel="stylesheet" />
+  </head>
+
+  <body
+    data-conversion-complete="{{ 'true' if conversion_success else 'false' }}">
+    <!-- =========================================================
+     PAGE
+========================================================= -->
+
+    <div class="page">
+      <main class="container">
+        <!-- =================================================
+             BACK
+        ================================================== -->
+
+        <a href="{{ url_for('dashboard') }}" class="back-link">
+          <h3><- Back to Dashboard</h3>
+        </a>
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <section class="converter-header">
+          <div class="converter-icon"><h1>📄</h1></div>
+
+          <div class="eyebrow"><h3>DOCUMENT CONVERTER</h3></div>
+
+          <h1>PDF <span>→</span> JPG</h1>
+
+          <p class="description">
+            Convert every page of a PDF document into high-quality JPG images.
+            Each page can be previewed, downloaded, or deleted individually.
+          </p>
+        </section>
+
+        <!-- =================================================
+             FLASH MESSAGES
+        ================================================== -->
+
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+
+        <div class="flash-container">
+          {% for category, message in messages %}
+
+          <div class="flash-message {{ category }}">{{ message }}</div>
+
+          {% endfor %}
+        </div>
+
+        {% endif %} {% endwith %}
+
+        <!-- =================================================
+             UPLOAD FORM
+        ================================================== -->
+
+        <section class="upload-section">
+          <form
+            action="{{ url_for('pdf_to_jpg.pdf_to_jpg') }}"
+            method="POST"
+            enctype="multipart/form-data"
+            id="pdfConversionForm">
+            <div class="upload-box">
+              <div class="upload-icon">↑</div>
+
+              <div class="upload-text">
+                <h3>Select a PDF file</h3>
+
+                <p>Upload the PDF you want to convert.</p>
+              </div>
+
+              <input
+                type="file"
+                name="file"
+                id="pdf-file"
+                accept=".pdf,application/pdf"
+                hidden
+                required />
+
+              <label for="pdf-file" class="choose-file-button">
+                Choose PDF
+              </label>
+
+              <div id="selected-file" class="selected-file">
+                No file selected
+              </div>
+            </div>
+
+            <button type="submit" class="convert-button" id="convertButton">
+              <span class="button-icon">↗</span>
+              <span id="buttonText"> Convert PDF to JPG </span>
+            </button>
+          </form>
+
+          <div class="info-box">
+            <div class="info-icon">
+              <table>
+                <ul></ul>
+              </table>
+            </div>
+
+            <div>
+              <strong> How it works </strong>
+
+              <p>
+                Select a PDF → Convert → Each page becomes a JPG. You can then
+                preview, download, or delete individual pages.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- =================================================
+             CURRENT CONVERSION
+        ================================================== -->
+
+        {% if conversion and pages %}
+
+        <section class="recent-conversion" id="recentConversion">
+          <div class="section-heading">
+            <div>
+              <div class="section-label success-label">CONVERSION COMPLETE</div>
+
+              <h2>{{ conversion.original_filename }}</h2>
+            </div>
+
+            <div class="page-count" id="currentPageCount">
+              {{ pages|length }} {% if pages|length == 1 %} Page {% else %}
+              Pages {% endif %}
+            </div>
+          </div>
+
+          <div class="converted-files" id="convertedFiles">
+            {% for page in pages %}
+
+            <div
+              class="converted-file"
+              id="file-card-{{ conversion.id }}-{{ page.page_number }}"
+              data-page-number="{{ page.page_number }}">
+              <!-- Small image icon -->
+              <div class="converted-file-icon">🖼️</div>
+
+              <!-- File information -->
+              <div class="converted-file-info">
+                <strong title="{{ page.filename }}">
+                  {{ page.filename }}
+                </strong>
+
+                <span> JPG · Page {{ page.page_number }} </span>
+              </div>
+
+              <!-- Actions -->
+              <div class="converted-file-actions">
+                <!-- PREVIEW -->
+
+                <button
+                  type="button"
+                  class="file-action preview"
+                  data-action="preview"
+                  data-preview-url="{{ url_for('pdf_to_jpg.view_converted_jpg', conversion_id=conversion.id, filename=page.filename) }}"
+                  data-download-url="{{ url_for('pdf_to_jpg.download_converted_jpg', conversion_id=conversion.id, filename=page.filename) }}"
+                  data-delete-url="{{ url_for('pdf_to_jpg.delete_converted_jpg', conversion_id=conversion.id, filename=page.filename) }}"
+                  data-filename="{{ page.filename }}"
+                  data-page-number="{{ page.page_number }}"
+                  data-card-id="file-card-{{ conversion.id }}-{{ page.page_number }}">
+                  👁
+                  <span>Preview</span>
+                </button>
+
+                <!-- DOWNLOAD -->
+
+                <a
+                  href="{{ url_for('pdf_to_jpg.download_converted_jpg', conversion_id=conversion.id, filename=page.filename) }}"
+                  class="file-action download">
+                  ↓
+                  <span>Download</span>
+                </a>
+
+                <!-- DELETE -->
+
+                <button
+                  type="button"
+                  class="file-action delete"
+                  data-action="delete"
+                  data-delete-url="{{ url_for('pdf_to_jpg.delete_converted_jpg', conversion_id=conversion.id, filename=page.filename) }}"
+                  data-filename="{{ page.filename }}"
+                  data-page-number="{{ page.page_number }}"
+                  data-card-id="file-card-{{ conversion.id }}-{{ page.page_number }}"
+                  data-conversion-id="{{ conversion.id }}">
+                  🗑
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+
+            {% endfor %}
+          </div>
+        </section>
+
+        {% endif %}
+
+        <!-- =================================================
+             RECENT HISTORY
+        ================================================== -->
+
+        <section class="history-section" id="conversionHistory">
+          <div class="history-header">
+            <div>
+              <div class="section-label">RECENT FILES</div>
+
+              <h2>Recent PDF conversions</h2>
+            </div>
+          </div>
+
+          {% if history %}
+
+          <div class="history-list">
+            {% for item in history %}
+
+            <article class="history-item" id="history-conversion-{{ item.id }}">
+              <!-- =================================================
+                         HISTORY HEADER
+                    ================================================== -->
+
+              <div class="history-main">
+                <div class="history-icon">📄</div>
+
+                <div class="history-info">
+                  <strong title="{{ item.original_filename }}">
+                    {{ item.original_filename }}
+                  </strong>
+
+                  <span>
+                    PDF → JPG {% if item.created_at %} · {{ item.created_at }}
+                    {% endif %}
+                  </span>
+                </div>
+
+                <!-- Page count -->
+
+                <div class="history-pages-count" data-count-for="{{ item.id }}">
+                  {{ item.pages|length }} {% if item.pages|length == 1 %} Page
+                  {% else %} Pages {% endif %}
+                </div>
+
+                <!-- View pages -->
+
+                <button
+                  type="button"
+                  class="history-toggle"
+                  data-history-toggle="{{ item.id }}"
+                  aria-expanded="false">
+                  <span> View pages </span>
+
+                  <span class="history-chevron"> ⌄ </span>
+                </button>
+              </div>
+
+              <!-- =================================================
+                         HISTORY PAGES
+                    ================================================== -->
+
+              <div
+                class="history-pages-list"
+                id="history-pages-{{ item.id }}"
+                hidden>
+                {% for page in item.pages %}
+
+                <div
+                  class="converted-file history-page-file"
+                  id="history-file-card-{{ item.id }}-{{ page.page_number }}"
+                  data-page-number="{{ page.page_number }}">
+                  <div class="converted-file-icon">🖼️</div>
+
+                  <div class="converted-file-info">
+                    <strong title="{{ page.filename }}">
+                      {{ page.filename }}
+                    </strong>
+
+                    <span> JPG · Page {{ page.page_number }} </span>
+                  </div>
+
+                  <div class="converted-file-actions">
+                    <!-- PREVIEW -->
+
+                    <button
+                      type="button"
+                      class="file-action preview"
+                      data-action="preview"
+                      data-preview-url="{{ url_for('pdf_to_jpg.view_converted_jpg', conversion_id=item.id, filename=page.filename) }}"
+                      data-download-url="{{ url_for('pdf_to_jpg.download_converted_jpg', conversion_id=item.id, filename=page.filename) }}"
+                      data-delete-url="{{ url_for('pdf_to_jpg.delete_converted_jpg', conversion_id=item.id, filename=page.filename) }}"
+                      data-filename="{{ page.filename }}"
+                      data-page-number="{{ page.page_number }}"
+                      data-card-id="history-file-card-{{ item.id }}-{{ page.page_number }}">
+                      👁
+                      <span>Preview</span>
+                    </button>
+
+                    <!-- DOWNLOAD -->
+
+                    <a
+                      href="{{ url_for('pdf_to_jpg.download_converted_jpg', conversion_id=item.id, filename=page.filename) }}"
+                      class="file-action download">
+                      ↓
+                      <span>Download</span>
+                    </a>
+
+                    <!-- DELETE -->
+
+                    <button
+                      type="button"
+                      class="file-action delete"
+                      data-action="delete"
+                      data-delete-url="{{ url_for('pdf_to_jpg.delete_converted_jpg', conversion_id=item.id, filename=page.filename) }}"
+                      data-filename="{{ page.filename }}"
+                      data-page-number="{{ page.page_number }}"
+                      data-card-id="history-file-card-{{ item.id }}-{{ page.page_number }}"
+                      data-conversion-id="{{ item.id }}">
+                      🗑
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+
+                {% endfor %}
+              </div>
+            </article>
+
+            {% endfor %}
+          </div>
+
+          {% else %}
+
+          <div class="empty-history">
+            <div class="empty-history-icon">🗂️</div>
+
+            <strong> No recent conversions </strong>
+
+            <span
+              >Temporary conversions appear here and are deleted
+              automatically.</span
+            >
+          </div>
+
+          {% endif %}
+        </section>
+      </main>
+    </div>
+
+    <!-- =========================================================
+     IMAGE PREVIEW MODAL
+========================================================= -->
+
+    <div id="imagePreviewModal" class="image-preview-modal" aria-hidden="true">
+      <div class="preview-overlay" id="previewOverlay"></div>
+
+      <div
+        class="preview-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="previewFileName">
+        <button
+          type="button"
+          class="preview-close"
+          id="previewClose"
+          aria-label="Close preview">
+          ×
+        </button>
+
+        <div class="preview-title">
+          <span id="previewFileName"> JPG Preview </span>
+        </div>
+
+        <div class="preview-image-container">
+          <div id="previewLoading" class="preview-loading">
+            Loading preview...
+          </div>
+
+          <img id="previewImage" src="" alt="JPG Preview" />
+
+          <div id="previewError" class="preview-error" hidden>
+            Unable to load this image.
+          </div>
+        </div>
+
+        <div class="preview-actions">
+          <a href="#" id="previewDownload" class="download-btn"> ↓ Download </a>
+
+          <button type="button" id="previewDelete" class="delete-btn">
+            🗑 Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+     SUCCESS TOAST
+========================================================= -->
+
+    <div
+      id="conversionToast"
+      class="conversion-toast"
+      role="status"
+      aria-live="polite">
+      <div class="toast-icon">✓</div>
+
+      <div class="toast-content">
+        <strong> Conversion Complete </strong>
+
+        <span> Your PDF has been successfully converted to JPG. </span>
+      </div>
+
+      <button
+        type="button"
+        class="toast-close"
+        id="toastClose"
+        aria-label="Close notification">
+        ×
+      </button>
+
+      <div class="toast-progress"></div>
+    </div>
+
+    <!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+    <script>
+      "use strict";
+
+      /* =========================================================
+         FILE SELECTION
+      ========================================================= */
+
+      const pdfFile = document.getElementById("pdf-file");
+      const selectedFile = document.getElementById("selected-file");
+      const conversionForm = document.getElementById("pdfConversionForm");
+      const convertButton = document.getElementById("convertButton");
+      const buttonText = document.getElementById("buttonText");
+
+      if (pdfFile) {
+        pdfFile.addEventListener("change", function () {
+          if (!this.files || !this.files.length) {
+            selectedFile.textContent = "No file selected";
+
+            return;
+          }
+
+          const file = this.files[0];
+
+          if (
+            file.type !== "application/pdf" &&
+            !file.name.toLowerCase().endsWith(".pdf")
+          ) {
+            alert("Please select a PDF file.");
+
+            this.value = "";
+
+            selectedFile.textContent = "No file selected";
+
+            return;
+          }
+
+          selectedFile.textContent = file.name;
+        });
+      }
+
+      /* =========================================================
+         FORM SUBMISSION
+      ========================================================= */
+
+      if (conversionForm) {
+        conversionForm.addEventListener("submit", function (event) {
+          if (!pdfFile || !pdfFile.files || !pdfFile.files.length) {
+            event.preventDefault();
+
+            alert("Please select a PDF file.");
+
+            return;
+          }
+
+          if (convertButton) {
+            convertButton.disabled = true;
+
+            convertButton.classList.add("converting");
+          }
+
+          if (buttonText) {
+            buttonText.textContent = "Converting PDF...";
+          }
+        });
+      }
+
+      /* =========================================================
+         PREVIEW ELEMENTS
+      ========================================================= */
+
+      const modal = document.getElementById("imagePreviewModal");
+
+      const previewOverlay = document.getElementById("previewOverlay");
+
+      const previewImage = document.getElementById("previewImage");
+
+      const previewLoading = document.getElementById("previewLoading");
+
+      const previewError = document.getElementById("previewError");
+
+      const previewTitle = document.getElementById("previewFileName");
+
+      const previewDownload = document.getElementById("previewDownload");
+
+      const previewDelete = document.getElementById("previewDelete");
+
+      const previewClose = document.getElementById("previewClose");
+
+      let currentPreview = {
+        deleteUrl: null,
+
+        filename: null,
+
+        pageNumber: null,
+
+        cardId: null,
+
+        conversionId: null,
+      };
+
+      /* =========================================================
+         OPEN PREVIEW
+      ========================================================= */
+
+      function openImagePreview(
+        imageUrl,
+        filename,
+        conversionId,
+        pageNumber,
+        downloadUrl,
+        deleteUrl,
+        cardId,
+      ) {
+        if (!modal) {
+          return;
+        }
+
+        currentPreview = {
+          conversionId: conversionId,
+
+          filename: filename,
+
+          pageNumber: pageNumber,
+
+          deleteUrl: deleteUrl,
+
+          cardId: cardId,
+        };
+
+        previewTitle.textContent = filename;
+
+        previewImage.style.display = "none";
+
+        previewImage.src = "";
+
+        previewLoading.hidden = false;
+
+        previewError.hidden = true;
+
+        previewDownload.href = downloadUrl;
+
+        modal.classList.add("active");
+
+        modal.setAttribute("aria-hidden", "false");
+
+        document.body.classList.add("modal-open");
+
+        previewImage.onload = function () {
+          previewLoading.hidden = true;
+
+          previewError.hidden = true;
+
+          previewImage.style.display = "block";
+        };
+
+        previewImage.onerror = function () {
+          previewLoading.hidden = true;
+
+          previewImage.style.display = "none";
+
+          previewError.hidden = false;
+        };
+
+        /*
+             Cache-busting query prevents browser from displaying
+             an old deleted/replaced image from cache.
+          */
+
+        previewImage.src =
+          imageUrl +
+          (imageUrl.includes("?") ? "&" : "?") +
+          "_preview=" +
+          Date.now();
+      }
+
+      /* =========================================================
+         CLOSE PREVIEW
+      ========================================================= */
+
+      function closeImagePreview() {
+        if (!modal) {
+          return;
+        }
+
+        modal.classList.remove("active");
+
+        modal.setAttribute("aria-hidden", "true");
+
+        previewImage.src = "";
+
+        document.body.classList.remove("modal-open");
+
+        currentPreview = {
+          deleteUrl: null,
+
+          filename: null,
+
+          pageNumber: null,
+
+          cardId: null,
+
+          conversionId: null,
+        };
+      }
+
+      /* =========================================================
+         CLOSE BUTTON
+      ========================================================= */
+
+      if (previewClose) {
+        previewClose.addEventListener("click", closeImagePreview);
+      }
+
+      if (previewOverlay) {
+        previewOverlay.addEventListener("click", closeImagePreview);
+      }
+
+      /* =========================================================
+         ESC KEY
+      ========================================================= */
+
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          closeImagePreview();
+        }
+      });
+
+      /* =========================================================
+         PREVIEW / DELETE CLICK HANDLER
+      ========================================================= */
+
+      document.addEventListener("click", function (event) {
+        /* -----------------------------------------------
+                 PREVIEW
+              ------------------------------------------------ */
+
+        const previewButton = event.target.closest(".file-action.preview");
+
+        if (previewButton) {
+          openImagePreview(
+            previewButton.dataset.previewUrl,
+
+            previewButton.dataset.filename,
+
+            previewButton.dataset.conversionId,
+
+            previewButton.dataset.pageNumber,
+
+            previewButton.dataset.downloadUrl,
+
+            previewButton.dataset.deleteUrl,
+
+            previewButton.dataset.cardId,
+          );
+
+          return;
+        }
+
+        /* -----------------------------------------------
+                 DELETE
+              ------------------------------------------------ */
+
+        const deleteButton = event.target.closest(".file-action.delete");
+
+        if (deleteButton) {
+          deleteConvertedFile(
+            deleteButton.dataset.deleteUrl,
+
+            deleteButton.dataset.filename,
+
+            deleteButton.dataset.pageNumber,
+
+            false,
+
+            deleteButton.dataset.cardId,
+
+            deleteButton.dataset.conversionId,
+          );
+
+          return;
+        }
+
+        /* -----------------------------------------------
+                 HISTORY TOGGLE
+              ------------------------------------------------ */
+
+        const historyToggle = event.target.closest(".history-toggle");
+
+        if (historyToggle) {
+          const id = historyToggle.dataset.historyToggle;
+
+          const pages = document.getElementById("history-pages-" + id);
+
+          if (!pages) {
+            return;
+          }
+
+          const opening = pages.hidden;
+
+          pages.hidden = !opening;
+
+          historyToggle.setAttribute("aria-expanded", String(opening));
+
+          const label = historyToggle.querySelector("span:first-child");
+
+          if (label) {
+            label.textContent = opening ? "Hide pages" : "View pages";
+          }
+
+          historyToggle.classList.toggle("open", opening);
+        }
+      });
+
+      /* =========================================================
+         DELETE CONVERTED FILE
+      ========================================================= */
+
+      async function deleteConvertedFile(
+        deleteUrl,
+
+        filename,
+
+        pageNumber,
+
+        fromPreview,
+
+        cardId,
+
+        conversionId,
+      ) {
+        if (!deleteUrl) {
+          alert("Delete URL is missing.");
+
+          return;
+        }
+
+        const confirmed = window.confirm(
+          "Are you sure you want to delete " + filename + "?",
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        try {
+          const response = await fetch(deleteUrl, {
+            method: "POST",
+
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+
+              Accept: "application/json",
+            },
+          });
+
+          /*
+                 Some Flask delete routes return JSON.
+              */
+
+          let data = null;
+
+          try {
+            data = await response.json();
+          } catch (jsonError) {
+            data = null;
+          }
+
+          if (!response.ok) {
+            throw new Error(
+              data && data.message ? data.message : "Delete request failed.",
+            );
+          }
+
+          if (data && data.success === false) {
+            throw new Error(data.message || "Could not delete the image.");
+          }
+
+          /* -------------------------------------------
+                 Close preview if deletion came from modal
+              -------------------------------------------- */
+
+          if (fromPreview) {
+            closeImagePreview();
+          }
+
+          /* -------------------------------------------
+                 Remove card from page
+              -------------------------------------------- */
+
+          const card = cardId ? document.getElementById(cardId) : null;
+
+          if (card) {
+            const parent = card.parentElement;
+
+            card.remove();
+
+            /*
+                     History page deleted
+                  */
+
+            if (parent && parent.classList.contains("history-pages-list")) {
+              updateHistoryAfterDelete(conversionId, parent);
+            } else {
+              /*
+                     Current conversion page deleted
+                  */
+              updateCurrentConversionAfterDelete();
+
+              updateHistoryForCurrentDelete(conversionId, pageNumber);
+            }
+          }
+        } catch (error) {
+          console.error("Delete error:", error);
+
+          alert(error.message || "Could not delete the image.");
+        }
+      }
+
+      /* =========================================================
+         UPDATE CURRENT CONVERSION
+      ========================================================= */
+
+      function updateCurrentConversionAfterDelete() {
+        const files = document.querySelectorAll(
+          "#convertedFiles > .converted-file",
+        );
+
+        const pageCount = document.getElementById("currentPageCount");
+
+        const count = files.length;
+
+        if (pageCount) {
+          pageCount.textContent = count + (count === 1 ? " Page" : " Pages");
+        }
+
+        /*
+             If all pages are deleted,
+             remove current conversion section.
+          */
+
+        if (count === 0) {
+          const recent = document.getElementById("recentConversion");
+
+          if (recent) {
+            recent.remove();
+          }
+        }
+      }
+
+      /* =========================================================
+         UPDATE HISTORY AFTER CURRENT PAGE DELETE
+      ========================================================= */
+
+      function updateHistoryForCurrentDelete(
+        conversionId,
+
+        pageNumber,
+      ) {
+        if (!conversionId) {
+          return;
+        }
+
+        const historyPages = document.getElementById(
+          "history-pages-" + conversionId,
+        );
+
+        if (!historyPages) {
+          return;
+        }
+
+        const page = historyPages.querySelector(
+          '[data-page-number="' + String(pageNumber) + '"]',
+        );
+
+        if (page) {
+          page.remove();
+        }
+
+        updateHistoryAfterDelete(conversionId, historyPages);
+      }
+
+      /* =========================================================
+         UPDATE HISTORY
+      ========================================================= */
+
+      function updateHistoryAfterDelete(
+        conversionId,
+
+        pagesContainer,
+      ) {
+        if (!pagesContainer) {
+          return;
+        }
+
+        const historyItem = document.getElementById(
+          "history-conversion-" + conversionId,
+        );
+
+        if (!historyItem) {
+          return;
+        }
+
+        const remaining = pagesContainer.querySelectorAll(".history-page-file");
+
+        const countBadge = historyItem.querySelector(
+          '[data-count-for="' + conversionId + '"]',
+        );
+
+        const count = remaining.length;
+
+        if (countBadge) {
+          countBadge.textContent = count + (count === 1 ? " Page" : " Pages");
+        }
+
+        /*
+             If no pages remain,
+             remove the history item.
+          */
+
+        if (count === 0) {
+          historyItem.remove();
+
+          const historyList = document.querySelector(".history-list");
+
+          if (historyList && !historyList.querySelector(".history-item")) {
+            historyList.innerHTML = `
+
+                      <div class="empty-history">
+
+                          <div class="empty-history-icon">
+                              🗂️
+                          </div>
+
+                          <strong>
+                              No conversion history
+                          </strong>
+
+                          <span>
+                              Your PDF conversions will appear here.
+                          </span>
+
+                      </div>
+
+                  `;
+          }
+        }
+      }
+
+      /* =========================================================
+         PREVIEW DELETE BUTTON
+      ========================================================= */
+
+      if (previewDelete) {
+        previewDelete.addEventListener("click", function () {
+          if (!currentPreview.deleteUrl) {
+            alert("Delete URL is missing.");
+
+            return;
+          }
+
+          deleteConvertedFile(
+            currentPreview.deleteUrl,
+
+            currentPreview.filename,
+
+            currentPreview.pageNumber,
+
+            true,
+
+            currentPreview.cardId,
+
+            currentPreview.conversionId,
+          );
+        });
+      }
+
+      /* =========================================================
+         SUCCESS TOAST
+
+         Do not embed Jinja conditionals directly inside this
+         JavaScript block.
+
+         The Flask backend should provide:
+
+             conversion_success = True
+
+         in the template context. It is passed to the DOM safely
+         as a data attribute on <body> (see the opening body tag
+         above), and this script reads that attribute below
+         instead of mixing template syntax into JS.
+      ========================================================= */
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const conversionToast = document.getElementById("conversionToast");
+        const toastClose = document.getElementById("toastClose");
+
+        let toastTimer = null;
+
+        function showConversionToast() {
+          if (!conversionToast) {
+            return;
+          }
+
+          // Remove show first so the animation can restart
+          conversionToast.classList.remove("show");
+
+          // Force browser reflow
+          void conversionToast.offsetWidth;
+
+          // Show toast
+          conversionToast.classList.add("show");
+
+          // Clear any previous timer
+          if (toastTimer) {
+            clearTimeout(toastTimer);
+          }
+
+          // Automatically hide after 4 seconds
+          toastTimer = setTimeout(function () {
+            hideConversionToast();
+          }, 4000);
+        }
+
+        function hideConversionToast() {
+          if (!conversionToast) {
+            return;
+          }
+
+          conversionToast.classList.remove("show");
+
+          if (toastTimer) {
+            clearTimeout(toastTimer);
+            toastTimer = null;
+          }
+        }
+
+        // Close button
+        if (toastClose) {
+          toastClose.addEventListener("click", function () {
+            hideConversionToast();
+          });
+        }
+
+        // Check Flask/Jinja data attribute
+        const completed = document.body.dataset.conversionComplete === "true";
+
+        if (completed) {
+          showConversionToast();
+        }
+      });
+    </script>
+  </body>
+</html>
