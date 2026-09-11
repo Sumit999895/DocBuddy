@@ -2,13 +2,12 @@
 grant_plan.py
 =============
 
-Admin utility for managing user plans and account status.
+Admin utility for managing user plans.
 
 Run this file from your project root, where database.py is located.
 
-------------------------------------------------------------
 AVAILABLE OPERATIONS
-------------------------------------------------------------
+--------------------
 
 1. Permanent Pro
    python grant_plan.py user@example.com pro
@@ -28,32 +27,18 @@ AVAILABLE OPERATIONS
 6. Revoke Pro
    python grant_plan.py user@example.com revoke
 
-7. Suspend account
-   python grant_plan.py user@example.com suspend
-
-8. Unsuspend account
-   python grant_plan.py user@example.com unsuspend
-
-9. Check user status
+7. Check user status
    python grant_plan.py user@example.com status
 
-
-------------------------------------------------------------
 IMPORTANT
-------------------------------------------------------------
+---------
 
-"revoke" changes the user's plan to FREE.
-
-"suspend" only suspends the account.
-It does NOT change the user's Pro subscription.
-
-"unsuspend" changes account status back to ACTIVE.
-
-"free" changes the plan to FREE and removes the expiry date.
-
-"pro" without --months or --days gives permanent Pro.
-
-You can use any positive number of months or days.
+- "revoke" changes the user's plan to FREE.
+- "free" changes the plan to FREE and removes the expiry date.
+- "pro" without --months or --days gives permanent Pro.
+- "pro --days N" gives Pro for N days.
+- "pro --months N" gives Pro for N months.
+- "pro --months N --days N" gives Pro for both periods.
 """
 
 import argparse
@@ -70,8 +55,6 @@ VALID_ACTIONS = (
     "pro",
     "free",
     "revoke",
-    "suspend",
-    "unsuspend",
     "status",
 )
 
@@ -92,8 +75,7 @@ def find_user(cursor, email):
             name,
             email,
             plan,
-            plan_expires_at,
-            account_status
+            plan_expires_at
         FROM Users
         WHERE email = %s
         """,
@@ -109,7 +91,7 @@ def find_user(cursor, email):
 
 def print_status(user):
     """
-    Display complete user information.
+    Display user information.
     """
 
     print()
@@ -123,17 +105,9 @@ def print_status(user):
     print(f"Plan            : {user['plan']}")
 
     if user["plan_expires_at"]:
-        print(
-            f"Plan expires    : "
-            f"{user['plan_expires_at']}"
-        )
+        print(f"Plan expires    : {user['plan_expires_at']}")
     else:
         print("Plan expires    : Never")
-
-    print(
-        f"Account status  : "
-        f"{user['account_status']}"
-    )
 
     print("=" * 60)
     print()
@@ -154,17 +128,17 @@ def grant_pro(
 
     Possible combinations:
 
-        No values:
-            Permanent Pro
+    No values:
+        Permanent Pro
 
-        days:
-            Pro for N days
+    days:
+        Pro for N days
 
-        months:
-            Pro for N months
+    months:
+        Pro for N months
 
-        months + days:
-            Pro for N months + N days
+    months + days:
+        Pro for N months + N days
     """
 
     # --------------------------------------------------------
@@ -225,10 +199,7 @@ def grant_pro(
             )
         )
 
-        return (
-            f"{months} month(s) + "
-            f"{days} day(s)"
-        )
+        return f"{months} month(s) + {days} day(s)"
 
 
     # --------------------------------------------------------
@@ -349,50 +320,6 @@ def revoke_plan(cursor, user_id):
 
 
 # ============================================================
-# SUSPEND ACCOUNT
-# ============================================================
-
-def suspend_account(cursor, user_id):
-    """
-    Suspend the account.
-
-    The plan is NOT changed.
-    """
-
-    cursor.execute(
-        """
-        UPDATE Users
-        SET
-            account_status = 'suspended'
-        WHERE id = %s
-        """,
-        (user_id,)
-    )
-
-
-# ============================================================
-# UNSUSPEND ACCOUNT
-# ============================================================
-
-def unsuspend_account(cursor, user_id):
-    """
-    Restore account to active status.
-
-    The plan is NOT changed.
-    """
-
-    cursor.execute(
-        """
-        UPDATE Users
-        SET
-            account_status = 'active'
-        WHERE id = %s
-        """,
-        (user_id,)
-    )
-
-
-# ============================================================
 # MAIN USER OPERATION
 # ============================================================
 
@@ -435,8 +362,7 @@ def update_user(
 
             print()
             print(
-                f"No user found with email: "
-                f"{email}"
+                f"No user found with email: {email}"
             )
             print()
 
@@ -471,12 +397,10 @@ def update_user(
 
             db.commit()
 
-
             updated_user = find_user(
                 cursor,
                 email
             )
-
 
             print()
             print("=" * 60)
@@ -514,14 +438,7 @@ def update_user(
                     f"{updated_user['plan_expires_at']}"
                 )
             else:
-                print(
-                    "Expires         : Never"
-                )
-
-            print(
-                f"Account status  : "
-                f"{updated_user['account_status']}"
-            )
+                print("Expires         : Never")
 
             print("=" * 60)
             print()
@@ -543,7 +460,6 @@ def update_user(
             )
 
             db.commit()
-
 
             print()
             print("=" * 60)
@@ -589,7 +505,6 @@ def update_user(
 
             db.commit()
 
-
             print()
             print("=" * 60)
             print("                 PLAN REVOKED")
@@ -620,108 +535,6 @@ def update_user(
 
 
         # ====================================================
-        # SUSPEND
-        # ====================================================
-
-        if action == "suspend":
-
-            old_status = user["account_status"]
-
-            suspend_account(
-                cursor,
-                user["id"]
-            )
-
-            db.commit()
-
-
-            print()
-            print("=" * 60)
-            print("               ACCOUNT SUSPENDED")
-            print("=" * 60)
-
-            print(
-                f"Name            : "
-                f"{user['name']}"
-            )
-
-            print(
-                f"Email           : "
-                f"{user['email']}"
-            )
-
-            print(
-                f"Previous status : "
-                f"{old_status}"
-            )
-
-            print(
-                "Current status  : suspended"
-            )
-
-            print(
-                f"Plan            : "
-                f"{user['plan']}"
-            )
-
-            print("=" * 60)
-            print()
-
-            return True
-
-
-        # ====================================================
-        # UNSUSPEND
-        # ====================================================
-
-        if action == "unsuspend":
-
-            old_status = user["account_status"]
-
-            unsuspend_account(
-                cursor,
-                user["id"]
-            )
-
-            db.commit()
-
-
-            print()
-            print("=" * 60)
-            print("              ACCOUNT UNSUSPENDED")
-            print("=" * 60)
-
-            print(
-                f"Name            : "
-                f"{user['name']}"
-            )
-
-            print(
-                f"Email           : "
-                f"{user['email']}"
-            )
-
-            print(
-                f"Previous status : "
-                f"{old_status}"
-            )
-
-            print(
-                "Current status  : active"
-            )
-
-            print(
-                f"Plan            : "
-                f"{user['plan']}"
-            )
-
-            print("=" * 60)
-            print()
-
-            return True
-
-
-        # ====================================================
         # INVALID ACTION
         # ====================================================
 
@@ -735,7 +548,6 @@ def update_user(
     except Exception as e:
 
         if db:
-
             db.rollback()
 
         print()
@@ -754,11 +566,9 @@ def update_user(
     finally:
 
         if cursor:
-
             cursor.close()
 
         if db and db.is_connected():
-
             db.close()
 
 
@@ -770,8 +580,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         description=(
-            "Manage user plans and "
-            "account status."
+            "Manage user plans."
         )
     )
 
@@ -794,8 +603,7 @@ def main():
         "action",
         choices=VALID_ACTIONS,
         help=(
-            "pro, free, revoke, suspend, "
-            "unsuspend or status"
+            "pro, free, revoke or status"
         )
     )
 
@@ -830,9 +638,6 @@ def main():
     )
 
 
-    args = parser.parse_args()
-
-
     # ========================================================
     # VALIDATION
     # ========================================================
@@ -840,62 +645,66 @@ def main():
     # --months and --days only work with Pro.
 
     if (
-        args.action != "pro"
-        and (
+        args := parser.parse_args()
+    ):
+
+        if (
+            args.action != "pro"
+            and (
+                args.months is not None
+                or args.days is not None
+            )
+        ):
+
+            parser.error(
+                "--months and --days can only "
+                "be used with 'pro'."
+            )
+
+
+        # ----------------------------------------------------
+        # Validate months
+        # ----------------------------------------------------
+
+        if (
             args.months is not None
-            or args.days is not None
-        )
-    ):
+            and args.months <= 0
+        ):
 
-        parser.error(
-            "--months and --days can only "
-            "be used with 'pro'."
-        )
+            parser.error(
+                "--months must be greater than 0."
+            )
 
 
-    # --------------------------------------------------------
-    # Validate months
-    # --------------------------------------------------------
+        # ----------------------------------------------------
+        # Validate days
+        # ----------------------------------------------------
 
-    if (
-        args.months is not None
-        and args.months <= 0
-    ):
+        if (
+            args.days is not None
+            and args.days <= 0
+        ):
 
-        parser.error(
-            "--months must be greater than 0."
-        )
+            parser.error(
+                "--days must be greater than 0."
+            )
 
 
-    # --------------------------------------------------------
-    # Validate days
-    # --------------------------------------------------------
+        # ====================================================
+        # EXECUTE
+        # ====================================================
 
-    if (
-        args.days is not None
-        and args.days <= 0
-    ):
-
-        parser.error(
-            "--days must be greater than 0."
+        success = update_user(
+            email=args.email,
+            action=args.action,
+            months=args.months,
+            days=args.days
         )
 
 
-    # ========================================================
-    # EXECUTE
-    # ========================================================
-
-    success = update_user(
-        email=args.email,
-        action=args.action,
-        months=args.months,
-        days=args.days
-    )
-
-
-    sys.exit(
-        0 if success else 1
-    )
+        sys.exit(
+            0 if success else 1
+        )
 
 
 # ============================================================
