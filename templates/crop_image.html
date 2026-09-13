@@ -2425,6 +2425,43 @@
 
         updateInfo();
       });
+
+      /* ============================================================
+   RESPONSIVE EDITOR RESIZE
+   Recalculate image size when viewport changes
+   ============================================================ */
+
+      let resizeTimer = null;
+
+      window.addEventListener("resize", function () {
+        if (!editor.classList.contains("active")) return;
+
+        clearTimeout(resizeTimer);
+
+        resizeTimer = setTimeout(function () {
+          const oldWidth = displayedWidth;
+          const oldHeight = displayedHeight;
+
+          if (!oldWidth || !oldHeight) return;
+
+          // Preserve crop position as a percentage of the old image
+          const cropXRatio = crop.x / oldWidth;
+          const cropYRatio = crop.y / oldHeight;
+          const cropWidthRatio = crop.width / oldWidth;
+          const cropHeightRatio = crop.height / oldHeight;
+
+          fitImage();
+
+          crop.x = cropXRatio * displayedWidth;
+          crop.y = cropYRatio * displayedHeight;
+          crop.width = cropWidthRatio * displayedWidth;
+          crop.height = cropHeightRatio * displayedHeight;
+
+          renderCrop();
+          updateImageTransform();
+          updateInfo();
+        }, 100);
+      });
     </script>
   </body>
 </html>
