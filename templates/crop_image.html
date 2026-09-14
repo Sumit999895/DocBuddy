@@ -683,8 +683,8 @@
 
     <script>
       /* ============================================================
-   DOCBUDDY CROP ENGINE
-   ============================================================ */
+      DOCBUDDY CROP ENGINE
+      ============================================================ */
 
       const imageInput = document.getElementById("imageInput");
 
@@ -755,8 +755,8 @@
       let borderColor = "#ffffff";
 
       /* ============================================================
-   TOASTS
-   ============================================================ */
+      TOASTS
+      ============================================================ */
 
       function showToast(message, type) {
         const stack = document.getElementById("toastStack");
@@ -775,8 +775,8 @@
       }
 
       /* ============================================================
-   UNDO / REDO HISTORY
-   ============================================================ */
+      UNDO / REDO HISTORY
+      ============================================================ */
 
       let history = [];
 
@@ -951,8 +951,8 @@
       }
 
       /* ============================================================
-   UPLOAD
-   ============================================================ */
+      UPLOAD
+      ============================================================ */
 
       imageInput.addEventListener("change", function () {
         const file = this.files[0];
@@ -963,8 +963,8 @@
       });
 
       /* ============================================================
-   DRAG & DROP
-   ============================================================ */
+      DRAG & DROP
+      ============================================================ */
 
       uploadBox.addEventListener("dragover", function (event) {
         event.preventDefault();
@@ -989,8 +989,8 @@
       });
 
       /* ============================================================
-   UPLOAD FUNCTION
-   ============================================================ */
+      UPLOAD FUNCTION
+      ============================================================ */
 
       async function uploadFile(file) {
         const formData = new FormData();
@@ -1039,8 +1039,8 @@
       }
 
       /* ============================================================
-   SETUP EDITOR
-   ============================================================ */
+      SETUP EDITOR
+      ============================================================ */
 
       function setupEditor() {
         uploadSection.style.display = "none";
@@ -1099,8 +1099,8 @@
       }
 
       /* ============================================================
-   FIT IMAGE
-   ============================================================ */
+      FIT IMAGE
+      ============================================================ */
 
       function fitImage() {
         const maxWidth = canvasArea.clientWidth - 40;
@@ -1133,8 +1133,8 @@
       }
 
       /* ============================================================
-   FULL CROP
-   ============================================================ */
+      FULL CROP
+      ============================================================ */
 
       function fullCrop() {
         crop = {
@@ -1148,8 +1148,8 @@
       }
 
       /* ============================================================
-   RENDER CROP BOX
-   ============================================================ */
+      RENDER CROP BOX
+      ============================================================ */
 
       function renderCrop() {
         crop.x = Math.max(0, Math.min(crop.x, displayedWidth - crop.width));
@@ -1191,8 +1191,8 @@
       }
 
       /* ============================================================
-   POINTER POSITION
-   ============================================================ */
+      POINTER POSITION
+      ============================================================ */
 
       function getPointer(event) {
         const rect = cropWorkspace.getBoundingClientRect();
@@ -1218,184 +1218,262 @@
       }
 
       /* ============================================================
-   START DRAG
-   ============================================================ */
+      CROP DRAGGING + INDEPENDENT HANDLE RESIZING
+      ============================================================ */
 
-      cropOverlay.addEventListener("pointerdown", function (event) {
-        if (event.target.classList.contains("crop-handle")) {
-          resizing = true;
-
-          activeHandle = event.target.dataset.handle;
-        } else {
-          dragging = true;
-        }
-
-        startPointer = getPointer(event);
-
-        startCrop = { ...crop };
-
-        cropOverlay.setPointerCapture(event.pointerId);
+      function beginCropInteraction(event, handleName) {
+        if (event.button !== undefined && event.button !== 0) return;
 
         event.preventDefault();
+        event.stopPropagation();
+
+        activeHandle = handleName || null;
+        resizing = !!handleName;
+        dragging = !handleName;
+
+        startPointer = getPointer(event);
+        startCrop = {
+          x: crop.x,
+          y: crop.y,
+          width: crop.width,
+          height: crop.height,
+        };
+
+        if (event.currentTarget && event.currentTarget.setPointerCapture) {
+          try {
+            event.currentTarget.setPointerCapture(event.pointerId);
+          } catch (_) {}
+        }
+      }
+
+      /* The eight handles receive their own pointer events.
+            This is deliberately NOT delegated through cropOverlay. */
+      document.querySelectorAll(".crop-handle").forEach(function (handle) {
+        handle.addEventListener("pointerdown", function (event) {
+          beginCropInteraction(event, handle.dataset.handle);
+        });
       });
 
-      /* ============================================================
-   MOVE CROP
-   ============================================================ */
-
-      cropOverlay.addEventListener("pointermove", function (event) {
-        if (!dragging && !resizing) {
-          return;
-        }
-
-        const pointer = getPointer(event);
-
-        const dx = pointer.x - startPointer.x;
-
-        const dy = pointer.y - startPointer.y;
-
-        if (dragging) {
-          crop.x = startCrop.x + dx;
-
-          crop.y = startCrop.y + dy;
-
-          crop.x = Math.max(0, Math.min(crop.x, displayedWidth - crop.width));
-
-          crop.y = Math.max(0, Math.min(crop.y, displayedHeight - crop.height));
-
-          renderCrop();
-
-          return;
-        }
-
-        if (resizing) {
-          resizeCrop(dx, dy);
-        }
+      /* Drag the crop rectangle itself. */
+      cropOverlay.addEventListener("pointerdown", function (event) {
+        if (event.target.closest(".crop-handle")) return;
+        beginCropInteraction(event, null);
       });
 
-      /* ============================================================
-   END DRAG
-   ============================================================ */
+      function stopCropInteraction(event) {
+        if (!dragging && !resizing) return;
 
-      cropOverlay.addEventListener("pointerup", function () {
         const wasActive = dragging || resizing;
-
         dragging = false;
-
         resizing = false;
-
         activeHandle = null;
 
         if (wasActive) pushHistory();
-      });
 
-      cropOverlay.addEventListener("pointercancel", function () {
-        dragging = false;
+        if (event && event.pointerId !== undefined) {
+          try {
+            if (
+              cropOverlay.hasPointerCapture &&
+              cropOverlay.hasPointerCapture(event.pointerId)
+            ) {
+              cropOverlay.releasePointerCapture(event.pointerId);
+            }
+          } catch (_) {}
+        }
+      }
 
-        resizing = false;
+      document.addEventListener(
+        "pointermove",
+        function (event) {
+          if (!dragging && !resizing) return;
 
-        activeHandle = null;
-      });
+          event.preventDefault();
+
+          const pointer = getPointer(event);
+          const dx = pointer.x - startPointer.x;
+          const dy = pointer.y - startPointer.y;
+
+          if (dragging) {
+            crop.x = Math.max(
+              0,
+              Math.min(displayedWidth - crop.width, startCrop.x + dx),
+            );
+            crop.y = Math.max(
+              0,
+              Math.min(displayedHeight - crop.height, startCrop.y + dy),
+            );
+            renderCrop();
+          } else if (resizing) {
+            resizeCrop(dx, dy);
+          }
+        },
+        { passive: false },
+      );
+
+      document.addEventListener("pointerup", stopCropInteraction);
+      document.addEventListener("pointercancel", stopCropInteraction);
+      document.addEventListener("lostpointercapture", stopCropInteraction);
 
       /* ============================================================
-   RESIZE CROP
-   ============================================================ */
+      RESIZE CROP
+      ============================================================ */
+
+      /* ============================================================
+      INDEPENDENT CROP HANDLES
+      - Free mode: every corner/edge moves independently.
+      - Aspect mode: the selected handle remains the anchor and
+        the opposite edges are adjusted only as needed to preserve
+        the selected ratio.
+      ============================================================ */
+
+      /* ============================================================
+      COMPLETELY INDEPENDENT CROP HANDLES
+
+      Every handle moves independently.
+
+      NW -> changes left + top
+      NE -> changes right + top
+      SE -> changes right + bottom
+      SW -> changes left + bottom
+
+      N  -> changes top only
+      E  -> changes right only
+      S  -> changes bottom only
+      W  -> changes left only
+
+      Aspect ratio is NOT forced while dragging.
+      ============================================================ */
 
       function resizeCrop(dx, dy) {
+        const MIN_SIZE = 20;
+
         let left = startCrop.x;
-
         let top = startCrop.y;
-
         let right = startCrop.x + startCrop.width;
-
         let bottom = startCrop.y + startCrop.height;
 
-        if (activeHandle.includes("w")) {
-          left = Math.max(0, Math.min(right - 20, startCrop.x + dx));
+        switch (activeHandle) {
+          /* =========================
+              TOP LEFT
+              ========================= */
+          case "nw":
+            left = startCrop.x + dx;
+            top = startCrop.y + dy;
+
+            left = Math.max(0, left);
+            top = Math.max(0, top);
+
+            left = Math.min(left, right - MIN_SIZE);
+            top = Math.min(top, bottom - MIN_SIZE);
+
+            break;
+
+          /* =========================
+              TOP RIGHT
+              ========================= */
+          case "ne":
+            right = startCrop.x + startCrop.width + dx;
+            top = startCrop.y + dy;
+
+            right = Math.min(displayedWidth, right);
+            top = Math.max(0, top);
+
+            right = Math.max(right, left + MIN_SIZE);
+            top = Math.min(top, bottom - MIN_SIZE);
+
+            break;
+
+          /* =========================
+              BOTTOM RIGHT
+              ========================= */
+          case "se":
+            right = startCrop.x + startCrop.width + dx;
+            bottom = startCrop.y + startCrop.height + dy;
+
+            right = Math.min(displayedWidth, right);
+            bottom = Math.min(displayedHeight, bottom);
+
+            right = Math.max(right, left + MIN_SIZE);
+            bottom = Math.max(bottom, top + MIN_SIZE);
+
+            break;
+
+          /* =========================
+              BOTTOM LEFT
+              ========================= */
+          case "sw":
+            left = startCrop.x + dx;
+            bottom = startCrop.y + startCrop.height + dy;
+
+            left = Math.max(0, left);
+            bottom = Math.min(displayedHeight, bottom);
+
+            left = Math.min(left, right - MIN_SIZE);
+            bottom = Math.max(bottom, top + MIN_SIZE);
+
+            break;
+
+          /* =========================
+              TOP EDGE
+              ========================= */
+          case "n":
+            top = startCrop.y + dy;
+
+            top = Math.max(0, top);
+            top = Math.min(top, bottom - MIN_SIZE);
+
+            break;
+
+          /* =========================
+              RIGHT EDGE
+              ========================= */
+          case "e":
+            right = startCrop.x + startCrop.width + dx;
+
+            right = Math.min(displayedWidth, right);
+            right = Math.max(right, left + MIN_SIZE);
+
+            break;
+
+          /* =========================
+              BOTTOM EDGE
+              ========================= */
+          case "s":
+            bottom = startCrop.y + startCrop.height + dy;
+
+            bottom = Math.min(displayedHeight, bottom);
+            bottom = Math.max(bottom, top + MIN_SIZE);
+
+            break;
+
+          /* =========================
+              LEFT EDGE
+              ========================= */
+          case "w":
+            left = startCrop.x + dx;
+
+            left = Math.max(0, left);
+            left = Math.min(left, right - MIN_SIZE);
+
+            break;
         }
 
-        if (activeHandle.includes("e")) {
-          right = Math.min(
-            displayedWidth,
-            Math.max(left + 20, startCrop.x + startCrop.width + dx),
-          );
-        }
-
-        if (activeHandle.includes("n")) {
-          top = Math.max(0, Math.min(bottom - 20, startCrop.y + dy));
-        }
-
-        if (activeHandle.includes("s")) {
-          bottom = Math.min(
-            displayedHeight,
-            Math.max(top + 20, startCrop.y + startCrop.height + dy),
-          );
-        }
-
-        if (ratio) {
-          const handle = activeHandle;
-
-          let width = right - left;
-
-          let height = bottom - top;
-
-          if (handle === "e" || handle === "w") {
-            height = width / ratio;
-          } else {
-            width = height * ratio;
-          }
-
-          if (handle.includes("w")) {
-            left = right - width;
-          } else if (handle.includes("e")) {
-            right = left + width;
-          }
-
-          if (handle.includes("n")) {
-            top = bottom - height;
-          } else {
-            bottom = top + height;
-          }
-
-          if (left < 0) {
-            left = 0;
-
-            right = width;
-          }
-
-          if (top < 0) {
-            top = 0;
-
-            bottom = height;
-          }
-
-          if (right > displayedWidth) {
-            right = displayedWidth;
-
-            left = right - width;
-          }
-
-          if (bottom > displayedHeight) {
-            bottom = displayedHeight;
-
-            top = bottom - height;
-          }
-        }
+        /* =========================
+          APPLY NEW CROP
+          ========================= */
 
         crop.x = left;
-
         crop.y = top;
 
-        crop.width = Math.max(20, right - left);
-
-        crop.height = Math.max(20, bottom - top);
+        crop.width = right - left;
+        crop.height = bottom - top;
 
         renderCrop();
       }
 
       /* ============================================================
-   ASPECT BUTTONS
-   ============================================================ */
+      ASPECT BUTTONS
+      ============================================================ */
 
       document.querySelectorAll(".aspect-btn").forEach((button) => {
         button.addEventListener("click", function () {
@@ -1426,8 +1504,8 @@
       });
 
       /* ============================================================
-   PRESET DROPDOWN (social / print)
-   ============================================================ */
+      PRESET DROPDOWN (social / print)
+      ============================================================ */
 
       document
         .getElementById("presetSelect")
@@ -1446,8 +1524,8 @@
         });
 
       /* ============================================================
-   SET ASPECT RATIO
-   ============================================================ */
+      SET ASPECT RATIO
+      ============================================================ */
 
       function setAspectRatio() {
         if (!ratio) return;
@@ -1474,8 +1552,8 @@
       }
 
       /* ============================================================
-   FULL IMAGE
-   ============================================================ */
+      FULL IMAGE
+      ============================================================ */
 
       document
         .getElementById("fullImageBtn")
@@ -1486,8 +1564,8 @@
         });
 
       /* ============================================================
-   SMART AUTO-DETECT (server-side)
-   ============================================================ */
+      SMART AUTO-DETECT (server-side)
+      ============================================================ */
 
       async function runAutoDetect(silent) {
         if (!fileId) return;
@@ -1570,8 +1648,8 @@
         });
 
       /* ============================================================
-   ZOOM
-   ============================================================ */
+      ZOOM
+      ============================================================ */
 
       document
         .getElementById("zoomRange")
@@ -1588,23 +1666,23 @@
         .addEventListener("change", pushHistory);
 
       /* ============================================================
-   IMAGE TRANSFORM
-   ============================================================ */
+      IMAGE TRANSFORM
+      ============================================================ */
 
       function updateImageTransform() {
         sourceImage.style.transform = `
-        rotate(${rotation}deg)
-        scale(
-            ${flipHorizontal ? -zoom : zoom},
-            ${flipVertical ? -zoom : zoom}
-        )
-        `;
+           rotate(${rotation}deg)
+           scale(
+               ${flipHorizontal ? -zoom : zoom},
+               ${flipVertical ? -zoom : zoom}
+           )
+           `;
       }
 
       /* ============================================================
-   LIVE FILTER / ADJUSTMENT PREVIEW
-   (CSS approximation of what the backend will render for real)
-   ============================================================ */
+      LIVE FILTER / ADJUSTMENT PREVIEW
+      (CSS approximation of what the backend will render for real)
+      ============================================================ */
 
       function filterPresetCss(name) {
         switch (name) {
@@ -1642,8 +1720,8 @@
       }
 
       /* ============================================================
-   ROTATE
-   ============================================================ */
+      ROTATE
+      ============================================================ */
 
       document
         .getElementById("rotateLeftBtn")
@@ -1666,8 +1744,8 @@
         });
 
       /* ============================================================
-   FLIP
-   ============================================================ */
+      FLIP
+      ============================================================ */
 
       document
         .getElementById("flipHorizontalBtn")
@@ -1690,8 +1768,8 @@
         });
 
       /* ============================================================
-   FILTER CHIPS
-   ============================================================ */
+      FILTER CHIPS
+      ============================================================ */
 
       document.querySelectorAll(".filter-chip").forEach((chip) => {
         chip.addEventListener("click", function () {
@@ -1710,8 +1788,8 @@
       });
 
       /* ============================================================
-   BRIGHTNESS / CONTRAST / SATURATION / BLUR
-   ============================================================ */
+      BRIGHTNESS / CONTRAST / SATURATION / BLUR
+      ============================================================ */
 
       document
         .getElementById("brightnessRange")
@@ -1766,8 +1844,8 @@
       });
 
       /* ============================================================
-   BORDER
-   ============================================================ */
+      BORDER
+      ============================================================ */
 
       document
         .getElementById("borderWidthRange")
@@ -1819,8 +1897,8 @@
         .addEventListener("change", pushHistory);
 
       /* ============================================================
-   QUALITY
-   ============================================================ */
+      QUALITY
+      ============================================================ */
 
       document
         .getElementById("qualityRange")
@@ -1830,8 +1908,8 @@
         });
 
       /* ============================================================
-   INFO
-   ============================================================ */
+      INFO
+      ============================================================ */
 
       function updateInfo() {
         const width = Math.round((crop.width * naturalWidth) / displayedWidth);
@@ -1844,8 +1922,8 @@
       }
 
       /* ============================================================
-   BUILD PROCESS PAYLOAD
-   ============================================================ */
+      BUILD PROCESS PAYLOAD
+      ============================================================ */
 
       function buildPayload(overrides) {
         const cropData = {
@@ -1902,16 +1980,16 @@
       }
 
       /* ============================================================
-   CROP DOWNLOAD
-   ============================================================ */
+      CROP DOWNLOAD
+      ============================================================ */
 
       document
         .getElementById("cropDownloadBtn")
         .addEventListener("click", processImage);
 
       /* ============================================================
-   PROCESS IMAGE
-   ============================================================ */
+      PROCESS IMAGE
+      ============================================================ */
 
       async function processImage() {
         if (!fileId) {
@@ -1960,8 +2038,8 @@
       }
 
       /* ============================================================
-   PREVIEW
-   ============================================================ */
+      PREVIEW
+      ============================================================ */
 
       document
         .getElementById("previewBtn")
@@ -2009,8 +2087,8 @@
         });
 
       /* ============================================================
-   COMPARE (before / after)
-   ============================================================ */
+      COMPARE (before / after)
+      ============================================================ */
 
       let compareActive = false;
 
@@ -2049,8 +2127,8 @@
         });
 
       /* ============================================================
-   RESET
-   ============================================================ */
+      RESET
+      ============================================================ */
 
       document
         .getElementById("resetBtn")
@@ -2107,8 +2185,8 @@
         });
 
       /* ============================================================
-   CHANGE IMAGE
-   ============================================================ */
+      CHANGE IMAGE
+      ============================================================ */
 
       document
         .getElementById("changeImageBtn")
@@ -2117,8 +2195,8 @@
         });
 
       /* ============================================================
-   NEW IMAGE
-   ============================================================ */
+      NEW IMAGE
+      ============================================================ */
 
       document
         .getElementById("newImageBtn")
@@ -2133,8 +2211,8 @@
         });
 
       /* ============================================================
-   DELETE TEMP FILE
-   ============================================================ */
+      DELETE TEMP FILE
+      ============================================================ */
 
       document
         .getElementById("deleteImageBtn")
@@ -2167,8 +2245,8 @@
         });
 
       /* ============================================================
-   KEYBOARD SHORTCUTS
-   ============================================================ */
+      KEYBOARD SHORTCUTS
+      ============================================================ */
 
       document.addEventListener("keydown", function (event) {
         if (!editor.classList.contains("active")) return;
@@ -2282,8 +2360,8 @@
       });
 
       /* ============================================================
-   CAMERA
-   ============================================================ */
+      CAMERA
+      ============================================================ */
 
       const cameraModal = document.getElementById("cameraModal");
 
@@ -2317,8 +2395,8 @@
       }
 
       /* ============================================================
-   CLOSE CAMERA
-   ============================================================ */
+      CLOSE CAMERA
+      ============================================================ */
 
       function closeCamera() {
         if (cameraStream) {
@@ -2341,8 +2419,8 @@
         .addEventListener("click", closeCamera);
 
       /* ============================================================
-   CAPTURE CAMERA
-   ============================================================ */
+      CAPTURE CAMERA
+      ============================================================ */
 
       document
         .getElementById("captureButton")
@@ -2379,8 +2457,8 @@
         });
 
       /* ============================================================
-   PREVIEW CLOSE
-   ============================================================ */
+      PREVIEW CLOSE
+      ============================================================ */
 
       function closePreview() {
         document.getElementById("previewModal").classList.remove("active");
@@ -2395,8 +2473,8 @@
         .addEventListener("click", closePreview);
 
       /* ============================================================
-   WINDOW RESIZE
-   ============================================================ */
+      WINDOW RESIZE
+      ============================================================ */
 
       window.addEventListener("resize", function () {
         if (!editor.classList.contains("active")) {
@@ -2427,9 +2505,9 @@
       });
 
       /* ============================================================
-   RESPONSIVE EDITOR RESIZE
-   Recalculate image size when viewport changes
-   ============================================================ */
+      RESPONSIVE EDITOR RESIZE
+      Recalculate image size when viewport changes
+      ============================================================ */
 
       let resizeTimer = null;
 

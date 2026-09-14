@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Verify Code | DocBuddy</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet" />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <div class="background-decor decor-1"></div>
+    <div class="background-decor decor-2"></div>
+
+    <div class="login-container otp-container">
+      <div class="header">
+        <h1>
+          {% if purpose == "password_reset" %} Reset Your Password {% else %}
+          Verify Your Email {% endif %}
+        </h1>
+
+        <p>
+          Enter the 6-digit code we sent to your email. The code expires in 10
+          minutes.
+        </p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <p class="otp-message">
+        Check your inbox and enter the verification code below.
+      </p>
+
+      <form
+        action="{{
+          url_for('auth.verify_otp_route')
+          if purpose == 'verify_account'
+          else url_for('auth.verify_reset_otp')
+        }}"
+        method="POST"
+        id="otp-form"
+        autocomplete="off">
+        <div class="otp-input-wrapper">
+          <input
+            type="text"
+            class="otp-input"
+            name="digit1"
+            maxlength="1"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            aria-label="Digit 1" />
+
+          <input
+            type="text"
+            class="otp-input"
+            name="digit2"
+            maxlength="1"
+            inputmode="numeric"
+            aria-label="Digit 2" />
+
+          <input
+            type="text"
+            class="otp-input"
+            name="digit3"
+            maxlength="1"
+            inputmode="numeric"
+            aria-label="Digit 3" />
+
+          <input
+            type="text"
+            class="otp-input"
+            name="digit4"
+            maxlength="1"
+            inputmode="numeric"
+            aria-label="Digit 4" />
+
+          <input
+            type="text"
+            class="otp-input"
+            name="digit5"
+            maxlength="1"
+            inputmode="numeric"
+            aria-label="Digit 5" />
+
+          <input
+            type="text"
+            class="otp-input"
+            name="digit6"
+            maxlength="1"
+            inputmode="numeric"
+            aria-label="Digit 6" />
+        </div>
+
+        <button type="submit" class="login-btn otp-submit-btn" id="otp-submit">
+          <span class="btn-label">Verify Code</span>
+
+          <svg
+            class="btn-arrow"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+
+          <span class="spinner"></span>
+        </button>
+      </form>
+
+      <div class="resend-section">
+        <p>Didn't receive the code?</p>
+
+        <form
+          action="{{ url_for('auth.resend_otp') }}"
+          method="POST"
+          id="resend-form">
+          <button type="submit" class="resend-btn" id="resend-btn" disabled>
+            Resend code (<span id="resend-timer">45</span>s)
+          </button>
+        </form>
+      </div>
+
+      <a href="{{ url_for('auth.login') }}" class="back-login">
+        ← Back to log in
+      </a>
+    </div>
+
+    <script src="{{ url_for('static', filename='auth.js') }}"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const inputs = Array.from(document.querySelectorAll(".otp-input"));
+        const form = document.getElementById("otp-form");
+        const timer = document.getElementById("resend-timer");
+        const resendBtn = document.getElementById("resend-btn");
+
+        if (!inputs.length || !form) return;
+
+        inputs[0].focus();
+
+        inputs.forEach(function (input, index) {
+          input.addEventListener("input", function () {
+            this.value = this.value.replace(/\D/g, "").slice(0, 1);
+
+            if (this.value && index < inputs.length - 1) {
+              inputs[index + 1].focus();
+            }
+          });
+
+          input.addEventListener("keydown", function (event) {
+            if (event.key === "Backspace" && !this.value && index > 0) {
+              inputs[index - 1].focus();
+            }
+
+            if (event.key === "ArrowLeft" && index > 0) {
+              inputs[index - 1].focus();
+            }
+
+            if (event.key === "ArrowRight" && index < inputs.length - 1) {
+              inputs[index + 1].focus();
+            }
+          });
+
+          input.addEventListener("paste", function (event) {
+            event.preventDefault();
+
+            const pasted = (event.clipboardData || window.clipboardData)
+              .getData("text")
+              .replace(/\D/g, "")
+              .slice(0, 6);
+
+            if (!pasted) return;
+
+            pasted.split("").forEach(function (digit, i) {
+              if (inputs[i]) {
+                inputs[i].value = digit;
+              }
+            });
+
+            const lastIndex = Math.min(pasted.length, inputs.length) - 1;
+
+            if (lastIndex >= 0) {
+              inputs[lastIndex].focus();
+            }
+          });
+        });
+
+        form.addEventListener("submit", function (event) {
+          const code = inputs
+            .map(function (input) {
+              return input.value;
+            })
+            .join("");
+
+          if (code.length !== 6) {
+            event.preventDefault();
+            inputs[Math.min(code.length, 5)].focus();
+            alert("Please enter the complete 6-digit code.");
+          }
+        });
+
+        if (timer && resendBtn) {
+          let remaining = 45;
+
+          const countdown = setInterval(function () {
+            remaining--;
+
+            if (remaining <= 0) {
+              clearInterval(countdown);
+              resendBtn.disabled = false;
+              resendBtn.textContent = "Resend code";
+              return;
+            }
+
+            timer.textContent = remaining;
+          }, 1000);
+        }
+      });
+    </script>
+  </body>
+</html>

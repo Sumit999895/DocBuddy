@@ -272,7 +272,7 @@ def crop_image():
     if not logged_in():
 
         return redirect(
-            url_for("login")
+            url_for("auth.login")
         )
 
     cleanup_old_files()
@@ -1156,7 +1156,7 @@ def download(
     if not logged_in():
 
         return redirect(
-            url_for("login")
+            url_for("auth.login")
         )
 
     extension = extension.lower()

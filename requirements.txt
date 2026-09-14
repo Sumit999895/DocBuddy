@@ -26,3 +26,12 @@ transformers==5.16.1
 beautifulsoup4==4.14.2
 
 razorpay==2.0.1
+
+# Add these to your existing requirements.txt and run:
+#   pip install -r requirements.txt
+
+Authlib==1.3.2          # Google OAuth (OpenID Connect)
+email-validator==2.2.0  # real email validation (syntax + domain)
+phonenumbers==8.13.45   # phone number validation/formatting
+Flask-Mail==0.9.1       # sending OTP / reset codes by email
+requests==2.32.3        # used by Authlib for the OAuth handshake

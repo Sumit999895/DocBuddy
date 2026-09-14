@@ -263,7 +263,7 @@
         </a>
         {% else %}
         <a
-          href="{{ url_for('login', next=url_for('dashboard')) }}"
+          href="{{ url_for('auth.login', next=url_for('dashboard')) }}"
           class="nav-item"
           data-tooltip="Log In">
           <span class="nav-icon">↪</span>
@@ -310,12 +310,12 @@
           {% if is_guest %}
           <div class="guest-auth-actions">
             <a
-              href="{{ url_for('login') }}"
+              href="{{ url_for('auth.login') }}"
               class="secondary-btn guest-login-btn">
               Log In
             </a>
             <a
-              href="{{ url_for('register') }}"
+              href="{{ url_for('auth.register') }}"
               class="primary-btn guest-signup-btn">
               Sign Up
             </a>
@@ -444,11 +444,11 @@
             <p>Create a free account to upload and store your documents.</p>
             <div class="guest-upload-prompt-actions">
               <a
-                href="{{ url_for('login', next=url_for('dashboard')) }}"
+                href="{{ url_for('auth.login', next=url_for('dashboard')) }}"
                 class="secondary-btn">
                 Log In
               </a>
-              <a href="{{ url_for('register') }}" class="primary-btn">
+              <a href="{{ url_for('auth.register') }}" class="primary-btn">
                 Sign Up Free
               </a>
             </div>
@@ -863,11 +863,11 @@
           </div>
           <div class="guest-profile-prompt-actions">
             <a
-              href="{{ url_for('login', next=url_for('dashboard') + '#profile-section') }}"
+              href="{{ url_for('auth.login', next=url_for('dashboard') + '#profile-section') }}"
               class="secondary-btn">
               Log In
             </a>
-            <a href="{{ url_for('register') }}" class="primary-btn">
+            <a href="{{ url_for('auth.register') }}" class="primary-btn">
               Sign Up Free
             </a>
           </div>
@@ -1105,13 +1105,13 @@
                     Permanently remove your account and all documents.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  class="danger-btn"
-                  disabled
-                  title="Coming soon">
-                  Delete
-                </button>
+                <form
+                  method="POST"
+                  action="{{ url_for('auth.delete_account') }}"
+                  onsubmit="return confirmDeleteAccount();"
+                  style="margin: 0">
+                  <button type="submit" class="danger-btn">Delete</button>
+                </form>
               </div>
             </div>
           </div>
@@ -1192,14 +1192,14 @@
             </a>
             {% else %}
             <a
-              href="{{ url_for('login', next=url_for('view_uploaded_document', document_id=pin_search_result.id)) }}"
+              href="{{ url_for('auth.login', next=url_for('view_uploaded_document', document_id=pin_search_result.id)) }}"
               class="row-action-btn preview-action"
               title="Log in to preview"
               aria-label="Log in to preview">
               👁 <span>Preview</span>
             </a>
             <a
-              href="{{ url_for('login', next=url_for('download_uploaded_document', document_id=pin_search_result.id)) }}"
+              href="{{ url_for('auth.login', next=url_for('download_uploaded_document', document_id=pin_search_result.id)) }}"
               class="row-action-btn"
               title="Log in to download"
               aria-label="Log in to download">
@@ -1349,7 +1349,7 @@
                 <strong>Log in to see your documents</strong>
                 <p>
                   Create a free account to upload PDFs and keep them here.
-                  <a href="{{ url_for('register') }}">Sign up free →</a>
+                  <a href="{{ url_for('auth.register') }}">Sign up free →</a>
                 </p>
               </div>
               {% else %}
@@ -2140,6 +2140,15 @@
           }, 4000);
         }
       });
+      function confirmDeleteAccount() {
+        return confirm(
+          "⚠️ DELETE ACCOUNT\n\n" +
+            "This will permanently delete your account, " +
+            "documents, document history and payment-related records.\n\n" +
+            "This action cannot be undone.\n\n" +
+            "Are you absolutely sure you want to continue?",
+        );
+      }
     </script>
   </body>
 </html>

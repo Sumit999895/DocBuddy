@@ -1,40 +1,71 @@
+/* ============================================================
+   RESET
+   ============================================================ */
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  width: 100%;
+  min-height: 100%;
+}
+
 body {
+  width: 100%;
+  min-height: 100vh;
+
   font-family:
     "Inter",
     -apple-system,
     BlinkMacSystemFont,
+    "Segoe UI",
     sans-serif;
+
   background-color: #0f172a;
+
   background-image:
     radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+
   position: relative;
-  overflow: hidden;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  padding: 20px;
 }
 
-/* Background Glowing Elements */
+/* ============================================================
+   BACKGROUND DECORATION
+   ============================================================ */
+
 .background-decor {
-  position: absolute;
+  position: fixed;
+
   border-radius: 50%;
+
   filter: blur(80px);
+
   z-index: 0;
+
   opacity: 0.6;
+
+  pointer-events: none;
 }
 
 .decor-1 {
   width: 300px;
   height: 300px;
+
   background: #4f46e5;
+
   top: -50px;
   left: -50px;
 }
@@ -42,132 +73,381 @@ body {
 .decor-2 {
   width: 350px;
   height: 350px;
+
   background: #9333ea;
+
   bottom: -50px;
   right: -50px;
 }
 
-/* Main Container with Glassmorphism */
+/* ============================================================
+   MAIN LOGIN / REGISTER CONTAINER
+   ============================================================ */
+
 .login-container {
   position: relative;
+
   z-index: 1;
+
   width: 100%;
   max-width: 420px;
-  background: rgba(255, 255, 255, 0.95);
+
+  background: rgba(255, 255, 255, 0.96);
+
   padding: 40px;
+
   border-radius: 20px;
+
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(255, 255, 255, 0.1);
+
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  margin: auto;
 }
+
+/* OTP container can be slightly wider */
+
+.otp-container {
+  max-width: 526px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 
 .header {
   margin-bottom: 28px;
+
   text-align: left;
 }
 
 .header h1 {
   font-size: 26px;
+
   font-weight: 700;
+
+  line-height: 1.25;
+
   color: #0f172a;
+
   letter-spacing: -0.5px;
 }
 
 .header p {
   color: #64748b;
+
   font-size: 14px;
+
+  line-height: 1.5;
+
   margin-top: 6px;
 }
 
-/* Form Styles */
+/* ============================================================
+   FORM
+   ============================================================ */
+
 form {
+  width: 100%;
+
   display: flex;
+
   flex-direction: column;
+
   gap: 20px;
 }
 
 .input-group {
+  width: 100%;
+
   display: flex;
+
   flex-direction: column;
+
   gap: 6px;
 }
 
 .label-wrapper {
+  width: 100%;
+
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
+
+  gap: 10px;
 }
 
 label {
   font-size: 13px;
+
   font-weight: 600;
+
+  line-height: 1.4;
+
   color: #334155;
 }
 
+/* ============================================================
+   NORMAL INPUTS
+   ============================================================ */
+
 input {
   width: 100%;
+
+  height: 46px;
+
   padding: 12px 16px;
+
   border: 1.5px solid #e2e8f0;
+
   border-radius: 10px;
+
+  font-family: inherit;
+
   font-size: 14px;
+
+  line-height: 1.2;
+
   color: #0f172a;
+
   background-color: #f8fafc;
-  transition: all 0.2s ease;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+
   outline: none;
+
+  appearance: none;
 }
 
 input::placeholder {
   color: #94a3b8;
+
+  opacity: 1;
+}
+
+input:hover {
+  border-color: #cbd5e1;
 }
 
 input:focus {
   background-color: #ffffff;
+
   border-color: #6366f1;
+
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
 }
 
+/* ============================================================
+   PASSWORD INPUT + EYE ICON
+   ============================================================ */
+
+/*
+   Recommended HTML:
+
+   <div class="password-wrapper">
+       <input type="password" id="password" name="password">
+       <button type="button" class="password-toggle">
+           <span class="eye-icon">👁</span>
+       </button>
+   </div>
+*/
+
+.password-wrapper {
+  position: relative;
+
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+
+  padding-right: 48px;
+}
+
+/* Eye button */
+
+.password-toggle {
+  position: absolute;
+
+  top: 50%;
+  right: 8px;
+
+  transform: translateY(-50%);
+
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #64748b;
+
+  cursor: pointer;
+
+  padding: 0;
+
+  font-family: inherit;
+
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: #4f46e5;
+
+  background-color: #eef2ff;
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #6366f1;
+
+  outline-offset: 1px;
+}
+
+/* SVG eye icon */
+
+.password-toggle svg {
+  width: 19px;
+  height: 19px;
+
+  display: block;
+
+  stroke: currentColor;
+}
+
+/* Font/icon based eye */
+
+.password-toggle i,
+.password-toggle .eye-icon {
+  font-size: 18px;
+
+  line-height: 1;
+
+  color: currentColor;
+}
+
+/* ============================================================
+   FORGOT PASSWORD
+   ============================================================ */
+
 .forgot-password {
   font-size: 12px;
+
   color: #6366f1;
+
   text-decoration: none;
+
   font-weight: 500;
-  transition: color 0.2s ease;
+
+  transition:
+    color 0.2s ease,
+    text-decoration 0.2s ease;
 }
 
 .forgot-password:hover {
   color: #4f46e5;
+
   text-decoration: underline;
 }
 
-/* Submit Button */
+/* ============================================================
+   SUBMIT BUTTON
+   ============================================================ */
+
 .login-btn {
   width: 100%;
+
+  min-height: 46px;
+
   background-color: #4f46e5;
-  color: white;
+
+  color: #ffffff;
+
   border: none;
+
   padding: 12px 20px;
+
   border-radius: 10px;
+
+  font-family: inherit;
+
   font-size: 15px;
+
   font-weight: 600;
+
   cursor: pointer;
+
   display: flex;
+
   justify-content: center;
+
   align-items: center;
+
   gap: 8px;
-  transition: all 0.2s ease;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+
   margin-top: 4px;
 }
 
 .login-btn:hover {
   background-color: #4338ca;
+
   transform: translateY(-1px);
+
   box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
 }
 
 .login-btn:active {
   transform: translateY(0);
+
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3);
+}
+
+.login-btn:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.25);
+
+  outline-offset: 2px;
+}
+
+.login-btn:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+
+  transform: none;
+
+  box-shadow: none;
 }
 
 .btn-arrow {
@@ -178,103 +458,759 @@ input:focus {
   transform: translateX(3px);
 }
 
-/* Divider */
+/* ============================================================
+   DIVIDER
+   ============================================================ */
+
 .divider {
   position: relative;
+
   text-align: center;
+
   margin: 24px 0;
 }
 
 .divider::before {
   content: "";
+
   position: absolute;
+
   top: 50%;
   left: 0;
+
   width: 100%;
+
   height: 1px;
+
   background-color: #e2e8f0;
 }
 
 .divider span {
   position: relative;
+
+  display: inline-block;
+
   background-color: #ffffff;
+
   padding: 0 12px;
+
   color: #94a3b8;
+
   font-size: 12px;
+
   text-transform: uppercase;
+
   letter-spacing: 0.5px;
+
   font-weight: 500;
 }
 
-/* Google Button */
+/* ============================================================
+   GOOGLE BUTTON
+   ============================================================ */
+
 .google-btn {
   width: 100%;
+
+  min-height: 46px;
+
   background-color: #ffffff;
+
   color: #334155;
+
   border: 1.5px solid #e2e8f0;
+
   padding: 12px 20px;
+
   border-radius: 10px;
+
+  font-family: inherit;
+
   font-size: 14px;
+
   font-weight: 600;
+
   cursor: pointer;
+
   display: flex;
+
   align-items: center;
+
   justify-content: center;
+
   gap: 10px;
-  transition: all 0.2s ease;
+
+  text-decoration: none;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .google-btn:hover {
   background-color: #f8fafc;
+
   border-color: #cbd5e1;
+
   transform: translateY(-1px);
+
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
 }
 
-/* Footer Link */
+.google-btn:active {
+  transform: translateY(0);
+}
+
+.google-btn:focus-visible {
+  outline: 3px solid rgba(66, 133, 244, 0.18);
+
+  outline-offset: 2px;
+}
+
+/* Google icon */
+
+.google-btn img,
+.google-btn svg {
+  width: 19px;
+
+  height: 19px;
+
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   FOOTER / SIGN UP
+   ============================================================ */
+
 .signup-text {
   text-align: center;
+
   margin-top: 24px;
+
   font-size: 13px;
+
+  line-height: 1.5;
+
   color: #64748b;
 }
 
 .signup-text a {
   color: #6366f1;
+
   font-weight: 600;
+
   text-decoration: none;
+
   margin-left: 4px;
+
+  transition: color 0.2s ease;
 }
 
 .signup-text a:hover {
+  color: #4f46e5;
+
   text-decoration: underline;
 }
-/* Phone Input Group Layout */
+
+/* ============================================================
+   PHONE INPUT
+   ============================================================ */
+
 .phone-input-wrapper {
+  width: 100%;
+
   display: flex;
+
   gap: 8px;
+
   align-items: center;
 }
 
 .country-select {
-  width: 100px;
-  padding: 12px 10px;
+  width: 105px;
+
+  height: 46px;
+
+  flex: 0 0 105px;
+
+  padding: 0 10px;
+
   border: 1.5px solid #e2e8f0;
+
   border-radius: 10px;
+
+  font-family: inherit;
+
   font-size: 14px;
+
   font-weight: 500;
+
   color: #0f172a;
+
   background-color: #f8fafc;
+
   outline: none;
+
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.country-select:hover {
+  border-color: #cbd5e1;
 }
 
 .country-select:focus {
   background-color: #ffffff;
+
   border-color: #6366f1;
+
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
 }
 
 .phone-input-wrapper input {
   flex: 1;
+
+  min-width: 0;
+}
+
+/* ============================================================
+   OTP VERIFICATION
+   ============================================================ */
+
+.otp-message {
+  color: #1e293b;
+
+  font-size: 16px;
+
+  line-height: 1.45;
+
+  margin-bottom: 18px;
+}
+
+/* Six OTP boxes */
+
+.otp-input-wrapper {
+  width: 100%;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin: 8px 0 28px;
+}
+
+/*
+   IMPORTANT:
+   Overrides the global input width.
+*/
+
+.otp-input-wrapper .otp-input {
+  width: 58px;
+
+  min-width: 58px;
+
+  max-width: 58px;
+
+  height: 58px;
+
+  min-height: 58px;
+
+  padding: 0;
+
+  border: 1.5px solid #dbe3ef;
+
+  border-radius: 12px;
+
+  background-color: #f8fafc;
+
+  color: #0f172a;
+
+  font-family: inherit;
+
+  font-size: 24px;
+
+  font-weight: 600;
+
+  line-height: 1;
+
+  text-align: center;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.otp-input-wrapper .otp-input:hover {
+  border-color: #cbd5e1;
+}
+
+.otp-input-wrapper .otp-input:focus {
+  background-color: #ffffff;
+
+  border-color: #6366f1;
+
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+
+  transform: translateY(-1px);
+}
+
+/* Remove number spinners */
+
+.otp-input::-webkit-outer-spin-button,
+.otp-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+
+  margin: 0;
+}
+
+.otp-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Verify button */
+
+.otp-submit-btn {
+  margin-top: 0;
+}
+
+/* ============================================================
+   RESEND OTP
+   ============================================================ */
+
+.resend-section {
+  width: 100%;
+
+  margin-top: 4px;
+
+  text-align: center;
+}
+
+.resend-section p {
+  color: #1e293b;
+
+  font-size: 14px;
+
+  line-height: 1.5;
+
+  margin-bottom: 8px;
+}
+
+.resend-btn {
+  width: 100%;
+
+  min-height: 40px;
+
+  padding: 8px 12px;
+
+  border: 1px solid #cbd5e1;
+
+  border-radius: 8px;
+
+  background-color: #f1f5f9;
+
+  color: #94a3b8;
+
+  font-family: inherit;
+
+  font-size: 14px;
+
+  cursor: not-allowed;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.resend-btn:not(:disabled) {
+  color: #6366f1;
+
+  background-color: #ffffff;
+
+  border-color: #6366f1;
+
+  cursor: pointer;
+}
+
+.resend-btn:not(:disabled):hover {
+  background-color: #eef2ff;
+
+  border-color: #4f46e5;
+}
+
+.resend-btn:disabled {
+  opacity: 0.7;
+}
+
+/* ============================================================
+   BACK TO LOGIN
+   ============================================================ */
+
+.back-login {
+  display: inline-block;
+
+  margin-top: 8px;
+
+  color: #6366f1;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  text-decoration: none;
+}
+
+.back-login:hover {
+  color: #4f46e5;
+
+  text-decoration: underline;
+}
+
+/* ============================================================
+   FLASH / ERROR MESSAGES
+   ============================================================ */
+
+.flash-messages {
+  width: 100%;
+
+  margin-bottom: 18px;
+}
+
+.flash-message {
+  width: 100%;
+
+  padding: 11px 13px;
+
+  border-radius: 9px;
+
+  font-size: 13px;
+
+  line-height: 1.45;
+
+  margin-bottom: 8px;
+
+  word-break: break-word;
+}
+
+.flash-message.error {
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  color: #b91c1c;
+}
+
+.flash-message.success {
+  background: #f0fdf4;
+
+  border: 1px solid #bbf7d0;
+
+  color: #15803d;
+}
+
+.flash-message.info {
+  background: #eff6ff;
+
+  border: 1px solid #bfdbfe;
+
+  color: #1d4ed8;
+}
+
+/* ============================================================
+   TABLET
+   ============================================================ */
+
+@media (max-width: 600px) {
+  body {
+    align-items: flex-start;
+
+    padding: 20px 12px;
+  }
+
+  .login-container {
+    width: 100%;
+
+    max-width: 420px;
+
+    padding: 30px 22px;
+
+    border-radius: 18px;
+
+    margin: auto 0;
+  }
+
+  .header {
+    margin-bottom: 24px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  form {
+    gap: 18px;
+  }
+
+  .divider {
+    margin: 20px 0;
+  }
+
+  /* OTP */
+
+  .otp-container {
+    width: 100%;
+
+    max-width: 420px;
+
+    padding: 30px 22px;
+  }
+
+  .otp-message {
+    font-size: 15px;
+  }
+
+  .otp-input-wrapper {
+    gap: 7px;
+
+    margin-bottom: 26px;
+  }
+
+  .otp-input-wrapper .otp-input {
+    width: 50px;
+
+    min-width: 50px;
+
+    max-width: 50px;
+
+    height: 54px;
+
+    min-height: 54px;
+
+    font-size: 22px;
+
+    border-radius: 10px;
+  }
+
+  /* Phone */
+
+  .country-select {
+    width: 95px;
+
+    flex-basis: 95px;
+  }
+}
+
+/* ============================================================
+   SMALL PHONES
+   ============================================================ */
+
+@media (max-width: 380px) {
+  body {
+    padding: 12px 8px;
+  }
+
+  .login-container {
+    padding: 26px 16px;
+
+    border-radius: 16px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+  }
+
+  .header p {
+    font-size: 13px;
+  }
+
+  form {
+    gap: 16px;
+  }
+
+  input {
+    height: 44px;
+
+    padding: 11px 13px;
+
+    font-size: 14px;
+  }
+
+  .password-wrapper input {
+    padding-right: 46px;
+  }
+
+  .password-toggle {
+    right: 5px;
+
+    width: 34px;
+
+    height: 34px;
+  }
+
+  .login-btn,
+  .google-btn {
+    min-height: 44px;
+
+    padding: 11px 14px;
+  }
+
+  /* Phone */
+
+  .phone-input-wrapper {
+    gap: 6px;
+  }
+
+  .country-select {
+    width: 88px;
+
+    flex-basis: 88px;
+
+    height: 44px;
+
+    padding: 0 7px;
+
+    font-size: 13px;
+  }
+
+  /* OTP */
+
+  .otp-input-wrapper {
+    gap: 5px;
+  }
+
+  .otp-input-wrapper .otp-input {
+    width: 44px;
+
+    min-width: 44px;
+
+    max-width: 44px;
+
+    height: 50px;
+
+    min-height: 50px;
+
+    font-size: 20px;
+
+    border-radius: 9px;
+  }
+
+  .otp-message {
+    font-size: 14px;
+  }
+
+  .resend-section p {
+    font-size: 13px;
+  }
+}
+
+/* ============================================================
+   VERY SMALL PHONES
+   ============================================================ */
+
+@media (max-width: 330px) {
+  body {
+    padding: 8px 6px;
+  }
+
+  .login-container {
+    padding: 22px 12px;
+
+    border-radius: 14px;
+  }
+
+  .header h1 {
+    font-size: 21px;
+  }
+
+  input {
+    font-size: 13px;
+  }
+
+  .country-select {
+    width: 80px;
+
+    flex-basis: 80px;
+
+    font-size: 12px;
+  }
+
+  /* OTP */
+
+  .otp-container {
+    padding-left: 12px;
+
+    padding-right: 12px;
+  }
+
+  .otp-input-wrapper {
+    gap: 3px;
+  }
+
+  .otp-input-wrapper .otp-input {
+    width: 40px;
+
+    min-width: 40px;
+
+    max-width: 40px;
+
+    height: 46px;
+
+    min-height: 46px;
+
+    font-size: 18px;
+  }
+
+  .otp-message {
+    font-size: 13px;
+  }
+}
+
+/* ============================================================
+   EXTRA SMALL DEVICES
+   ============================================================ */
+
+@media (max-width: 290px) {
+  .login-container {
+    padding-left: 9px;
+
+    padding-right: 9px;
+  }
+
+  .otp-input-wrapper {
+    gap: 2px;
+  }
+
+  .otp-input-wrapper .otp-input {
+    width: 37px;
+
+    min-width: 37px;
+
+    max-width: 37px;
+
+    height: 43px;
+
+    min-height: 43px;
+
+    font-size: 17px;
+  }
+
+  .country-select {
+    width: 75px;
+
+    flex-basis: 75px;
+  }
 }

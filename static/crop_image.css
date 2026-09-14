@@ -3725,3 +3725,456 @@ svg {
 .crop-page {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* ============================================================
+   DOCBUDDY - INDEPENDENT CROP CORNERS
+   ============================================================ */
+
+/* Keep the crop workspace visually clean and prevent browser
+   gestures from fighting the crop interaction. */
+.crop-workspace {
+  position: relative;
+  overflow: visible;
+  touch-action: none;
+}
+
+#sourceImage {
+  pointer-events: none;
+}
+
+/* Crop frame */
+.crop-overlay {
+  box-sizing: border-box;
+  border: 2px solid #ffffff;
+  background: transparent;
+  cursor: move;
+  touch-action: none;
+}
+
+/* Better rule-of-thirds grid */
+.crop-grid {
+  pointer-events: none;
+}
+
+/* Large, easy-to-grab handles */
+.crop-handle {
+  width: 20px !important;
+  height: 20px !important;
+
+  margin: 0;
+
+  background: #ffffff;
+
+  border: 3px solid var(--cb-primary);
+
+  border-radius: 6px;
+
+  box-shadow:
+    0 3px 10px rgba(0, 0, 0, 0.55),
+    0 0 0 2px rgba(255, 255, 255, 0.18);
+
+  z-index: 30;
+
+  transition:
+    transform 0.12s ease,
+    background-color 0.12s ease,
+    box-shadow 0.12s ease;
+
+  touch-action: none;
+}
+
+/* Corners are deliberately independent */
+.crop-handle.nw,
+.crop-handle.ne,
+.crop-handle.se,
+.crop-handle.sw {
+  border-radius: 7px;
+}
+
+/* Keep the exact center point on each corner */
+.crop-handle.nw {
+  top: -10px !important;
+  left: -10px !important;
+  cursor: nwse-resize;
+}
+
+.crop-handle.ne {
+  top: -10px !important;
+  right: -10px !important;
+  cursor: nesw-resize;
+}
+
+.crop-handle.se {
+  right: -10px !important;
+  bottom: -10px !important;
+  cursor: nwse-resize;
+}
+
+.crop-handle.sw {
+  left: -10px !important;
+  bottom: -10px !important;
+  cursor: nesw-resize;
+}
+
+/* Edge handles */
+.crop-handle.n {
+  top: -10px !important;
+}
+
+.crop-handle.e {
+  right: -10px !important;
+}
+
+.crop-handle.s {
+  bottom: -10px !important;
+}
+
+.crop-handle.w {
+  left: -10px !important;
+}
+
+.crop-handle:hover {
+  background: var(--cb-accent);
+
+  transform: scale(1.18);
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.55),
+    0 0 0 5px rgba(224, 147, 46, 0.2);
+}
+
+/* Because the n/e/s/w handles use transforms for centering,
+   preserve their centering while hovering. */
+.crop-handle.n:hover,
+.crop-handle.s:hover {
+  transform: translateX(-50%) scale(1.18);
+}
+
+.crop-handle.e:hover,
+.crop-handle.w:hover {
+  transform: translateY(-50%) scale(1.18);
+}
+
+/* Active crop interaction */
+.crop-overlay:active {
+  cursor: grabbing;
+}
+
+/* ------------------------------------------------------------
+   Better canvas appearance
+   ------------------------------------------------------------ */
+
+.canvas-area {
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.035),
+      transparent 60%
+    ),
+    #171212;
+}
+
+.canvas-topbar {
+  padding: 2px 2px 4px;
+}
+
+.image-name {
+  letter-spacing: 0.1px;
+}
+
+.editor-bottom {
+  gap: 12px;
+}
+
+/* ------------------------------------------------------------
+   Cleaner control panel
+   ------------------------------------------------------------ */
+
+.controls-panel {
+  scrollbar-width: thin;
+  scrollbar-color: #4a3832 transparent;
+}
+
+.controls-panel::-webkit-scrollbar {
+  width: 7px;
+}
+
+.controls-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.controls-panel::-webkit-scrollbar-thumb {
+  background: #4a3832;
+  border-radius: 20px;
+}
+
+.controls-panel::-webkit-scrollbar-thumb:hover {
+  background: #614940;
+}
+
+/* ------------------------------------------------------------
+   MOBILE: handles remain large enough for touch
+   ------------------------------------------------------------ */
+
+@media (max-width: 650px) {
+  .crop-handle {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .crop-handle.nw {
+    top: -11px !important;
+    left: -11px !important;
+  }
+
+  .crop-handle.ne {
+    top: -11px !important;
+    right: -11px !important;
+  }
+
+  .crop-handle.se {
+    right: -11px !important;
+    bottom: -11px !important;
+  }
+
+  .crop-handle.sw {
+    left: -11px !important;
+    bottom: -11px !important;
+  }
+
+  .crop-handle.n {
+    top: -11px !important;
+  }
+
+  .crop-handle.e {
+    right: -11px !important;
+  }
+
+  .crop-handle.s {
+    bottom: -11px !important;
+  }
+
+  .crop-handle.w {
+    left: -11px !important;
+  }
+
+  .crop-overlay {
+    border-width: 2px;
+  }
+}
+
+/* ------------------------------------------------------------
+   Accessibility / reduced motion
+   ------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* ============================================================
+   TRUE INDEPENDENT CROP HANDLES
+   ============================================================ */
+
+.crop-workspace {
+  position: relative;
+  touch-action: none;
+  user-select: none;
+}
+
+.crop-overlay {
+  position: absolute;
+  box-sizing: border-box;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Make handles easy to grab */
+.crop-handle {
+  width: 22px !important;
+  height: 22px !important;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  border: 3px solid var(--cb-primary);
+
+  border-radius: 6px;
+
+  z-index: 100;
+
+  margin: 0;
+
+  padding: 0;
+
+  touch-action: none;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s ease;
+}
+
+/* =========================
+   CORNERS
+   ========================= */
+
+.crop-handle.nw {
+  top: -11px !important;
+  left: -11px !important;
+  cursor: nwse-resize;
+}
+
+.crop-handle.ne {
+  top: -11px !important;
+  right: -11px !important;
+  cursor: nesw-resize;
+}
+
+.crop-handle.se {
+  right: -11px !important;
+  bottom: -11px !important;
+  cursor: nwse-resize;
+}
+
+.crop-handle.sw {
+  left: -11px !important;
+  bottom: -11px !important;
+  cursor: nesw-resize;
+}
+
+/* =========================
+   EDGES
+   ========================= */
+
+.crop-handle.n {
+  top: -11px !important;
+  left: 50% !important;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.crop-handle.e {
+  right: -11px !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.crop-handle.s {
+  bottom: -11px !important;
+  left: 50% !important;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.crop-handle.w {
+  left: -11px !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+/* =========================
+   HOVER
+   ========================= */
+
+.crop-handle:hover {
+  background: var(--cb-accent);
+
+  box-shadow:
+    0 3px 12px rgba(0, 0, 0, 0.55),
+    0 0 0 5px rgba(224, 147, 46, 0.2);
+}
+
+/* Preserve center positioning for edge handles */
+
+.crop-handle.n:hover,
+.crop-handle.s:hover {
+  transform: translateX(-50%) scale(1.15);
+}
+
+.crop-handle.e:hover,
+.crop-handle.w:hover {
+  transform: translateY(-50%) scale(1.15);
+}
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 650px) {
+  .crop-handle {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .crop-handle.nw {
+    top: -13px !important;
+    left: -13px !important;
+  }
+
+  .crop-handle.ne {
+    top: -13px !important;
+    right: -13px !important;
+  }
+
+  .crop-handle.se {
+    right: -13px !important;
+    bottom: -13px !important;
+  }
+
+  .crop-handle.sw {
+    left: -13px !important;
+    bottom: -13px !important;
+  }
+
+  .crop-handle.n {
+    top: -13px !important;
+  }
+
+  .crop-handle.e {
+    right: -13px !important;
+  }
+
+  .crop-handle.s {
+    bottom: -13px !important;
+  }
+
+  .crop-handle.w {
+    left: -13px !important;
+  }
+}
+
+/* ============================================================
+   CROP INTERACTION FIX
+   ============================================================ */
+.crop-workspace,
+.crop-overlay,
+.crop-handle {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.crop-overlay {
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.crop-grid {
+  pointer-events: none;
+}
+
+.crop-handle {
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 100;
+}
