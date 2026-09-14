@@ -1434,20 +1434,6 @@ def delete_account():
         )
 
         # ----------------------------------------------------
-        # 8. DELETE jpgtopdfhistory
-        #
-        # This table also isn't in the Users CASCADE list.
-        # ----------------------------------------------------
-
-        cursor.execute(
-            """
-            DELETE FROM jpgtopdfhistory
-            WHERE user_id = %s
-            """,
-            (user_id,),
-        )
-
-        # ----------------------------------------------------
         # 9. DELETE PENDING REGISTRATION RECORDS
         # ----------------------------------------------------
 
