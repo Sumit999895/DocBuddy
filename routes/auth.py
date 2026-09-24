@@ -10,6 +10,7 @@ import mysql.connector
 from authlib.integrations.flask_client import OAuth
 from flask import (
     Blueprint,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -43,13 +44,42 @@ REGISTRATION_RESEND_COOLDOWN = 45
 
 
 def init_oauth(app):
+    """
+    Initialize Google OpenID Connect.
+
+    Works with both local development (.env / environment variables)
+    and Render environment variables.
+    """
     oauth.init_app(app)
+
+    client_id = (
+        app.config.get("GOOGLE_CLIENT_ID")
+        or os.getenv("GOOGLE_CLIENT_ID")
+    )
+    client_secret = (
+        app.config.get("GOOGLE_CLIENT_SECRET")
+        or os.getenv("GOOGLE_CLIENT_SECRET")
+    )
+
+    print(
+        "Google OAuth initialized:",
+        {
+            "client_id_configured": bool(client_id),
+            "client_secret_configured": bool(client_secret),
+        },
+    )
+
     oauth.register(
         name="google",
-        client_id=app.config.get("GOOGLE_CLIENT_ID"),
-        client_secret=app.config.get("GOOGLE_CLIENT_SECRET"),
-        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-        client_kwargs={"scope": "openid email profile"},
+        client_id=client_id,
+        client_secret=client_secret,
+        server_metadata_url=(
+            "https://accounts.google.com/"
+            ".well-known/openid-configuration"
+        ),
+        client_kwargs={
+            "scope": "openid email profile"
+        },
     )
 
 
@@ -745,18 +775,43 @@ def login():
 # GOOGLE LOGIN
 # ============================================================
 
+def _get_google_credentials():
+    """
+    Get Google OAuth credentials from Flask config first and
+    environment variables second.
+
+    This supports both local development and Render.
+    """
+    client_id = (
+        current_app.config.get("GOOGLE_CLIENT_ID")
+        or os.getenv("GOOGLE_CLIENT_ID")
+    )
+    client_secret = (
+        current_app.config.get("GOOGLE_CLIENT_SECRET")
+        or os.getenv("GOOGLE_CLIENT_SECRET")
+    )
+
+    return (
+        str(client_id).strip() if client_id else "",
+        str(client_secret).strip() if client_secret else "",
+    )
+
+
 def _google_callback_url():
     """
-    Build the OAuth callback URL correctly for both local Flask and
-    production deployments behind a reverse proxy such as Render.
+    Build the callback URL for both local Flask and Render.
+
+    Locally this will normally be:
+        http://127.0.0.1:5000/auth/google/callback
+
+    On Render it will be:
+        https://docbuddy-vrdo.onrender.com/auth/google/callback
     """
     callback_url = url_for(
         "auth.google_callback",
         _external=True,
     )
 
-    # Render/proxies may send the original HTTPS scheme in
-    # X-Forwarded-Proto while Flask sees the internal HTTP scheme.
     forwarded_proto = (
         request.headers.get("X-Forwarded-Proto", "")
         .split(",")[0]
@@ -764,15 +819,14 @@ def _google_callback_url():
         .lower()
     )
 
-    if forwarded_proto == "https" and callback_url.startswith("http://"):
-        callback_url = "https://" + callback_url[len("http://"):]
-
-    # Prefer the externally visible host when a proxy supplies it.
     forwarded_host = (
         request.headers.get("X-Forwarded-Host", "")
         .split(",")[0]
         .strip()
     )
+
+    if forwarded_proto == "https" and callback_url.startswith("http://"):
+        callback_url = "https://" + callback_url[len("http://"):]
 
     if forwarded_host:
         try:
@@ -789,9 +843,40 @@ def _google_callback_url():
                 )
             )
         except Exception as e:
-            print("Google callback host normalization error:", repr(e))
+            print(
+                "Google callback URL normalization error:",
+                repr(e),
+            )
 
     return callback_url
+
+
+def _configure_google_client():
+    """
+    Register Google with the credentials currently available to Flask.
+
+    Re-registering is intentional: it makes local and Render behavior
+    consistent even when configuration is supplied at runtime.
+    """
+    client_id, client_secret = _get_google_credentials()
+
+    if not client_id or not client_secret:
+        return False
+
+    oauth.register(
+        name="google",
+        client_id=client_id,
+        client_secret=client_secret,
+        server_metadata_url=(
+            "https://accounts.google.com/"
+            ".well-known/openid-configuration"
+        ),
+        client_kwargs={
+            "scope": "openid email profile"
+        },
+    )
+
+    return True
 
 
 @auth_bp.route("/auth/google/login")
@@ -799,8 +884,8 @@ def google_login():
     """
     Start Google OpenID Connect login.
 
-    The optional `next` value is stored in the session so the user can
-    return to the page that requested authentication.
+    prompt=select_account makes Google show the account chooser,
+    even when the browser already has a Google session.
     """
     next_url = _safe_next_url(
         request.args.get("next", "")
@@ -811,60 +896,91 @@ def google_login():
     else:
         session.pop("google_login_next", None)
 
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
-    client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
-
-    if not client_id or not client_secret:
+    if not _configure_google_client():
         print(
             "Google OAuth configuration error: "
             "GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing."
         )
+
         flash(
             "Google sign-in is temporarily unavailable. "
             "Please use email and password.",
             "error",
         )
-        return redirect(url_for("auth.login", next=next_url))
+
+        return redirect(
+            url_for(
+                "auth.login",
+                next=next_url,
+            )
+        )
 
     try:
         redirect_uri = _google_callback_url()
 
-        print("Google OAuth redirect URI:", redirect_uri)
+        print(
+            "Google OAuth redirect URI:",
+            redirect_uri,
+        )
 
         return oauth.google.authorize_redirect(
-            redirect_uri
+            redirect_uri,
+            prompt="select_account",
         )
 
     except Exception as e:
         import traceback
 
-        print("Google OAuth start error:", repr(e))
+        print(
+            "========== GOOGLE OAUTH START ERROR =========="
+        )
+        print(
+            "Google OAuth start error:",
+            repr(e),
+        )
         traceback.print_exc()
+        print(
+            "=============================================="
+        )
 
         flash(
-            "Google sign-in could not be started. Please try again.",
+            "Google sign-in could not be started. "
+            "Please try again.",
             "error",
         )
+
         return redirect(
-            url_for("auth.login", next=next_url)
+            url_for(
+                "auth.login",
+                next=next_url,
+            )
         )
 
 
 @auth_bp.route("/auth/google/callback")
 def google_callback():
     """
-    Complete Google OpenID Connect login and create/update the
-    corresponding DocBuddy user.
+    Complete Google OpenID Connect login and create/update
+    the corresponding DocBuddy user.
     """
     next_url = _safe_next_url(
-        session.pop("google_login_next", "")
+        session.pop(
+            "google_login_next",
+            "",
+        )
     )
 
+    db = None
+    cursor = None
+
     try:
+        if not _configure_google_client():
+            raise RuntimeError(
+                "Google OAuth credentials are not configured."
+            )
+
         token = oauth.google.authorize_access_token()
 
-        # Authlib normally provides OIDC user information in the token.
-        # If it does not, use Google's userinfo endpoint as a fallback.
         userinfo = token.get("userinfo")
 
         if not userinfo:
@@ -872,95 +988,103 @@ def google_callback():
                 userinfo = oauth.google.userinfo(
                     token=token
                 )
-            except Exception:
-                userinfo = None
+            except Exception as e:
+                print(
+                    "Google userinfo endpoint error:",
+                    repr(e),
+                )
 
         if not userinfo and token.get("id_token"):
-            userinfo = oauth.google.parse_id_token(token)
+            try:
+                userinfo = oauth.google.parse_id_token(
+                    token
+                )
+            except Exception as e:
+                print(
+                    "Google ID token parsing error:",
+                    repr(e),
+                )
 
         if not userinfo:
             raise RuntimeError(
                 "Google did not return user profile information."
             )
 
-    except Exception as e:
-        import traceback
-
-        print("========== GOOGLE OAUTH ERROR ==========")
-        print("Google OAuth error:", repr(e))
-        traceback.print_exc()
-        print("========================================")
-
-        flash(
-            "Could not sign you in with Google. "
-            "Please try again.",
-            "error",
-        )
-        return redirect(
-            url_for("auth.login", next=next_url)
+        email = (
+            str(
+                userinfo.get(
+                    "email",
+                    "",
+                )
+            )
+            .strip()
+            .lower()
         )
 
-    email = (
-        str(userinfo.get("email", ""))
-        .strip()
-        .lower()
-    )
-
-    name = (
-        str(
-            userinfo.get("name")
-            or userinfo.get("given_name")
-            or email.split("@")[0]
-        )
-        .strip()
-        or email.split("@")[0]
-    )
-
-    google_id = str(
-        userinfo.get("sub", "")
-    ).strip()
-
-    email_verified = userinfo.get(
-        "email_verified",
-        True,
-    )
-
-    if not email or "@" not in email or not google_id:
-        print(
-            "Google OAuth error: incomplete user information:",
-            {
-                "has_email": bool(email),
-                "has_google_id": bool(google_id),
-            },
+        name = (
+            str(
+                userinfo.get("name")
+                or userinfo.get("given_name")
+                or (
+                    email.split("@")[0]
+                    if email
+                    else "Google User"
+                )
+            )
+            .strip()
+            or (
+                email.split("@")[0]
+                if email
+                else "Google User"
+            )
         )
 
-        flash(
-            "Google did not provide the required account information.",
-            "error",
-        )
-        return redirect(
-            url_for("auth.login", next=next_url)
+        google_id = str(
+            userinfo.get(
+                "sub",
+                "",
+            )
+        ).strip()
+
+        email_verified = userinfo.get(
+            "email_verified",
+            True,
         )
 
-    if email_verified is False:
-        flash(
-            "Your Google email address is not verified.",
-            "error",
-        )
-        return redirect(
-            url_for("auth.login", next=next_url)
-        )
+        if (
+            not email
+            or "@" not in email
+            or not google_id
+        ):
+            raise RuntimeError(
+                "Google returned incomplete account information."
+            )
 
-    db = None
-    cursor = None
+        if email_verified is False:
+            raise RuntimeError(
+                "Google email address is not verified."
+            )
 
-    try:
+        # ----------------------------------------------------
+        # DATABASE
+        # ----------------------------------------------------
+
         db = get_db_connection()
         cursor = db.cursor(dictionary=True)
 
-        # Match either an existing Google account or an existing
-        # email account. This allows an existing DocBuddy account to
-        # be linked to Google without creating a duplicate account.
+        # Log only safe schema information.
+        cursor.execute(
+            "SELECT DATABASE() AS db_name"
+        )
+        db_info = cursor.fetchone()
+
+        print(
+            "Google login database:",
+            db_info,
+        )
+
+        # Find an existing Google account OR an existing
+        # email account so we don't create duplicates.
         cursor.execute(
             """
             SELECT *
@@ -978,6 +1102,7 @@ def google_callback():
         user = cursor.fetchone()
 
         if user:
+            # Existing account: link Google to it.
             cursor.execute(
                 """
                 UPDATE Users
@@ -1001,17 +1126,33 @@ def google_callback():
             )
 
         else:
+            # ------------------------------------------------
+            # NEW GOOGLE ACCOUNT
+            #
+            # password is NOT allowed to be NULL in the
+            # current Users table. Therefore create a random
+            # bcrypt password that the user never receives.
+            # Google remains the authentication method.
+            # ------------------------------------------------
+
+            unusable_password = bcrypt.hashpw(
+                secrets.token_urlsafe(32).encode("utf-8"),
+                bcrypt.gensalt(),
+            ).decode("utf-8")
+
             cursor.execute(
                 """
                 INSERT INTO Users
                 (
                     name,
                     email,
+                    phone,
                     password,
-                    google_id,
                     login_method,
+                    plan,
                     account_status,
-                    auth_provider
+                    auth_provider,
+                    google_id
                 )
                 VALUES
                 (
@@ -1020,18 +1161,22 @@ def google_callback():
                     NULL,
                     %s,
                     'google',
+                    'free',
                     'active',
-                    'google'
+                    'google',
+                    %s
                 )
                 """,
                 (
                     name,
                     email,
+                    unusable_password,
                     google_id,
                 ),
             )
 
             user_id = cursor.lastrowid
+
             db.commit()
 
             user = _get_user_by_id(
@@ -1042,6 +1187,18 @@ def google_callback():
         if not user:
             raise RuntimeError(
                 "Google user could not be loaded after database update."
+            )
+
+        if user.get("account_status") == "suspended":
+            flash(
+                "Your account is suspended.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "auth.login",
+                    next=next_url,
+                )
             )
 
     except mysql.connector.Error as e:
@@ -1060,7 +1217,10 @@ def google_callback():
         )
 
         return redirect(
-            url_for("auth.login", next=next_url)
+            url_for(
+                "auth.login",
+                next=next_url,
+            )
         )
 
     except Exception as e:
@@ -1069,16 +1229,29 @@ def google_callback():
 
         import traceback
 
-        print("Google login error:", repr(e))
+        print(
+            "========== GOOGLE LOGIN ERROR =========="
+        )
+        print(
+            "Google login error:",
+            repr(e),
+        )
         traceback.print_exc()
+        print(
+            "========================================"
+        )
 
         flash(
-            "Could not complete Google sign-in. Please try again.",
+            "Could not complete Google sign-in. "
+            "Please try again.",
             "error",
         )
 
         return redirect(
-            url_for("auth.login", next=next_url)
+            url_for(
+                "auth.login",
+                next=next_url,
+            )
         )
 
     finally:
@@ -1098,6 +1271,7 @@ def google_callback():
     return redirect(
         next_url or url_for("dashboard")
     )
+
 
 # ============================================================
 # FORGOT PASSWORD
