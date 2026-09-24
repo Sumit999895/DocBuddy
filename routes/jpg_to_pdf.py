@@ -441,7 +441,7 @@ def jpg_to_pdf():
     if "user" not in session:
 
         return redirect(
-            url_for("login")
+            url_for("auth.login")
         )
 
     # Clean old temporary files whenever this page is opened.
@@ -466,7 +466,7 @@ def convert_jpg_to_pdf_route():
     if "user" not in session:
 
         return redirect(
-            url_for("login")
+            url_for("auth.login")
         )
 
     # Clean old temporary conversions first.
@@ -742,7 +742,7 @@ def result_jpg_to_pdf(token):
     if "user" not in session:
 
         return redirect(
-            url_for("login")
+            url_for("auth.login")
         )
 
     cleanup_old_conversions()
@@ -842,7 +842,7 @@ def preview_jpg_to_pdf(token):
     if "user" not in session:
 
         return redirect(
-            url_for("login")
+            url_for("auth.login")
         )
 
     token = safe_token(
@@ -884,7 +884,7 @@ def download_jpg_to_pdf(token):
     if "user" not in session:
 
         return redirect(
-            url_for("login")
+            url_for("auth.login")
         )
 
     token = safe_token(
@@ -947,7 +947,7 @@ def delete_jpg_to_pdf(token):
     if "user" not in session:
 
         return redirect(
-            url_for("login")
+            url_for("auth.login")
         )
 
     token = safe_token(
