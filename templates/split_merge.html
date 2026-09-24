@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <title>Split & Merge PDF | DocBuddy</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='split_merge.css') }}" />
+
+    <style>
+      /* Split result cards */
+      .split-results {
+        margin-top: 24px;
+        padding: 22px;
+        border: 1px solid rgba(255, 90, 60, 0.2);
+        border-radius: 20px;
+        background: linear-gradient(
+          145deg,
+          rgba(35, 12, 10, 0.94),
+          rgba(17, 11, 10, 0.98)
+        );
+        box-shadow:
+          0 18px 50px rgba(0, 0, 0, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+      .split-results-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+      .results-kicker {
+        display: inline-block;
+        margin-bottom: 5px;
+        color: #e48a51;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .split-results-header h3 {
+        margin: 0;
+        color: #fff5ed;
+        font-size: 21px;
+      }
+      .split-results-header p {
+        margin: 6px 0 0;
+        color: rgba(255, 235, 220, 0.62);
+        font-size: 13px;
+      }
+      .split-results-count {
+        flex-shrink: 0;
+        padding: 7px 11px;
+        border-radius: 999px;
+        background: rgba(224, 104, 63, 0.12);
+        border: 1px solid rgba(224, 104, 63, 0.24);
+        color: #efa06e;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .split-result-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 16px;
+      }
+      .split-result-card {
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.035);
+        transition:
+          transform 0.2s ease,
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .split-result-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(232, 113, 70, 0.38);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+      }
+      .split-result-preview {
+        height: 175px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: radial-gradient(
+          circle at center,
+          rgba(221, 87, 47, 0.13),
+          transparent 65%
+        );
+      }
+      .pdf-sheet {
+        width: 105px;
+        height: 140px;
+        background: #fff;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        transform: rotate(-2deg);
+        transition: transform 0.25s ease;
+      }
+      .split-result-card:hover .pdf-sheet {
+        transform: rotate(0deg) scale(1.03);
+      }
+      .pdf-sheet-top {
+        height: 26px;
+        display: flex;
+        align-items: center;
+        padding-left: 9px;
+        background: #9d3325;
+        color: #fff;
+        font-size: 8px;
+        font-weight: 800;
+      }
+      .pdf-sheet-body {
+        position: relative;
+        height: calc(100% - 26px);
+        padding: 15px 10px;
+      }
+      .pdf-line {
+        height: 4px;
+        margin-bottom: 7px;
+        border-radius: 3px;
+        background: #dedede;
+      }
+      .pdf-line.short {
+        width: 65%;
+      }
+      .pdf-page-number {
+        position: absolute;
+        right: 10px;
+        bottom: 8px;
+        color: #999;
+        font-size: 9px;
+      }
+      .split-result-info {
+        padding: 14px 15px 10px;
+      }
+      .split-result-title {
+        color: #fff2e9;
+        font-size: 14px;
+        font-weight: 800;
+      }
+      .split-result-name {
+        margin-top: 4px;
+        overflow: hidden;
+        color: rgba(255, 225, 207, 0.5);
+        font-size: 11px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .split-result-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 12px 15px 15px;
+      }
+      .split-preview-btn,
+      .split-download-btn {
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 9px;
+        font-size: 12px;
+        font-weight: 750;
+        cursor: pointer;
+        text-decoration: none;
+        transition:
+          transform 0.2s ease,
+          background 0.2s ease;
+      }
+      .split-preview-btn {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        color: #ffe9dc;
+      }
+      .split-download-btn {
+        border: 1px solid rgba(218, 93, 55, 0.38);
+        background: rgba(184, 64, 39, 0.18);
+        color: #ffb18b;
+      }
+      .split-preview-btn:hover,
+      .split-download-btn:hover {
+        transform: translateY(-1px);
+      }
+      .split-preview-btn:hover {
+        background: rgba(255, 255, 255, 0.09);
+      }
+      .split-download-btn:hover {
+        background: rgba(184, 64, 39, 0.3);
+      }
+
+      /* PDF preview */
+      .preview-open {
+        overflow: hidden;
+      }
+      .pdf-preview-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .pdf-preview-modal[hidden] {
+        display: none;
+      }
+      .pdf-preview-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(4, 3, 3, 0.84);
+        backdrop-filter: blur(8px);
+      }
+      .pdf-preview-dialog {
+        position: relative;
+        z-index: 2;
+        width: min(1100px, 100%);
+        height: min(90vh, 850px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid rgba(239, 114, 69, 0.25);
+        border-radius: 18px;
+        background: #17100e;
+        box-shadow: 0 30px 100px rgba(0, 0, 0, 0.65);
+      }
+      .pdf-preview-header {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .pdf-preview-header h3 {
+        margin: 0;
+        color: #fff4ed;
+        font-size: 17px;
+      }
+      .pdf-preview-close {
+        width: 38px;
+        height: 38px;
+        border: 0;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.07);
+        color: #fff;
+        font-size: 25px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .pdf-preview-close:hover {
+        background: rgba(214, 72, 42, 0.3);
+      }
+      .pdf-preview-body {
+        flex: 1;
+        min-height: 0;
+        background: #292929;
+      }
+      .pdf-preview-body iframe {
+        width: 100%;
+        height: 100%;
+        display: block;
+        border: 0;
+        background: #fff;
+      }
+
+      @media (max-width: 700px) {
+        .split-results {
+          padding: 16px;
+          border-radius: 16px;
+        }
+        .split-results-header {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .split-result-grid {
+          grid-template-columns: 1fr;
+        }
+        .split-result-actions {
+          grid-template-columns: 1fr 1fr;
+        }
+        .pdf-preview-modal {
+          padding: 0;
+        }
+        .pdf-preview-dialog {
+          width: 100%;
+          height: 100%;
+          border-radius: 0;
+        }
+        .pdf-preview-header {
+          padding: 12px 14px;
+        }
+      }
+      @media (max-width: 400px) {
+        .split-result-actions {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Ambient effects -->
+    <div class="darkroom-film-grain"></div>
+    <div class="safelight-glow"></div>
+
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-top">
+        <a href="{{ url_for('dashboard') }}" class="back-button">
+          ← Dashboard
+        </a>
+
+        <div class="live-indicator">
+          <span class="safelight-beacon"></span>
+          <span>READY</span>
+        </div>
+      </div>
+
+      <div class="brand-block">
+        <div class="brand-mark">◎</div>
+
+        <div>
+          <div class="brand-title">PDF <span>DocBuddy</span></div>
+
+          <p class="brand-subtitle">Split. Merge. Refine your documents.</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main-container">
+      <!-- Tool heading -->
+      <section class="tool-heading">
+        <div class="eyebrow">DOCUMENT LABORATORY</div>
+
+        <h1>PDF <span>Processing</span></h1>
+
+        <p>
+          Separate pages or combine multiple PDFs into one polished document.
+        </p>
+      </section>
+
+      <!-- Tabs -->
+      <nav class="tool-tabs" role="tablist">
+        <button
+          class="tool-tab active"
+          data-tab="split"
+          role="tab"
+          aria-selected="true"
+          type="button">
+          <span class="tab-icon">✂</span>
+          <span>
+            <strong>Split PDF</strong>
+            <small>Extract pages</small>
+          </span>
+        </button>
+
+        <button
+          class="tool-tab"
+          data-tab="merge"
+          role="tab"
+          aria-selected="false"
+          type="button">
+          <span class="tab-icon">⊕</span>
+          <span>
+            <strong>Merge PDFs</strong>
+            <small>Combine files</small>
+          </span>
+        </button>
+      </nav>
+
+      <!-- ================= SPLIT ================= -->
+
+      <section class="tool-panel active" id="panel-split" role="tabpanel">
+        <div class="tool-card">
+          <div class="card-heading">
+            <div class="card-icon red">✂</div>
+
+            <div>
+              <h2>Split a PDF</h2>
+
+              <p>Separate every page or extract specific page ranges.</p>
+            </div>
+          </div>
+
+          <form id="splitForm">
+            <!-- Upload -->
+            <div class="upload-zone" id="splitDropzone">
+              <input
+                type="file"
+                id="splitFileInput"
+                name="file"
+                accept=".pdf,application/pdf"
+                hidden />
+
+              <div class="upload-icon">⇧</div>
+
+              <h3>Drop your PDF here</h3>
+
+              <p>
+                or
+                <span class="browse-link">browse files</span>
+              </p>
+
+              <div class="upload-hint">PDF files only</div>
+
+              <div class="selected-file" id="splitFileName"></div>
+
+              <div class="page-badge" id="splitPageCount"></div>
+            </div>
+
+            <!-- Split options -->
+            <div class="options-section">
+              <div class="section-label">SPLIT METHOD</div>
+
+              <label class="option-card">
+                <input type="radio" name="mode" value="all" checked />
+
+                <span class="custom-radio"></span>
+
+                <span class="option-content">
+                  <strong> Extract every page </strong>
+
+                  <small> Creates one PDF for each page </small>
+                </span>
+              </label>
+
+              <label class="option-card">
+                <input type="radio" name="mode" value="ranges" />
+
+                <span class="custom-radio"></span>
+
+                <span class="option-content">
+                  <strong> Custom page ranges </strong>
+
+                  <small> Extract selected pages or ranges </small>
+                </span>
+              </label>
+
+              <div class="range-container" id="rangesField" hidden>
+                <label for="rangesInput" class="input-label">
+                  PAGE RANGES
+                </label>
+
+                <input
+                  type="text"
+                  id="rangesInput"
+                  name="ranges"
+                  class="modern-input"
+                  placeholder="Example: 1-3, 5, 8-10"
+                  autocomplete="off" />
+
+                <div class="input-hint">
+                  Separate multiple ranges with commas.
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="action-button primary"
+              id="splitSubmit">
+              <span class="button-icon">✂</span>
+
+              <span class="dr-btn-text"> Split PDF </span>
+
+              <span class="button-arrow"> → </span>
+            </button>
+
+            <div
+              class="status-message"
+              id="splitStatus"
+              aria-live="polite"></div>
+
+            <!-- SPLIT RESULTS -->
+            <section class="split-results" id="splitResults" hidden>
+              <div class="split-results-header">
+                <div>
+                  <span class="results-kicker">DEVELOPED FILES</span>
+                  <h3>Choose what you need</h3>
+                  <p>Preview a result or download only the pages you want.</p>
+                </div>
+                <span class="split-results-count" id="splitResultsCount"
+                  >0 files</span
+                >
+              </div>
+              <div class="split-result-grid" id="splitResultGrid"></div>
+            </section>
+          </form>
+        </div>
+      </section>
+
+      <!-- ================= MERGE ================= -->
+
+      <section class="tool-panel" id="panel-merge" role="tabpanel">
+        <div class="tool-card">
+          <div class="card-heading">
+            <div class="card-icon amber">⊕</div>
+
+            <div>
+              <h2>Merge PDFs</h2>
+
+              <p>Arrange multiple PDFs and fuse them into one file.</p>
+            </div>
+          </div>
+
+          <form id="mergeForm">
+            <!-- Upload -->
+            <div class="upload-zone" id="mergeDropzone">
+              <input
+                type="file"
+                id="mergeFileInput"
+                name="files"
+                accept=".pdf,application/pdf"
+                multiple
+                hidden />
+
+              <div class="upload-icon">⇧</div>
+
+              <h3>Drop PDF files here</h3>
+
+              <p>
+                or
+                <span class="browse-link"> browse files </span>
+              </p>
+
+              <div class="upload-hint">Select two or more PDF files</div>
+            </div>
+
+            <!-- Files -->
+            <div class="file-list-wrapper">
+              <div class="section-label">DOCUMENT QUEUE</div>
+
+              <ul class="file-list" id="mergeFileList"></ul>
+            </div>
+
+            <!-- Output name -->
+            <div class="options-section">
+              <label for="outputNameInput" class="input-label">
+                OUTPUT FILE NAME
+              </label>
+
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  id="outputNameInput"
+                  name="output_name"
+                  class="modern-input"
+                  value="merged"
+                  placeholder="merged" />
+
+                <span class="input-extension"> .pdf </span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="action-button primary"
+              id="mergeSubmit"
+              disabled>
+              <span class="button-icon"> ⊕ </span>
+
+              <span class="dr-btn-text"> Merge PDFs </span>
+
+              <span class="button-arrow"> → </span>
+            </button>
+
+            <div
+              class="status-message"
+              id="mergeStatus"
+              aria-live="polite"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Info strip -->
+      <section class="info-strip">
+        <div class="info-item">
+          <span class="info-icon"> ⚡ </span>
+
+          <div>
+            <strong>Fast processing</strong>
+            <small>Designed for quick PDF operations</small>
+          </div>
+        </div>
+
+        <div class="info-divider"></div>
+
+        <div class="info-item">
+          <span class="info-icon"> ◉ </span>
+
+          <div>
+            <strong>Session based</strong>
+            <small>Files are processed for your session</small>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+      <span class="footer-light"></span>
+
+      DocBuddy PDF Darkroom
+
+      <span class="footer-separator">•</span>
+
+      Split & Merge
+    </footer>
+
+    <!-- PDF PREVIEW MODAL -->
+    <div class="pdf-preview-modal" id="pdfPreviewModal" hidden>
+      <div class="pdf-preview-backdrop" id="pdfPreviewBackdrop"></div>
+      <div
+        class="pdf-preview-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-label="PDF Preview">
+        <div class="pdf-preview-header">
+          <div>
+            <span class="results-kicker">DOCUMENT PREVIEW</span>
+            <h3>PDF Preview</h3>
+          </div>
+          <button
+            type="button"
+            class="pdf-preview-close"
+            id="pdfPreviewClose"
+            aria-label="Close preview">
+            ×
+          </button>
+        </div>
+        <div class="pdf-preview-body">
+          <iframe id="pdfPreviewFrame" title="PDF Preview"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        /* ==========================================
+         PDF PREVIEW
+        ========================================== */
+
+        const pdfPreviewModal = document.getElementById("pdfPreviewModal");
+        const pdfPreviewFrame = document.getElementById("pdfPreviewFrame");
+        const pdfPreviewClose = document.getElementById("pdfPreviewClose");
+        const pdfPreviewBackdrop =
+          document.getElementById("pdfPreviewBackdrop");
+
+        function openPdfPreview(url) {
+          if (!url) return;
+          pdfPreviewFrame.src = url;
+          pdfPreviewModal.hidden = false;
+          document.body.classList.add("preview-open");
+        }
+
+        function closePdfPreview() {
+          pdfPreviewModal.hidden = true;
+          pdfPreviewFrame.src = "";
+          document.body.classList.remove("preview-open");
+        }
+
+        pdfPreviewClose.addEventListener("click", closePdfPreview);
+        pdfPreviewBackdrop.addEventListener("click", closePdfPreview);
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && !pdfPreviewModal.hidden) {
+            closePdfPreview();
+          }
+        });
+
+        /* ==========================================
+         TABS
+      ========================================== */
+
+        const tabs = document.querySelectorAll(".tool-tab");
+        const panels = document.querySelectorAll(".tool-panel");
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            tabs.forEach((item) => {
+              item.classList.remove("active");
+              item.setAttribute("aria-selected", "false");
+            });
+
+            panels.forEach((panel) => {
+              panel.classList.remove("active");
+            });
+
+            tab.classList.add("active");
+            tab.setAttribute("aria-selected", "true");
+
+            const panel = document.getElementById("panel-" + tab.dataset.tab);
+
+            if (panel) {
+              panel.classList.add("active");
+            }
+          });
+        });
+
+        /* ==========================================
+         DROPZONE
+      ========================================== */
+
+        function wireDropzone(zone, input, onFiles) {
+          zone.addEventListener("click", (event) => {
+            if (
+              event.target.closest(".selected-file") ||
+              event.target.closest(".page-badge")
+            ) {
+              return;
+            }
+
+            input.click();
+          });
+
+          zone.addEventListener("dragover", (event) => {
+            event.preventDefault();
+
+            zone.classList.add("dragover");
+          });
+
+          zone.addEventListener("dragleave", () => {
+            zone.classList.remove("dragover");
+          });
+
+          zone.addEventListener("drop", (event) => {
+            event.preventDefault();
+
+            zone.classList.remove("dragover");
+
+            if (event.dataTransfer.files.length) {
+              try {
+                input.files = event.dataTransfer.files;
+              } catch (error) {
+                // Browser may prevent assigning FileList.
+              }
+
+              onFiles(event.dataTransfer.files);
+            }
+          });
+
+          input.addEventListener("change", () => {
+            onFiles(input.files);
+          });
+        }
+
+        /* ==========================================
+         SPLIT
+      ========================================== */
+
+        const splitDropzone = document.getElementById("splitDropzone");
+
+        const splitFileInput = document.getElementById("splitFileInput");
+
+        const splitFileName = document.getElementById("splitFileName");
+
+        const splitPageCount = document.getElementById("splitPageCount");
+
+        const rangesRadio = document.querySelector(
+          'input[name="mode"][value="ranges"]',
+        );
+
+        const allRadio = document.querySelector(
+          'input[name="mode"][value="all"]',
+        );
+
+        const rangesField = document.getElementById("rangesField");
+
+        wireDropzone(splitDropzone, splitFileInput, async (files) => {
+          if (!files.length) {
+            return;
+          }
+
+          const file = files[0];
+
+          splitFileName.textContent = file.name;
+
+          splitFileName.classList.add("visible");
+
+          splitPageCount.textContent = "Reading page count…";
+
+          splitPageCount.classList.add("visible");
+
+          const fd = new FormData();
+
+          fd.append("file", file);
+
+          try {
+            const res = await fetch("/split-merge/page-count", {
+              method: "POST",
+              body: fd,
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+              splitPageCount.textContent = `${data.page_count} ${
+                data.page_count === 1 ? "page" : "pages"
+              }`;
+            } else {
+              splitPageCount.textContent =
+                data.error || "Could not read this file.";
+            }
+          } catch (error) {
+            splitPageCount.textContent = "Could not read this file.";
+          }
+        });
+
+        [rangesRadio, allRadio].forEach((radio) => {
+          radio.addEventListener("change", () => {
+            rangesField.hidden = !rangesRadio.checked;
+          });
+        });
+
+        /* ==========================================
+         SPLIT SUBMIT
+      ========================================== */
+
+        const splitForm = document.getElementById("splitForm");
+
+        const splitStatus = document.getElementById("splitStatus");
+
+        const splitSubmit = document.getElementById("splitSubmit");
+
+        splitForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          if (!splitFileInput.files.length) {
+            splitStatus.textContent = "Choose a PDF first.";
+            splitStatus.className = "status-message error";
+            return;
+          }
+
+          const splitResults = document.getElementById("splitResults");
+          const splitResultGrid = document.getElementById("splitResultGrid");
+          const splitResultsCount =
+            document.getElementById("splitResultsCount");
+
+          splitResults.hidden = true;
+          splitResultGrid.innerHTML = "";
+
+          splitSubmit.disabled = true;
+          splitStatus.textContent = "Processing your PDF…";
+          splitStatus.className = "status-message loading";
+
+          const fd = new FormData(splitForm);
+
+          try {
+            const res = await fetch("/split-merge/split", {
+              method: "POST",
+              body: fd,
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || !data.success) {
+              throw new Error(data.error || "Split failed.");
+            }
+
+            if (!data.files || !data.files.length) {
+              throw new Error("No split files were created.");
+            }
+
+            data.files.forEach((file, index) => {
+              const card = document.createElement("article");
+              card.className = "split-result-card";
+
+              card.innerHTML = `
+                <div class="split-result-preview">
+                  <div class="pdf-sheet">
+                    <div class="pdf-sheet-top">PDF</div>
+                    <div class="pdf-sheet-body">
+                      <div class="pdf-line"></div>
+                      <div class="pdf-line"></div>
+                      <div class="pdf-line short"></div>
+                      <div class="pdf-page-number">${index + 1}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="split-result-info">
+                  <div class="split-result-title">${escapeHtml(file.label || `Part ${index + 1}`)}</div>
+                  <div class="split-result-name">${escapeHtml(file.filename || "split.pdf")}</div>
+                </div>
+
+                <div class="split-result-actions">
+                  <button
+                    type="button"
+                    class="split-preview-btn"
+                    data-preview="${escapeHtml(file.preview_url || "")}">
+                    <span>👁</span> Preview
+                  </button>
+
+                  <a
+                    class="split-download-btn"
+                    href="${escapeHtml(file.download_url || "#")}"
+                    download>
+                    <span>↓</span> Download
+                  </a>
+                </div>
+              `;
+
+              splitResultGrid.appendChild(card);
+            });
+
+            splitResultGrid
+              .querySelectorAll(".split-preview-btn")
+              .forEach((button) => {
+                button.addEventListener("click", () => {
+                  openPdfPreview(button.dataset.preview);
+                });
+              });
+
+            splitResultsCount.textContent = `${data.files.length} ${data.files.length === 1 ? "file" : "files"}`;
+
+            splitResults.hidden = false;
+
+            splitStatus.textContent =
+              "✓ Split complete — choose a file to preview or download.";
+            splitStatus.className = "status-message success";
+
+            setTimeout(() => {
+              splitResults.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }, 100);
+          } catch (error) {
+            console.error("Split error:", error);
+            splitStatus.textContent =
+              error.message || "Unable to split the PDF.";
+            splitStatus.className = "status-message error";
+          } finally {
+            splitSubmit.disabled = false;
+          }
+        });
+
+        /* ==========================================
+         MERGE
+      ========================================== */
+
+        const mergeDropzone = document.getElementById("mergeDropzone");
+
+        const mergeFileInput = document.getElementById("mergeFileInput");
+
+        const mergeFileList = document.getElementById("mergeFileList");
+
+        const mergeSubmit = document.getElementById("mergeSubmit");
+
+        let mergeFiles = [];
+
+        wireDropzone(mergeDropzone, mergeFileInput, (files) => {
+          mergeFiles = Array.from(files);
+
+          renderMergeList();
+        });
+
+        function renderMergeList() {
+          mergeFileList.innerHTML = "";
+
+          mergeFiles.forEach((file, index) => {
+            const li = document.createElement("li");
+
+            li.className = "file-item";
+
+            li.innerHTML = `
+
+              <span class="file-number">
+                ${index + 1}
+              </span>
+
+              <span class="file-type">
+                PDF
+              </span>
+
+              <span class="file-name">
+                ${escapeHtml(file.name)}
+              </span>
+
+              <button
+                type="button"
+                class="remove-file"
+                data-index="${index}"
+                aria-label="Remove ${escapeHtml(file.name)}"
+              >
+                ×
+              </button>
+
+            `;
+
+            mergeFileList.appendChild(li);
+          });
+
+          mergeSubmit.disabled = mergeFiles.length < 2;
+
+          mergeDropzone.classList.toggle("has-files", mergeFiles.length > 0);
+
+          mergeFileList.querySelectorAll(".remove-file").forEach((button) => {
+            button.addEventListener("click", () => {
+              const index = Number(button.dataset.index);
+
+              mergeFiles.splice(index, 1);
+
+              renderMergeList();
+            });
+          });
+        }
+
+        /* ==========================================
+         MERGE SUBMIT
+      ========================================== */
+
+        const mergeForm = document.getElementById("mergeForm");
+
+        const mergeStatus = document.getElementById("mergeStatus");
+
+        mergeForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          if (mergeFiles.length < 2) {
+            mergeStatus.textContent = "Select at least two PDFs.";
+
+            mergeStatus.className = "status-message error";
+
+            return;
+          }
+
+          mergeSubmit.disabled = true;
+
+          mergeStatus.textContent = "Fusing your documents…";
+
+          mergeStatus.className = "status-message loading";
+
+          const fd = new FormData();
+
+          mergeFiles.forEach((file) => {
+            fd.append("files", file);
+          });
+
+          fd.append(
+            "output_name",
+            document.getElementById("outputNameInput").value.trim() || "merged",
+          );
+
+          try {
+            const res = await fetch("/split-merge/merge", {
+              method: "POST",
+              body: fd,
+            });
+
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}));
+
+              throw new Error(data.error || "Merge failed.");
+            }
+
+            const blob = await res.blob();
+
+            const disposition = res.headers.get("Content-Disposition") || "";
+
+            const match = disposition.match(/filename="?([^"]+)"?/);
+
+            downloadBlob(blob, match ? match[1] : "merged.pdf");
+
+            mergeStatus.textContent = "✓ Done — download started.";
+
+            mergeStatus.className = "status-message success";
+          } catch (error) {
+            mergeStatus.textContent = error.message;
+
+            mergeStatus.className = "status-message error";
+          } finally {
+            mergeSubmit.disabled = mergeFiles.length < 2;
+          }
+        });
+
+        /* ==========================================
+         DOWNLOAD
+      ========================================== */
+
+        function downloadBlob(blob, filename) {
+          const url = window.URL.createObjectURL(blob);
+
+          const link = document.createElement("a");
+
+          link.href = url;
+
+          link.download = filename;
+
+          document.body.appendChild(link);
+
+          link.click();
+
+          link.remove();
+
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+          }, 100);
+        }
+
+        /* ==========================================
+         HTML ESCAPE
+      ========================================== */
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+        }
+      })();
+    </script>
+  </body>
+</html>

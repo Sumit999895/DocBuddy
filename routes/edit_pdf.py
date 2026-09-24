@@ -149,7 +149,7 @@ def require_pro_page():
     should be blocked, or None if the request may proceed."""
 
     if not logged_in():
-        return redirect(url_for("login", next=request.path))
+        return redirect(url_for("auth.login", next=request.path))
 
     if get_current_plan() != "pro":
         return redirect(url_for("upgrade"))
@@ -1029,7 +1029,7 @@ def process():
 def download(output_id):
 
     if not logged_in():
-        return redirect(url_for("login"))
+        return redirect(url_for("auth.login"))
 
     path = pdf_path(output_id)
 

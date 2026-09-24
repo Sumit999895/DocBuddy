@@ -138,7 +138,7 @@ def _require_pro_page():
     user_id = _get_user_id()
 
     if not user_id:
-        return redirect(url_for("login"))
+        return redirect(url_for("auth.login"))
 
     if not _is_pro_user():
         return redirect("/upgrade")

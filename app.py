@@ -39,6 +39,7 @@ from routes.scan import scan_bp
 from routes.create import create_bp
 from routes.page_format import page_format_bp
 from routes.ocr_text import ocr_text_bp
+from routes.split_merge import split_merge_bp
 
 from routes.auth import auth_bp, init_oauth
 from services.mail_service import init_mail
@@ -211,6 +212,7 @@ app.register_blueprint(scan_bp)
 app.register_blueprint(create_bp)
 app.register_blueprint(page_format_bp)
 app.register_blueprint(ocr_text_bp)
+app.register_blueprint(split_merge_bp)
 
 init_mail(app)
 init_oauth(app)
